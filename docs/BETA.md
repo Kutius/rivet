@@ -8,14 +8,21 @@ This file is the release gate, not a wish list. Do not check a box without a com
 
 ### B1. Trusted catalog
 
-- [ ] The official main index can be signed with Ed25519 and the client verifies it before parsing.
-- [ ] Verification is mandatory for HTTP indexes. rv update fails closed on a missing or invalid signature.
-- [ ] Local file:// and directory indexes may be unsigned for development; an explicit insecure override exists for remote indexes.
-- [ ] Maintainer commands: key generation, signing, and public-key reporting are documented and tested.
-- [ ] Every package artifact still requires a SHA-256 and is verified before extraction.
-- [ ] Signing-key handling never prints the private key in normal output. Private keys are not committed.
+- [x] The official main index can be signed with Ed25519 and the client verifies it before parsing.
+- [x] Verification is mandatory for HTTP indexes. rv update fails closed on a missing or invalid signature.
+- [x] Local file:// and directory indexes may be unsigned for development; an explicit insecure override exists for remote indexes.
+- [x] Maintainer commands: key generation, signing, and public-key reporting are documented and tested.
+- [x] Every package artifact still requires a SHA-256 and is verified before extraction.
+- [x] Signing-key handling never prints the private key in normal output. Private keys are not committed.
 
 Evidence:
+
+- Code: `src/trust.rs` (Ed25519 key generation, signing, verification through `ring`; `Trust` holds the trusted keys), `src/index.rs::load_index` (verifies the raw index bytes before `parse_index`), `src/config.rs` (`trusted_keys`, `allow_unsigned_remote`, `RIVET_TRUSTED_KEY`), `src/cli.rs` (`--insecure`, `rv repo keygen|sign|public-key`).
+- Tests, `cargo test --offline` → `tests/trust.rs`: `signed_local_index_verifies_and_tampering_fails` (trusted key accepted; no key, wrong key, and a one-byte tamper all fail), `signed_remote_index_verifies` (HTTP index + `index.json.sig`), `remote_index_fails_closed_without_signature` (HTTP without a signature fails; `--insecure` accepts it), `unsigned_local_index_stays_usable_for_development`, `keygen_never_prints_the_private_key`, `bad_checksum_is_rejected_before_extraction`. Result: 6 passed, 0 failed.
+- The remote tests run against a local HTTP server (`tests/trust.rs::serve`), so the HTTP path itself is exercised, not only `file://`.
+- Artifact digest: `src/model.rs::PackageManifest::validate` rejects a missing or malformed SHA-256; `src/download.rs::cache_blob` verifies the digest and deletes the partial file on mismatch. Test: `bad_checksum_is_rejected_before_extraction` (install fails with `sha256 mismatch`, `apps/hello` is never created).
+- Key handling: `rv repo keygen` prints only paths and the public key; the private key is PKCS#8 bytes in `rivet-signing.key`. No key file is committed (`.gitignore` ignores `*.key`; `git ls-files` contains no key).
+- Documentation: README section "Signing the index" and `docs/SECURITY.md`.
 
 ### B2. Mutation safety
 

@@ -9,5 +9,6 @@ pub mod model;
 pub mod repo;
 pub mod shim;
 pub mod store;
+pub mod trust;
 
 pub use commands::run;

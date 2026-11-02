@@ -1,3 +1,4 @@
+use crate::trust::Trust;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -11,6 +12,10 @@ pub struct Config {
     pub concurrency: usize,
     #[serde(default = "default_keep_versions")]
     pub keep_versions: usize,
+    #[serde(default)]
+    pub trusted_keys: Vec<String>,
+    #[serde(default)]
+    pub allow_unsigned_remote: bool,
 }
 
 fn default_concurrency() -> usize {
@@ -27,6 +32,8 @@ impl Default for Config {
             main_index: String::new(),
             concurrency: default_concurrency(),
             keep_versions: default_keep_versions(),
+            trusted_keys: Vec::new(),
+            allow_unsigned_remote: false,
         }
     }
 }
@@ -98,9 +105,15 @@ impl Config {
             toml::from_str(&text)
                 .with_context(|| format!("parsing {}", paths.config_file.display()))?
         };
-        if let Ok(main_index) = std::env::var("RIVET_MAIN_INDEX") {
-            if !main_index.trim().is_empty() {
-                config.main_index = main_index;
+        if let Ok(main_index) = std::env::var("RIVET_MAIN_INDEX")
+            && !main_index.trim().is_empty()
+        {
+            config.main_index = main_index;
+        }
+        if let Ok(key) = std::env::var("RIVET_TRUSTED_KEY") {
+            let key = key.trim().to_ascii_lowercase();
+            if !key.is_empty() && !config.trusted_keys.iter().any(|item| item == &key) {
+                config.trusted_keys.push(key);
             }
         }
         if config.concurrency == 0 {
@@ -124,6 +137,10 @@ impl Config {
         } else {
             Some(value.to_string())
         }
+    }
+
+    pub fn trust(&self) -> Trust {
+        Trust::new(&self.trusted_keys, self.allow_unsigned_remote)
     }
 }
 

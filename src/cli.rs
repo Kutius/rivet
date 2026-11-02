@@ -9,6 +9,12 @@ use clap::{Parser, Subcommand};
 pub struct Cli {
     #[arg(short, long, global = true, help = "Show extra diagnostic output")]
     pub verbose: bool,
+    #[arg(
+        long,
+        global = true,
+        help = "Allow unsigned remote indexes (insecure escape hatch)"
+    )]
+    pub insecure: bool,
     #[command(subcommand)]
     pub command: Commands,
 }
@@ -96,6 +102,26 @@ pub enum RepoCommands {
         path: String,
         #[arg(long)]
         output: Option<String>,
+    },
+    /// Generate an Ed25519 signing key pair
+    Keygen {
+        /// Directory for rivet-signing.key and rivet-signing.pub
+        #[arg(long)]
+        out: Option<String>,
+    },
+    /// Sign index.json with an Ed25519 private key
+    Sign {
+        /// Repository directory or index.json path
+        path: String,
+        /// Private key produced by 'rv repo keygen'
+        #[arg(long)]
+        key: String,
+    },
+    /// Print the public key for a private key
+    PublicKey {
+        /// Private key produced by 'rv repo keygen'
+        #[arg(long)]
+        key: String,
     },
 }
 

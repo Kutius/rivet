@@ -7,6 +7,7 @@ use crate::index;
 use crate::model::{BinSpec, PackageManifest, compare_manifests};
 use crate::repo;
 use crate::store;
+use crate::trust;
 use anyhow::{Context, Result, bail};
 use semver::Version;
 use std::collections::{BTreeMap, HashSet};
@@ -16,6 +17,7 @@ use std::process::Command;
 
 pub fn run(cli: Cli) -> Result<()> {
     download::init_crypto();
+    let insecure = cli.insecure;
     let paths = Paths::discover()?;
     if let Commands::Repo { command } = &cli.command {
         return cmd_repo(command.clone());
@@ -28,7 +30,10 @@ pub fn run(cli: Cli) -> Result<()> {
         return Ok(());
     }
     paths.ensure_layout()?;
-    let config = Config::load(&paths)?;
+    let mut config = Config::load(&paths)?;
+    if insecure {
+        config.allow_unsigned_remote = true;
+    }
     let db = Db::open(&paths.db_file)?;
 
     match cli.command {
@@ -47,7 +52,7 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::Rollback { packages } => cmd_rollback(&db, &paths, &packages),
         Commands::Cleanup => cmd_cleanup(&db, &paths, &config),
         Commands::Doctor => cmd_doctor(&db, &paths),
-        Commands::Tap { command } => cmd_tap(&db, &paths, command),
+        Commands::Tap { command } => cmd_tap(&db, &paths, command, &config.trust()),
         Commands::Repo { command } => cmd_repo(command),
         Commands::Config { command } => cmd_config(&paths, command),
         Commands::Init => cmd_init(&paths),
@@ -55,13 +60,14 @@ pub fn run(cli: Cli) -> Result<()> {
 }
 
 fn cmd_update(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
+    let trust = config.trust();
     let has_main = config.main_index_location().is_some() || db.get_repo("main")?.is_some();
     if has_main {
-        repo::sync_main(db, paths, config)?;
+        repo::sync_main(db, paths, config, &trust)?;
     } else {
         println!("main index is not configured; updating taps only");
     }
-    repo::sync_taps(db, paths)?;
+    repo::sync_taps(db, paths, &trust)?;
     Ok(())
 }
 
@@ -682,9 +688,9 @@ fn cmd_doctor(db: &Db, paths: &Paths) -> Result<()> {
     Ok(())
 }
 
-fn cmd_tap(db: &Db, paths: &Paths, command: TapCommands) -> Result<()> {
+fn cmd_tap(db: &Db, paths: &Paths, command: TapCommands, trust: &trust::Trust) -> Result<()> {
     match command {
-        TapCommands::Add { name, url } => repo::add_tap(db, paths, &name, url.as_deref()),
+        TapCommands::Add { name, url } => repo::add_tap(db, paths, &name, url.as_deref(), trust),
         TapCommands::List => {
             let repos = db.repos()?;
             if repos.iter().all(|repo| repo.kind != "tap") {
@@ -714,6 +720,48 @@ fn cmd_repo(command: RepoCommands) -> Result<()> {
             println!("built index with {} package versions", index.packages.len());
             Ok(())
         }
+        RepoCommands::Keygen { out } => {
+            let directory = out
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|| std::path::PathBuf::from("keys"));
+            let (private, public) = trust::keygen(&directory)?;
+            let key_hex = fs::read_to_string(&public)?.trim().to_string();
+            println!("private key: {}", private.display());
+            println!("public key:  {}", public.display());
+            println!("public key hex: {key_hex}");
+            println!("trust this key with: rv config set trusted_key {key_hex}");
+            Ok(())
+        }
+        RepoCommands::Sign { path, key } => {
+            let path = std::path::PathBuf::from(path);
+            let index_path = if path.is_dir() {
+                path.join("index.json")
+            } else {
+                path
+            };
+            if !index_path.exists() {
+                bail!("index file not found: {}", index_path.display());
+            }
+            let pair = trust::load_private_key(Path::new(&key))?;
+            let data = fs::read(&index_path)?;
+            let signature = trust::sign(&pair, &data);
+            let signature_path = trust::signature_path(&index_path);
+            fs::write(
+                &signature_path,
+                format!("{}\n", serde_json::to_string_pretty(&signature)?),
+            )?;
+            println!(
+                "signed {} (key {})",
+                index_path.display(),
+                signature.public_key
+            );
+            Ok(())
+        }
+        RepoCommands::PublicKey { key } => {
+            let pair = trust::load_private_key(Path::new(&key))?;
+            println!("{}", trust::public_key_hex(&pair));
+            Ok(())
+        }
     }
 }
 
@@ -729,6 +777,8 @@ fn cmd_config(paths: &Paths, command: ConfigCommands) -> Result<()> {
                 "main_index" => config.main_index,
                 "concurrency" => config.concurrency.to_string(),
                 "keep_versions" => config.keep_versions.to_string(),
+                "trusted_key" | "trusted_keys" => config.trusted_keys.join(","),
+                "allow_unsigned_remote" => config.allow_unsigned_remote.to_string(),
                 _ => bail!("unknown config key '{key}'"),
             };
             println!("{value}");
@@ -740,6 +790,15 @@ fn cmd_config(paths: &Paths, command: ConfigCommands) -> Result<()> {
                 "main_index" => config.main_index = value,
                 "concurrency" => config.concurrency = value.parse()?,
                 "keep_versions" => config.keep_versions = value.parse()?,
+                "trusted_key" | "trusted_keys" => {
+                    for key in value.split(',') {
+                        let key = key.trim().to_ascii_lowercase();
+                        if !key.is_empty() && !config.trusted_keys.contains(&key) {
+                            config.trusted_keys.push(key);
+                        }
+                    }
+                }
+                "allow_unsigned_remote" => config.allow_unsigned_remote = value.parse()?,
                 _ => bail!("unknown config key '{key}'"),
             }
             config.save(paths)?;
@@ -750,6 +809,8 @@ fn cmd_config(paths: &Paths, command: ConfigCommands) -> Result<()> {
                     "main_index" => config.main_index,
                     "concurrency" => config.concurrency.to_string(),
                     "keep_versions" => config.keep_versions.to_string(),
+                    "trusted_key" | "trusted_keys" => config.trusted_keys.join(","),
+                    "allow_unsigned_remote" => config.allow_unsigned_remote.to_string(),
                     _ => String::new(),
                 }
             );

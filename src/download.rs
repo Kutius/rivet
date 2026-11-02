@@ -51,6 +51,35 @@ pub fn get_text(location: &str) -> Result<String> {
     }
 }
 
+pub fn get_bytes(location: &str) -> Result<Vec<u8>> {
+    if is_http(location) {
+        let response = http_client()?.get(location).send()?.error_for_status()?;
+        Ok(response.bytes()?.to_vec())
+    } else {
+        let path = local_path(location)?;
+        fs::read(&path).with_context(|| format!("reading {}", path.display()))
+    }
+}
+
+pub fn try_get_text(location: &str) -> Result<Option<String>> {
+    if is_http(location) {
+        let response = http_client()?.get(location).send()?;
+        if response.status() == reqwest::StatusCode::NOT_FOUND {
+            return Ok(None);
+        }
+        let response = response.error_for_status()?;
+        Ok(Some(response.text()?))
+    } else {
+        let path = local_path(location)?;
+        if !path.exists() {
+            return Ok(None);
+        }
+        Ok(Some(
+            fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?,
+        ))
+    }
+}
+
 pub fn resolve_artifact_url(repo_location: &str, artifact: &str) -> Result<String> {
     if is_remote(artifact) || Path::new(artifact).is_absolute() {
         return Ok(artifact.to_string());

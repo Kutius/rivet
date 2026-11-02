@@ -1,6 +1,7 @@
 use crate::config::{Config, Paths};
 use crate::db::{Db, RepoRecord};
 use crate::index;
+use crate::trust::Trust;
 use anyhow::{Context, Result, bail};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -41,7 +42,7 @@ fn now() -> String {
     chrono::Utc::now().to_rfc3339()
 }
 
-pub fn sync_main(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
+pub fn sync_main(db: &Db, paths: &Paths, config: &Config, trust: &Trust) -> Result<()> {
     let location = if let Some(value) = config.main_index_location() {
         value
     } else if let Some(repo) = db.get_repo("main")? {
@@ -51,7 +52,7 @@ pub fn sync_main(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
             "main index is not configured. Set RIVET_MAIN_INDEX or run:\n  rv config set main_index C:\\path\\to\\index.json"
         );
     };
-    let index = index::load_index(&location)?;
+    let index = index::load_index(&location, trust)?;
     db.upsert_repo(&RepoRecord {
         name: "main".to_string(),
         kind: "main".to_string(),
@@ -70,7 +71,7 @@ pub fn sync_main(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
     Ok(())
 }
 
-pub fn sync_taps(db: &Db, paths: &Paths) -> Result<()> {
+pub fn sync_taps(db: &Db, paths: &Paths, trust: &Trust) -> Result<()> {
     for repo in db.repos()? {
         if repo.kind != "tap" {
             continue;
@@ -97,7 +98,7 @@ pub fn sync_taps(db: &Db, paths: &Paths) -> Result<()> {
         }
         let index_path = dir.join("index.json");
         let index = if index_path.exists() {
-            index::load_index(&index_path.to_string_lossy())?
+            index::load_index(&index_path.to_string_lossy(), trust)?
         } else {
             index::build_index(&dir, Some(&index_path))?
         };
@@ -119,7 +120,7 @@ pub fn sync_taps(db: &Db, paths: &Paths) -> Result<()> {
     Ok(())
 }
 
-pub fn add_tap(db: &Db, paths: &Paths, name: &str, url: Option<&str>) -> Result<()> {
+pub fn add_tap(db: &Db, paths: &Paths, name: &str, url: Option<&str>, trust: &Trust) -> Result<()> {
     let name = name.trim().trim_end_matches('/');
     validate_tap_name(name)?;
     let repo_url = match url {
@@ -145,7 +146,7 @@ pub fn add_tap(db: &Db, paths: &Paths, name: &str, url: Option<&str>) -> Result<
     }
     let index_path = dir.join("index.json");
     let index = if index_path.exists() {
-        index::load_index(&index_path.to_string_lossy())?
+        index::load_index(&index_path.to_string_lossy(), trust)?
     } else {
         index::build_index(&dir, Some(&index_path))?
     };

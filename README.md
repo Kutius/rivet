@@ -138,6 +138,32 @@ rv install demo/hello
 
 If the tap has no `index.json`, `rv update` builds one locally from its manifests. Search is always local; network access only occurs during explicit `rv update`, `rv tap add`, and artifact downloads.
 
+## Signing the index
+
+The client verifies an Ed25519 signature over the exact `index.json` bytes before parsing them. Maintainers generate a key pair, sign the index, and publish `index.json.sig` next to `index.json`:
+
+~~~powershell
+rv repo keygen --out C:\secure\rivet-keys
+rv repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
+rv repo public-key --key C:\secure\rivet-keys\rivet-signing.key
+~~~
+
+`rv repo keygen` writes `rivet-signing.key` (private) and `rivet-signing.pub` (public, hex). It prints only the public key. Never commit the private key.
+
+Clients trust a key explicitly:
+
+~~~powershell
+rv config set trusted_key <64-hex public key>
+# or for one invocation:
+$env:RIVET_TRUSTED_KEY = "<64-hex public key>"
+~~~
+
+Rules:
+
+- HTTP indexes must be signed; a missing, untrusted, or invalid signature fails `rv update` before parsing.
+- Local file and directory indexes may be unsigned for development.
+- `--insecure` (or `rv config set allow_unsigned_remote true`) accepts unsigned remote indexes. It is a deliberate downgrade; use it only for testing.
+
 ## Storage layout
 
 ~~~text

@@ -1,4 +1,5 @@
 use crate::model::{INDEX_SCHEMA, IndexFile, PackageManifest};
+use crate::trust::Trust;
 use anyhow::{Context, Result, bail};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -79,23 +80,40 @@ pub fn parse_index(text: &str, source: &str) -> Result<IndexFile> {
     Ok(index)
 }
 
-pub fn load_index(location: &str) -> Result<IndexFile> {
+pub fn load_index(location: &str, trust: &Trust) -> Result<IndexFile> {
     if crate::download::is_http(location) {
-        let text = crate::download::get_text(location)?;
-        parse_index(&text, location)
-    } else {
-        let path = crate::download::local_path(location)?;
-        if path.is_dir() {
-            let index_path = path.join("index.json");
-            if index_path.exists() {
-                return load_index(&index_path.to_string_lossy());
-            }
-            return build_index(&path, Some(&index_path));
-        }
-        let text =
-            fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-        parse_index(&text, &path.display().to_string())
+        let data = crate::download::get_bytes(location)?;
+        let signature_location = format!("{location}{}", crate::trust::SIGNATURE_SUFFIX);
+        let signature = crate::download::try_get_text(&signature_location)?;
+        crate::trust::verify_index(&data, signature.as_deref(), trust, location, true)?;
+        let text = std::str::from_utf8(&data)
+            .with_context(|| format!("index at {location} is not valid UTF-8"))?;
+        return parse_index(text, location);
     }
+
+    let path = crate::download::local_path(location)?;
+    if path.is_dir() {
+        let index_path = path.join("index.json");
+        if index_path.exists() {
+            return load_index(&index_path.to_string_lossy(), trust);
+        }
+        return build_index(&path, Some(&index_path));
+    }
+    let data = fs::read(&path).with_context(|| format!("reading {}", path.display()))?;
+    let signature_path = crate::trust::signature_path(&path);
+    let signature = if signature_path.exists() {
+        Some(
+            fs::read_to_string(&signature_path)
+                .with_context(|| format!("reading {}", signature_path.display()))?,
+        )
+    } else {
+        None
+    };
+    let display = path.display().to_string();
+    crate::trust::verify_index(&data, signature.as_deref(), trust, &display, false)?;
+    let text = std::str::from_utf8(&data)
+        .with_context(|| format!("index {} is not valid UTF-8", path.display()))?;
+    parse_index(text, &display)
 }
 
 pub fn index_location_from_dir(directory: &Path) -> PathBuf {
