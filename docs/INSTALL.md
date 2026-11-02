@@ -114,7 +114,7 @@ For a signed remote index, the client fetches index.json.sig next to index.json.
 Use the built-in updater:
 
 ~~~powershell
-rv self-update
+rv.exe self-update
 ~~~
 
 The updater downloads the latest release, verifies SHA256SUMS, and replaces the binaries after the current rv process exits. Installed packages and persist data are not touched. Use `rv self-update --force` to reinstall the current version.
@@ -128,7 +128,7 @@ irm https://kutius.github.io/rivet/install.ps1 | iex
 ## Uninstall
 
 ~~~powershell
-rv self-uninstall --yes
+rv.exe self-uninstall --yes
 ~~~
 
 This removes all installed packages (including persist data), removes the Rivet bin directory from the user PATH, and deletes %LOCALAPPDATA%\Rivet after the current process exits. The --yes flag is required because the operation is destructive.
