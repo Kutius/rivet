@@ -80,3 +80,11 @@
 - Measured with PowerShell Measure-Command: rv --version 8.8 ms (10 runs), rv search pkg00042 12.0 ms (10 runs), rv update 153.1 ms (5 runs). All are under the beta floors.
 - Recorded the build, method, and numbers in docs/PERFORMANCE.md.
 - Next: commit B6–B8, run the clean-clone check, and close the gate.
+
+## Round 9 — final verification
+
+- Fixed the lock-file lifecycle: the OS-held handle is the lock, and the file is intentionally left in place. Removing it in Drop created a close/delete race with a second process; keeping it removes that window. Tests updated.
+- Final clean clone at commit 8fe7049: fmt, clippy -D warnings, 30 tests offline, release build, and release script all pass.
+- Final dist/SHA256SUMS verified against rv.exe, rv-shim.exe, and the zip. Fresh-root smoke test: update, install, verify, native shim execution, remove, and rv --version all pass.
+- docs/BETA.md has no unchecked P0 items; the remaining P1 items are documented in CHANGELOG.md.
+- Gate closed.

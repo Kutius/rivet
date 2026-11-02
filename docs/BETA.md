@@ -121,7 +121,7 @@ Evidence:
 - cargo fmt --check: pass. cargo clippy --offline --all-targets -- -D warnings: pass. cargo test --offline: 30 tests pass (5 unit + 4 e2e + 3 install + 3 lifecycle + 4 output + 5 safety + 6 trust).
 - CI: .github/workflows/ci.yml runs cargo fetch --locked, fmt --check, clippy -D warnings, test --offline, and release build. .github/workflows/release.yml builds the zip and uploads artifacts on a v* tag.
 - Release smoke: from a fresh %TEMP% root, dist/rv.exe update, search, install, list, verify, status, native shim execution, and remove all succeeded.
-- Clean clone: git clone to %TEMP%\rivet-clean-beta, then cargo fmt --check, cargo clippy --offline --all-targets -- -D warnings, cargo test --offline, cargo build --offline --release --bins, and scripts/release.ps1 -SkipBuild all succeeded. 30 tests passed.
+- Clean clone: git clone to %TEMP%\rivet-clean-final, then cargo fmt --check, cargo clippy --offline --all-targets -- -D warnings, cargo test --offline, cargo build --offline --release --bins, and scripts/release.ps1 -SkipBuild all succeeded. 30 tests passed.
 
 ### B8. Performance floor
 
