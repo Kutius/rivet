@@ -1,0 +1,7 @@
+* text=auto
+*.exe binary
+*.zip binary
+repo/main/index.json text eol=lf
+repo/main/index.json.sig text eol=lf
+repo/main/packages/*.toml text eol=lf
+*.ps1 text eol=lf
