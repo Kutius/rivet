@@ -1,0 +1,10 @@
+name = "hello"
+version = "1.1.0"
+description = "Rivet demo package that prints a greeting"
+homepage = "https://example.invalid/rivet/hello"
+license = "MIT"
+tags = ["demo", "sample"]
+url = "artifacts/hello-1.1.0.zip"
+sha256 = "2adebc0a2a037a0c541bc3707232015dae351630c44240be932af32ba1cfeed9"
+extract = "zip"
+bin = [{ path = "hello.cmd", name = "hello" }]

@@ -1,0 +1,42 @@
+[package]
+name = "rivet"
+version = "0.1.0"
+edition = "2024"
+description = "Rivet: a fast, portable-first Windows package manager"
+license = "MIT"
+
+[lib]
+name = "rivet"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rv"
+path = "src/main.rs"
+
+[[bin]]
+name = "rv-shim"
+path = "src/bin/rv-shim.rs"
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+dirs = "6"
+flate2 = "1"
+hex = "0.4"
+junction = "1"
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "rustls-no-provider"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+semver = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+tar = "0.4"
+toml = "0.9"
+url = "2"
+walkdir = "2"
+zip = "2"
+
+[dev-dependencies]
+tempfile = "3"

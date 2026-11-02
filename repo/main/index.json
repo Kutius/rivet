@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-02T09:51:07.976703600+00:00",
+  "packages": [
+    {
+      "name": "hello",
+      "version": "1.0.0",
+      "description": "Rivet demo package that prints a greeting",
+      "homepage": "https://example.invalid/rivet/hello",
+      "license": "MIT",
+      "tags": [
+        "demo",
+        "sample"
+      ],
+      "arch": null,
+      "url": "artifacts/hello-1.0.0.zip",
+      "sha256": "f61c5c9c48e6b681a11543043dc730571d7d9e1501615f7139b3cdda0e73d5d0",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "hello.cmd",
+          "name": "hello",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "hello",
+      "version": "1.1.0",
+      "description": "Rivet demo package that prints a greeting",
+      "homepage": "https://example.invalid/rivet/hello",
+      "license": "MIT",
+      "tags": [
+        "demo",
+        "sample"
+      ],
+      "arch": null,
+      "url": "artifacts/hello-1.1.0.zip",
+      "sha256": "2adebc0a2a037a0c541bc3707232015dae351630c44240be932af32ba1cfeed9",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "hello.cmd",
+          "name": "hello",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    }
+  ]
+}
