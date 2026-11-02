@@ -109,7 +109,7 @@ Upgrade installs the new version separately and switches the junction. The old v
 
 ## Roadmap
 
-- `rv status` and `rv lock`/`rv sync`.
+- `rv lock`/`rv sync` for reproducible environment snapshots.
 - Optional minisign signatures.
 - Optional artifact mirror per package.
 - A proper dependency solver only when real packages need it.
