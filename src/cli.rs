@@ -94,8 +94,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: ConfigCommands,
     },
-    /// Add the Rivet bin directory to the user PATH
-    Init,
+    /// Install the Rivet binaries and add the bin directory to the user PATH
+    Init {
+        #[arg(long, help = "Install the binaries without changing PATH")]
+        no_path: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]

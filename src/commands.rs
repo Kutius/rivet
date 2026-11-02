@@ -75,7 +75,7 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::Tap { command } => cmd_tap(&db, &paths, command, &config.trust()),
         Commands::Repo { command } => cmd_repo(command),
         Commands::Config { command } => cmd_config(&paths, command),
-        Commands::Init => cmd_init(&paths),
+        Commands::Init { no_path } => cmd_init(&paths, no_path),
     }
 }
 
@@ -89,7 +89,7 @@ fn is_mutating(command: &Commands) -> bool {
         | Commands::Cleanup
         | Commands::Pin { .. }
         | Commands::Unpin { .. }
-        | Commands::Init => true,
+        | Commands::Init { .. } => true,
         Commands::Tap { command } => matches!(
             command,
             TapCommands::Add { .. } | TapCommands::Remove { .. }
@@ -1176,30 +1176,80 @@ fn install_self(paths: &Paths) -> Result<()> {
     Ok(())
 }
 
-fn cmd_init(paths: &Paths) -> Result<()> {
+fn cmd_init(paths: &Paths, no_path: bool) -> Result<()> {
     paths.ensure_layout()?;
     install_self(paths)?;
+    if no_path {
+        println!(
+            "installed {} and {}; PATH not changed (run 'rv init' to add {})",
+            paths.bin.join("rv.exe").display(),
+            paths.bin.join("rv-shim.exe").display(),
+            paths.bin.display()
+        );
+        return Ok(());
+    }
     let bin = paths.bin.to_string_lossy().to_string();
     let current = user_path()?;
-    let already = current.split(';').any(|part| {
-        part.trim_end_matches('\\')
-            .eq_ignore_ascii_case(bin.trim_end_matches('\\'))
-    });
-    if already {
+    if path_has_entry(&current, &bin) {
         println!("{} is already in the user PATH", paths.bin.display());
         return Ok(());
     }
-    let new_path = if current.trim().is_empty() {
-        bin.clone()
-    } else {
-        format!("{};{}", current.trim_end_matches(';'), bin)
-    };
+    let new_path = append_path(&current, &bin);
     set_user_path(&new_path)?;
+    if let Err(error) = broadcast_environment_change() {
+        eprintln!("warning: PATH was updated but the environment broadcast failed: {error}");
+    }
     println!(
         "added {} to the user PATH; open a new terminal to use it",
         paths.bin.display()
     );
     Ok(())
+}
+
+#[cfg(windows)]
+fn broadcast_environment_change() -> Result<()> {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        HWND_BROADCAST, SMTO_ABORTIFHUNG, SendMessageTimeoutW, WM_SETTINGCHANGE,
+    };
+
+    let environment: Vec<u16> = "Environment\0".encode_utf16().collect();
+    let mut result = 0usize;
+    let ok = unsafe {
+        SendMessageTimeoutW(
+            HWND_BROADCAST,
+            WM_SETTINGCHANGE,
+            0,
+            environment.as_ptr() as isize,
+            SMTO_ABORTIFHUNG,
+            5000,
+            &mut result,
+        )
+    };
+    if ok == 0 {
+        bail!("Windows did not acknowledge WM_SETTINGCHANGE");
+    }
+    Ok(())
+}
+
+#[cfg(not(windows))]
+fn broadcast_environment_change() -> Result<()> {
+    Ok(())
+}
+
+fn path_has_entry(current: &str, bin: &str) -> bool {
+    current.split(';').any(|part| {
+        part.trim()
+            .trim_end_matches('\\')
+            .eq_ignore_ascii_case(bin.trim_end_matches('\\'))
+    })
+}
+
+fn append_path(current: &str, bin: &str) -> String {
+    if current.trim().is_empty() {
+        bin.to_string()
+    } else {
+        format!("{};{}", current.trim_end_matches(';'), bin)
+    }
 }
 
 fn user_path() -> Result<String> {
@@ -1360,5 +1410,29 @@ fn truncate(value: &str, length: usize) -> String {
         let mut result: String = value.chars().take(length.saturating_sub(1)).collect();
         result.push('…');
         result
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{append_path, path_has_entry};
+
+    #[test]
+    fn path_entry_matches_case_and_trailing_slashes() {
+        let current = r"C:\Tools;C:\Users\me\AppData\Local\Rivet\bin\";
+        assert!(path_has_entry(
+            current,
+            r"c:\users\me\appdata\local\rivet\bin"
+        ));
+        assert!(!path_has_entry(current, r"C:\Other"));
+    }
+
+    #[test]
+    fn append_path_does_not_add_an_extra_separator() {
+        assert_eq!(append_path("", r"C:\Rivet\bin"), r"C:\Rivet\bin");
+        assert_eq!(
+            append_path(r"C:\Tools;", r"C:\Rivet\bin"),
+            r"C:\Tools;C:\Rivet\bin"
+        );
     }
 }

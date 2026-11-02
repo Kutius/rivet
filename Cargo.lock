@@ -1228,7 +1228,7 @@ dependencies = [
 
 [[package]]
 name = "rivet"
-version = "0.1.0"
+version = "0.1.0-beta.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1250,6 +1250,7 @@ dependencies = [
  "toml",
  "url",
  "walkdir",
+ "windows-sys 0.61.2",
  "zip",
 ]
 

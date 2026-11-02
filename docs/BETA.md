@@ -60,13 +60,20 @@ Evidence:
 
 ### B4. Install and first run
 
-- [ ] rv init is idempotent and does not duplicate PATH entries.
-- [ ] rv init broadcasts the environment change so newly opened shells see the PATH without logout.
-- [ ] rv init --no-path installs the binaries without touching PATH.
-- [ ] rv --version reports the release version, and rv doctor reports missing PATH/bin conditions.
-- [ ] A release zip contains rv.exe, rv-shim.exe, README, LICENSE, and SHA256SUMS.
+- [x] rv init is idempotent and does not duplicate PATH entries.
+- [x] rv init broadcasts the environment change so newly opened shells see the PATH without logout.
+- [x] rv init --no-path installs the binaries without touching PATH.
+- [x] rv --version reports the release version, and rv doctor reports missing PATH/bin conditions.
+- [x] A release zip contains rv.exe, rv-shim.exe, README, LICENSE, and SHA256SUMS.
 
 Evidence:
+
+- Init: `rv init [--no-path]` in `src/cli.rs`; `cmd_init` installs `rv.exe` and `rv-shim.exe`, checks the existing user PATH case-insensitively with trailing-slash tolerance, and only appends once. `path_has_entry` / `append_path` unit tests in `src/commands.rs` cover case, trailing slash, empty PATH, and trailing separator.
+- Broadcast: after `reg.exe` updates `HKCU\\Environment\\Path`, `broadcast_environment_change` sends `WM_SETTINGCHANGE` with `"Environment"` through `SendMessageTimeoutW` (5s, `SMTO_ABORTIFHUNG`). Failure is a warning, not a silent success.
+- No-path: `tests/install.rs::init_no_path_installs_binaries_without_touching_path` runs init twice, asserts the "PATH not changed" message and that `rv.exe` exists; it also asserts `rv doctor` reports the bin directory missing from PATH.
+- Version: `tests/install.rs::version_is_visible` asserts `rv --version`; release binary prints `rv 0.1.0-beta.1`.
+- Release: `scripts/release.ps1` builds `dist/rivet-v0.1.0-beta.1-windows-x64.zip` containing `rv.exe`, `rv-shim.exe`, README, LICENSE, docs, and an internal `SHA256SUMS`; `dist/SHA256SUMS` covers the binaries and the zip. Verified with `tar -tf` and `dist/rv.exe --version`.
+- Tests: 26 pass (5 unit + 4 e2e + 3 install + 3 lifecycle + 5 safety + 6 trust).
 
 ### B5. Scriptable output and errors
 

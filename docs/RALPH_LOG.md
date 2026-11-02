@@ -39,3 +39,13 @@
 - Docs: BETA B3 evidence.
 - Remaining P0: B4–B8.
 - Next: B4 install/first run — `rv init --no-path`, environment broadcast, release zip contents.
+
+## Round 4 — B4 install and first run
+
+- Added `rv init --no-path`; normal init still installs `rv.exe`/`rv-shim.exe`, checks PATH case-insensitively, appends once, and sends `WM_SETTINGCHANGE` through `SendMessageTimeoutW` after changing `HKCU\\Environment\\Path`.
+- Bumped the package version to `0.1.0-beta.1`; `rv --version` now reports it.
+- Added `scripts/release.ps1`: builds release binaries, copies them to `dist`, creates `dist/rivet-v0.1.0-beta.1-windows-x64.zip`, an internal `SHA256SUMS`, and `dist/SHA256SUMS`.
+- Tests: new `tests/install.rs` (3 tests: no-path install, version, no leftover lock) and PATH helper unit tests. Suite: 26 tests pass.
+- Release zip verified: `rv.exe`, `rv-shim.exe`, README, LICENSE, docs, internal SHA256SUMS.
+- Remaining P0: B5–B8.
+- Next: B5 JSON output, status --check offline behavior, error/exit-code coverage.
