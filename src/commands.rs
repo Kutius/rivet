@@ -550,20 +550,24 @@ fn reconcile_shims(
     }
     let created = store::install_shims(paths, package, &manifest.bin)?;
     let mut records = Vec::new();
-    for (command, _shim_path, sidecar_path) in &created {
+    for shim in &created {
         let target = store::current_link(paths, package).join(
             manifest
                 .bin
                 .iter()
-                .find(|bin| bin.command_name() == *command)
+                .find(|bin| bin.command_name() == shim.command)
                 .map(BinSpec::path)
                 .unwrap_or(""),
         );
         records.push(ShimRecord {
-            command: command.clone(),
+            command: shim.command.clone(),
             package: package.to_string(),
             target: target.to_string_lossy().to_string(),
-            sidecar: sidecar_path.to_string_lossy().to_string(),
+            sidecar: shim
+                .sidecar
+                .as_ref()
+                .map(|path| path.to_string_lossy().to_string())
+                .unwrap_or_default(),
         });
     }
     Ok(records)
@@ -772,51 +776,68 @@ fn cmd_verify(db: &Db, paths: &Paths) -> Result<()> {
             );
             problems += 1;
         }
+        let records = db.shims_for_package(&item.name)?;
         for bin in &manifest.bin {
             let command = bin.command_name();
             let shim_path = paths.bin.join(format!("{command}.exe"));
-            let sidecar_path = paths.bin.join(format!("{command}.rvshim"));
-            if !shim_path.is_file() {
+            if fs::symlink_metadata(&shim_path).is_err() {
                 println!(
                     "damage:    {} shim missing: {}",
                     item.name,
                     shim_path.display()
                 );
                 problems += 1;
+                continue;
             }
-            match fs::read_to_string(&sidecar_path) {
-                Ok(text) => {
-                    if serde_json::from_str::<crate::store::ShimSpec>(&text).is_err() {
+            let Some(record) = records
+                .iter()
+                .find(|shim| shim.command.eq_ignore_ascii_case(&command))
+            else {
+                println!(
+                    "damage:    {} shim record missing: {}",
+                    item.name,
+                    shim_path.display()
+                );
+                problems += 1;
+                continue;
+            };
+            if record.sidecar.is_empty() {
+                let metadata = fs::symlink_metadata(&shim_path)?;
+                if !metadata.file_type().is_symlink() {
+                    println!(
+                        "damage:    {} shim is not a symlink: {}",
+                        item.name,
+                        shim_path.display()
+                    );
+                    problems += 1;
+                }
+            } else {
+                let sidecar_path = Path::new(&record.sidecar);
+                match fs::read_to_string(sidecar_path) {
+                    Ok(text) => {
+                        if serde_json::from_str::<crate::shim::ShimSpec>(&text).is_err() {
+                            println!(
+                                "damage:    {} shim sidecar invalid: {}",
+                                item.name,
+                                sidecar_path.display()
+                            );
+                            problems += 1;
+                        }
+                    }
+                    Err(_) => {
                         println!(
-                            "damage:    {} shim sidecar invalid: {}",
+                            "damage:    {} shim sidecar missing: {}",
                             item.name,
                             sidecar_path.display()
                         );
                         problems += 1;
                     }
                 }
-                Err(_) => {
-                    println!(
-                        "damage:    {} shim sidecar missing: {}",
-                        item.name,
-                        sidecar_path.display()
-                    );
-                    problems += 1;
-                }
             }
-        }
-        for shim in db.shims_for_package(&item.name)? {
-            if !Path::new(&shim.target).exists() {
+            if !Path::new(&record.target).exists() {
                 println!(
                     "damage:    {} shim target missing: {} -> {}",
-                    item.name, shim.command, shim.target
-                );
-                problems += 1;
-            }
-            if !Path::new(&shim.sidecar).exists() {
-                println!(
-                    "damage:    {} recorded shim sidecar missing: {}",
-                    item.name, shim.sidecar
+                    item.name, record.command, record.target
                 );
                 problems += 1;
             }
@@ -1005,31 +1026,43 @@ fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
             .bin
             .iter()
             .map(|bin| bin.command_name())
-            .filter(|command| !paths.bin.join(format!("{command}.exe")).exists())
+            .filter(|command| {
+                fs::symlink_metadata(paths.bin.join(format!("{command}.exe"))).is_err()
+            })
             .collect();
-        if !missing.is_empty() {
-            if fix {
-                let shims = reconcile_shims(db, paths, &item.name, &manifest)?;
-                db.save_install_state(&item, &shims)?;
+        if fix {
+            // Reconcile every package so doctor --fix also switches between
+            // symlink and launcher modes when the environment changes.
+            let shims = reconcile_shims(db, paths, &item.name, &manifest)?;
+            db.save_install_state(&item, &shims)?;
+            if !missing.is_empty() {
                 println!(
                     "fixed:     shims for {} ({})",
                     item.name,
                     missing.join(", ")
                 );
-            } else {
-                println!(
-                    "shim:      missing {} (repairable: rv doctor --fix)",
-                    missing.join(", ")
-                );
-                repairable += 1;
-                ok = false;
             }
+        } else if !missing.is_empty() {
+            println!(
+                "shim:      missing {} (repairable: rv doctor --fix)",
+                missing.join(", ")
+            );
+            repairable += 1;
+            ok = false;
         }
         for shim in db.shims_for_package(&item.name)? {
             if !Path::new(&shim.target).exists() {
                 println!(
                     "shim:      broken {} -> {} (repairable: rv doctor --fix)",
                     shim.command, shim.target
+                );
+                repairable += 1;
+                ok = false;
+            }
+            if !shim.sidecar.is_empty() && !Path::new(&shim.sidecar).exists() {
+                println!(
+                    "shim:      sidecar missing {} (repairable: rv doctor --fix)",
+                    shim.sidecar
                 );
                 repairable += 1;
                 ok = false;

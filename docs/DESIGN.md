@@ -9,7 +9,7 @@ This is the lean, individual-developer version of Rivet. It deliberately keeps o
 3. Third-party sources are Homebrew-style taps: normal Git repositories, explicitly added by the user.
 4. Search and package lookup use a local SQLite database. The filesystem remains the source of truth for installed packages.
 5. Installed versions are immutable directories. The active version is a `current` junction.
-6. App commands are native `rv-shim.exe` shims. There is one PATH entry, not one PATH entry per app.
+6. App commands are direct symlinks when Developer Mode allows it, otherwise a lightweight `rv-shim.exe` launcher. There is one PATH entry, not one PATH entry per app.
 7. `rv update` refreshes metadata. `rv upgrade` changes installed packages. `rv install` never runs a full metadata update implicitly.
 8. Packages are portable archives by default. There is no arbitrary install hook and no MSI/EXE system-installer channel in this beta.
 
@@ -24,7 +24,7 @@ main repo (Git) --CI--> index.json / artifacts --> GitHub Pages or Release
                          |                             |                             |
                     SQLite index                  blob cache                  immutable store
                          |                             |                             |
-                   search/list                  downloader                  junction + shim
+                   search/list                  downloader                  junction + symlink/shim
 ~~~
 
 ## Command semantics
@@ -83,7 +83,7 @@ Install flow:
 5. Rename the temporary directory to the final version directory.
 6. Apply persist junctions.
 7. Switch `apps/<name>/current` to the new version.
-8. Create or update native shims.
+8. Create or update native symlinks, or shims when symlinks are unavailable.
 9. Record the installed version and previous version in SQLite.
 
 Upgrade installs the new version separately and switches the junction. The old version is retained for `rv rollback` and removed by `rv cleanup` when it is no longer current or previous.
@@ -96,7 +96,7 @@ Upgrade installs the new version separately and switches the junction. The old v
 | Generated index, not Git on client | No bucket scans, no Git pulls in the hot path | Depends on index hosting |
 | Upstream artifact URLs | No storage or legal burden for a solo developer | Download speed depends on the vendor |
 | Optional Ed25519 index signatures | The maintainer can pin a key; HTTP indexes fail closed | Key distribution and rotation are manual |
-| Native shims | Per-app environment and no PATH bloat | Small process-launch overhead |
+| Symlink-first, shim fallback | No PATH bloat, no launcher process for native exes, scripts still work | Symlinks need Developer Mode; script commands pay one small process launch |
 | Portable-only | Clean uninstall and predictable behavior | Many Windows GUI apps are out of scope |
 | Single index file | Simple to build and cache | Does not scale to tens of thousands of packages |
 | Simple dependency resolver | Small codebase | Complex version conflicts are not handled |
@@ -108,7 +108,7 @@ Upgrade installs the new version separately and switches the junction. The old v
 - Bad archive: extraction fails into a temp directory; temp directory is removed.
 - Failed upgrade: old `current` junction remains until the new version is fully staged; the switch is the last step.
 - Corrupt SQLite: `rv doctor` reports filesystem state; the store remains authoritative.
-- Shim binary missing: install fails with an actionable message; run `cargo build --bins` or `rv init` from a release zip.
+- Shim binary missing: script shims cannot be created; install fails with an actionable message. Run `cargo build --bins` or `rv init` from a release zip.
 - Interrupted mutation: the next mutating command clears staging directories and orphan shims; `rv doctor --fix` repairs the rest.
 
 ## Roadmap
@@ -116,4 +116,4 @@ Upgrade installs the new version separately and switches the junction. The old v
 - `rv lock`/`rv sync` for reproducible environment snapshots.
 - Optional artifact mirror per package.
 - A proper dependency solver only when real packages need it.
-- Code signing for the binaries and a smaller bootstrap installer.
+- Code signing for the binaries and a self-update helper.

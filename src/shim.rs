@@ -1,9 +1,21 @@
-use crate::store::ShimSpec;
 use anyhow::{Context, Result, bail};
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ShimSpec {
+    pub target: String,
+    #[serde(default)]
+    pub args: Vec<String>,
+    #[serde(default)]
+    pub cwd: Option<String>,
+    #[serde(default)]
+    pub env: BTreeMap<String, String>,
+}
 
 pub fn sidecar_for_current_exe() -> Result<PathBuf> {
     let exe = std::env::current_exe().context("locating shim executable")?;

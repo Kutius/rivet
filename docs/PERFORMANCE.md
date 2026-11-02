@@ -1,6 +1,6 @@
 # Performance
 
-Measurements were taken on the development Windows machine with the 0.1.0-beta.1 release build; the measured code paths are unchanged in 0.1.0-beta.2:
+Measurements were taken on the development Windows machine with the 0.1.0-beta.3 release build (size-optimized release profile):
 
 ~~~powershell
 cargo build --release --bins
@@ -12,11 +12,11 @@ Times include process startup. The 10,000-package index is a synthetic index.jso
 
 | Operation | Average | Min | Max |
 |---|---:|---:|---:|
-| rv --version | 8.8 ms | 8.2 ms | 11.7 ms |
-| rv search pkg00042 | 12.0 ms | 11.4 ms | 14.5 ms |
-| rv update (10k index) | 153.1 ms | 150.0 ms | 156.9 ms |
+| rv --version | 9.6 ms | 8.3 ms | 17.5 ms |
+| rv search pkg00042 | 12.5 ms | 11.3 ms | 19.7 ms |
+| rv update (10k index) | 159.1 ms | 156.6 ms | 163.0 ms |
 
-The index file is 2.99 MB. The search path reads only SQLite; it does not scan manifest files or the index. Update parses the complete index once and writes it in one SQLite transaction.
+The index file is 2.99 MB. The search path reads only SQLite; it does not scan manifest files or the index. Update parses the complete index once and writes it in one SQLite transaction. The size-optimized profile costs about 1 ms on version/search and 6 ms on update versus the beta.1 build, still well under the beta floors.
 
 ## What dominates
 

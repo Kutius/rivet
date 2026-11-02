@@ -2,7 +2,7 @@
 
 Rivet is a fast, portable-first package manager for Windows, built as one native Rust binary. It keeps the useful parts of Scoop's model without the PowerShell startup, bucket scans, and implicit metadata refreshes.
 
-Current release: 0.1.0-beta.2.
+Current release: 0.1.0-beta.3.
 
 Rivet is not Scoop-compatible. Scoop manifests, buckets, and PowerShell hooks are intentionally out of scope.
 
@@ -21,7 +21,7 @@ Rivet moves those costs out of the hot path:
 - a local SQLite index for search and package metadata;
 - a generated main index instead of a client-side Git bucket clone;
 - immutable version directories plus a current junction;
-- native shims for app commands;
+- native symlinks for app commands where Windows allows them, with a lightweight shim fallback;
 - explicit update and upgrade commands, with no implicit update during install.
 
 ## Install
@@ -207,7 +207,7 @@ Release packaging:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\release.ps1
 ~~~
 
-This builds dist\rivet-v0.1.0-beta.2-windows-x64.zip, the binaries, install.ps1, and SHA256SUMS. It does not publish.
+This builds dist\rivet-v0.1.0-beta.3-windows-x64.zip, the binaries, install.ps1, and SHA256SUMS. It does not publish.
 
 ## Supported
 

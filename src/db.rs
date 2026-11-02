@@ -36,6 +36,7 @@ pub struct ShimRecord {
     pub command: String,
     pub package: String,
     pub target: String,
+    /// Empty when the command is a direct symlink; otherwise the launcher sidecar path.
     pub sidecar: String,
 }
 

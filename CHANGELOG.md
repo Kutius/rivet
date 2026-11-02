@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.0-beta.3 — symlink-first commands and release automation
+
+### Added
+
+- Native `.exe` commands are installed as direct symlinks when Developer Mode allows unprivileged symlink creation; the installer falls back to a shim when symlink creation fails.
+- `RIVET_DISABLE_SYMLINKS=1` forces launcher shims and `rv doctor --fix` repairs existing commands.
+- Release workflow creates a draft GitHub release and uploads the zip, binaries, installer, and checksums.
+
+### Changed
+
+- `rv-shim.exe` is now built with a size-optimized release profile: 2.66 MB → 280 KB.
+- `rv.exe` is now 3.75 MB (previously 7.67 MB).
+- `rv verify` and `rv doctor` understand both symlink and launcher shims.
+- Orphan symlink cleanup during interrupted-install recovery.
+
+### Tests
+
+- 31 tests, including a native `.exe` fallback test with symlinks disabled.
+
 ## 0.1.0-beta.2 — catalog and installer
 
 ### Added

@@ -8,6 +8,7 @@ Rivet is a portable-first Windows package manager. The beta is a portable zip pl
 - PowerShell 7 or Windows PowerShell 5.1 for the commands shown here.
 - No administrator rights are required.
 - Git is required only for third-party taps, not for the main catalog.
+- Native .exe commands use direct symlinks when Developer Mode allows it; script commands and locked-down systems use the small rv-shim.exe launcher.
 
 ## One command
 
@@ -45,7 +46,7 @@ This still installs to %LOCALAPPDATA%\Rivet\bin. Run rv by full path, or add the
 To pin a specific version:
 
 ~~~powershell
-.\install.ps1 -Version 0.1.0-beta.2
+.\install.ps1 -Version 0.1.0-beta.3
 ~~~
 
 To skip the catalog refresh:
@@ -56,12 +57,12 @@ To skip the catalog refresh:
 
 ## Manual zip install
 
-1. Download rivet-v0.1.0-beta.2-windows-x64.zip and SHA256SUMS from the release page.
+1. Download rivet-v0.1.0-beta.3-windows-x64.zip and SHA256SUMS from the release page.
 2. Verify the archive before extracting:
 
    ~~~powershell
-   $expected = (Get-Content .\SHA256SUMS | Select-String 'rivet-v0.1.0-beta.2-windows-x64.zip').Line.Split()[0]
-   (Get-FileHash .\rivet-v0.1.0-beta.2-windows-x64.zip -Algorithm SHA256).Hash.ToLower() -eq $expected
+   $expected = (Get-Content .\SHA256SUMS | Select-String 'rivet-v0.1.0-beta.3-windows-x64.zip').Line.Split()[0]
+   (Get-FileHash .\rivet-v0.1.0-beta.3-windows-x64.zip -Algorithm SHA256).Hash.ToLower() -eq $expected
    ~~~
 
 3. Extract the zip anywhere, then run:
@@ -77,7 +78,7 @@ To skip the catalog refresh:
    rv doctor
    ~~~
 
-The current beta is 0.1.0-beta.2.
+The current beta is 0.1.0-beta.3.
 
 ## Package source
 

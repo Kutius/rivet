@@ -1,21 +1,10 @@
 use crate::config::Paths;
 use crate::model::BinSpec;
+use crate::shim::ShimSpec;
 use anyhow::{Context, Result, bail};
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct ShimSpec {
-    pub target: String,
-    #[serde(default)]
-    pub args: Vec<String>,
-    #[serde(default)]
-    pub cwd: Option<String>,
-    #[serde(default)]
-    pub env: BTreeMap<String, String>,
-}
 
 pub fn version_dir(paths: &Paths, name: &str, version: &str) -> PathBuf {
     paths.store.join(name).join(version)
@@ -101,48 +90,111 @@ pub fn ensure_base_shim(paths: &Paths) -> Result<PathBuf> {
     Ok(destination)
 }
 
-pub fn install_shims(
-    paths: &Paths,
-    package: &str,
-    bins: &[BinSpec],
-) -> Result<Vec<(String, PathBuf, PathBuf)>> {
-    let base = ensure_base_shim(paths)?;
+#[derive(Clone, Debug)]
+pub struct InstalledShim {
+    pub command: String,
+    pub path: PathBuf,
+    /// None means the command is a direct symlink to the versioned executable.
+    pub sidecar: Option<PathBuf>,
+}
+
+pub fn install_shims(paths: &Paths, package: &str, bins: &[BinSpec]) -> Result<Vec<InstalledShim>> {
     let mut created = Vec::new();
+    let mut base: Option<PathBuf> = None;
     for bin in bins {
         let command = bin.command_name();
         let target = current_link(paths, package).join(bin.path());
-        let sidecar_path = paths.bin.join(format!("{command}.rvshim"));
         let shim_path = paths.bin.join(format!("{command}.exe"));
         remove_shim_files(paths, &command)?;
-        match fs::hard_link(&base, &shim_path) {
+
+        if symlinks_enabled() && can_symlink(bin, &target) && try_file_symlink(&target, &shim_path)
+        {
+            created.push(InstalledShim {
+                command,
+                path: shim_path,
+                sidecar: None,
+            });
+            continue;
+        }
+
+        let base_path = match &base {
+            Some(path) => path.clone(),
+            None => {
+                let path = ensure_base_shim(paths)?;
+                base = Some(path.clone());
+                path
+            }
+        };
+        match fs::hard_link(&base_path, &shim_path) {
             Ok(()) => {}
             Err(_) => {
-                fs::copy(&base, &shim_path).with_context(|| {
+                fs::copy(&base_path, &shim_path).with_context(|| {
                     format!(
                         "creating shim {} from {}",
                         shim_path.display(),
-                        base.display()
+                        base_path.display()
                     )
                 })?;
             }
         }
+        let sidecar_path = paths.bin.join(format!("{command}.rvshim"));
         let spec = ShimSpec {
             target: target.to_string_lossy().to_string(),
             args: bin.args(),
             cwd: None,
             env: BTreeMap::new(),
         };
-        fs::write(&sidecar_path, serde_json::to_string_pretty(&spec)?)
+        fs::write(&sidecar_path, serde_json::to_string(&spec)?)
             .with_context(|| format!("writing {}", sidecar_path.display()))?;
-        created.push((command, shim_path, sidecar_path));
+        created.push(InstalledShim {
+            command,
+            path: shim_path,
+            sidecar: Some(sidecar_path),
+        });
     }
     Ok(created)
+}
+
+fn symlinks_enabled() -> bool {
+    !std::env::var_os("RIVET_DISABLE_SYMLINKS").is_some_and(|value| !value.is_empty())
+}
+
+fn can_symlink(bin: &BinSpec, target: &Path) -> bool {
+    bin.args().is_empty()
+        && target
+            .extension()
+            .and_then(|value| value.to_str())
+            .is_some_and(|value| value.eq_ignore_ascii_case("exe"))
+}
+
+#[cfg(windows)]
+fn try_file_symlink(target: &Path, link: &Path) -> bool {
+    use std::os::windows::ffi::OsStrExt;
+    use windows_sys::Win32::Storage::FileSystem::CreateSymbolicLinkW;
+
+    // 0x2 is SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE. It works when
+    // Developer Mode is enabled and fails cleanly when it is not.
+    const ALLOW_UNPRIVILEGED_CREATE: u32 = 0x2;
+    let link_wide: Vec<u16> = link.as_os_str().encode_wide().chain(Some(0)).collect();
+    let target_wide: Vec<u16> = target.as_os_str().encode_wide().chain(Some(0)).collect();
+    unsafe {
+        CreateSymbolicLinkW(
+            link_wide.as_ptr(),
+            target_wide.as_ptr(),
+            ALLOW_UNPRIVILEGED_CREATE,
+        )
+    }
+}
+
+#[cfg(not(windows))]
+fn try_file_symlink(target: &Path, link: &Path) -> bool {
+    std::os::unix::fs::symlink(target, link).is_ok()
 }
 
 pub fn remove_shim_files(paths: &Paths, command: &str) -> Result<()> {
     for extension in ["exe", "cmd", "bat", "ps1", "rvshim"] {
         let path = paths.bin.join(format!("{command}.{extension}"));
-        if path.exists() {
+        if fs::symlink_metadata(&path).is_ok() {
             fs::remove_file(&path).with_context(|| format!("removing {}", path.display()))?;
         }
     }
@@ -272,6 +324,16 @@ pub fn recover_interrupted(paths: &Paths, db: &crate::db::Db) -> Result<()> {
                 && !known.contains(&command.to_ascii_lowercase())
             {
                 let _ = fs::remove_file(paths.bin.join(format!("{command}.exe")));
+                let _ = fs::remove_file(entry.path());
+            }
+            if let Some(command) = file_name.strip_suffix(".exe")
+                && !command.eq_ignore_ascii_case("rv")
+                && !command.eq_ignore_ascii_case("rv-shim")
+                && !known.contains(&command.to_ascii_lowercase())
+                && fs::symlink_metadata(entry.path())
+                    .map(|metadata| metadata.file_type().is_symlink())
+                    .unwrap_or(false)
+            {
                 let _ = fs::remove_file(entry.path());
             }
         }

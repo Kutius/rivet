@@ -47,6 +47,19 @@ The archive does not contain a path declared in bin. The install fails before th
 
 rv doctor reports this. Run rv init from a release zip that contains both rv.exe and rv-shim.exe. A source build must run cargo build --release --bins.
 
+## symlink shims
+
+Rivet uses a direct symlink for native .exe commands when Developer Mode allows it, and falls back to a small rv-shim.exe launcher otherwise. Script commands (.cmd, .bat, .ps1, .py, .jar) always use the launcher.
+
+If symlinks cause trouble with backup or endpoint-security tools, force the launcher mode and repair the existing commands:
+
+~~~powershell
+$env:RIVET_DISABLE_SYMLINKS = "1"
+rv doctor --fix
+~~~
+
+Run rv verify afterwards.
+
 ## broken current link or missing shim
 
 ~~~powershell
