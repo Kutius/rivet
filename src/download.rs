@@ -14,6 +14,7 @@ pub fn init_crypto() {
 pub fn http_client() -> Result<Client> {
     init_crypto();
     Client::builder()
+        .user_agent(concat!("rivet/", env!("CARGO_PKG_VERSION")))
         .timeout(Duration::from_secs(300))
         .build()
         .context("building HTTP client")

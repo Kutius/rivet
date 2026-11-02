@@ -39,6 +39,9 @@ main repo (Git) --CI--> index.json / artifacts --> GitHub Pages or Release
 | `rv verify` | Check store paths, current links, shims, and recorded versions. |
 | `rv doctor --fix` | Repair broken current links and missing shims when the store is intact. |
 | `rv tap add` | Clone a third-party Git tap and build its local index if needed. |
+| `rv self-update` | Fetch, verify, and stage the latest binaries; replace them after the current process exits. |
+| `rv self-uninstall --yes` | Remove packages, the PATH entry, and the Rivet root after the current process exits. |
+| `rv cleanup --dry-run` | List removable store versions and cache entries without deleting them. |
 
 ## Repository and index
 

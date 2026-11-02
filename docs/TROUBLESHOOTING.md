@@ -78,6 +78,14 @@ The local SQLite index is a cache. Search, list, status, and upgrade can use the
 
 Remove the dependent first. If the dependency is genuinely no longer needed, pass --force and then repair the dependent package.
 
+## rv self-update
+
+The updater stages the new binaries and finishes after the current rv process exits. It prints the helper log path. If the version does not change, check that log and confirm the process is not blocked by endpoint security. `rv self-update --force` re-downloads the current release.
+
+## rv self-uninstall
+
+`rv self-uninstall --yes` removes packages, the PATH entry, and the Rivet root after the current process exits. If the directory remains, wait a few seconds and check the log path printed by the command; a process with an open handle can delay deletion.
+
 ## Where data lives
 
 ~~~text

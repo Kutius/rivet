@@ -1,6 +1,6 @@
 # Rivet Public Beta Gate
 
-> This gate was closed for 0.1.0-beta.1. 0.1.0-beta.2 added the hosted signed catalog and one-command installer; 0.1.0-beta.3 adds symlink-first command links, a smaller shim, and release automation. See CHANGELOG.md. The historical evidence below is left as recorded.
+> This gate was closed for 0.1.0-beta.1. 0.1.0-beta.2 added the hosted signed catalog and one-command installer; 0.1.0-beta.3 added symlink-first command links, a smaller shim, and release automation; 0.1.0-beta.4 adds self-update, self-uninstall, and cleanup --dry-run. See CHANGELOG.md. The historical evidence below is left as recorded.
 
 Definition: Rivet is public-beta ready when a Windows user can download a signed release, install it without admin rights, install and manage packages from a signed catalog and a third-party tap, recover from the common broken states, and understand exactly what is supported — with no known P0/P1 defect.
 
@@ -143,7 +143,7 @@ Evidence:
 ## P1 — should ship in beta if cheap
 
 - [ ] Artifact mirror fallback per manifest.
-- [ ] rv cleanup --dry-run.
+- [x] rv cleanup --dry-run. Evidence: `rv cleanup --dry-run` prints `would remove ...` for orphan store and cache entries and leaves both paths in place; a follow-up `rv cleanup` removes them.
 - [ ] Shell completion generation.
 - [x] rv status --json includes update availability.
 - [ ] Basic telemetry-free crash report instructions.

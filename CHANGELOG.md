@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.0-beta.4 — self-management
+
+### Added
+
+- `rv self-update [--force]`: fetch the latest release, verify SHA256SUMS, stage it, and replace the binaries after the current process exits.
+- `rv self-uninstall --yes`: remove all packages (including persist data), remove the Rivet PATH entry, and delete the root after the current process exits.
+- `rv cleanup --dry-run`: list removable store versions, orphan stores, and cache entries without deleting them.
+- `rv install` and `rv remove` are idempotent: installing an already-installed package is a no-op; removing an absent package succeeds without changes.
+
+### Changed
+
+- `rv cleanup` only takes the mutation lock when it will actually delete something.
+
+### Tests
+
+- 34 tests, including PATH entry removal, dry-run lock behavior, idempotent install/remove, and the native-exe shim fallback.
+
 ## 0.1.0-beta.3 — symlink-first commands and release automation
 
 ### Added

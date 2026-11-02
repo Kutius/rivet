@@ -1,6 +1,6 @@
 [package]
 name = "rivet"
-version = "0.1.0-beta.3"
+version = "0.1.0-beta.4"
 edition = "2024"
 description = "Rivet: a fast, portable-first Windows package manager"
 license = "MIT"

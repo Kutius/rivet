@@ -75,7 +75,10 @@ pub enum Commands {
     /// Switch a package back to its previous version
     Rollback { packages: Vec<String> },
     /// Remove old store versions and stale cache entries
-    Cleanup,
+    Cleanup {
+        #[arg(long, help = "List what would be removed without deleting it")]
+        dry_run: bool,
+    },
     /// Check the Rivet installation for common problems
     Doctor {
         #[arg(long, help = "Repair broken links and missing shims")]
@@ -100,6 +103,16 @@ pub enum Commands {
     Init {
         #[arg(long, help = "Install the binaries without changing PATH")]
         no_path: bool,
+    },
+    /// Update the Rivet binaries from the latest release
+    SelfUpdate {
+        #[arg(long, help = "Reinstall even if the version is current")]
+        force: bool,
+    },
+    /// Remove Rivet, its packages, and its data
+    SelfUninstall {
+        #[arg(long, help = "Confirm removal without prompting")]
+        yes: bool,
     },
 }
 

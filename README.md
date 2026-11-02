@@ -2,7 +2,7 @@
 
 Rivet is a fast, portable-first package manager for Windows, built as a native Rust CLI plus a tiny launcher shim. It keeps the useful parts of Scoop's model without the PowerShell startup, bucket scans, and implicit metadata refreshes.
 
-Current release: 0.1.0-beta.3.
+Current release: 0.1.0-beta.4.
 
 Rivet is not Scoop-compatible. Scoop manifests, buckets, and PowerShell hooks are intentionally out of scope.
 
@@ -87,11 +87,15 @@ The demo package installs a native shim at %RIVET_ROOT%\bin\hello.exe.
 | rv pin / rv unpin PACKAGE... | Hold or release a package at its current version. |
 | rv verify | Check store paths, current links, shims, and recorded versions. Non-zero on damage. |
 | rv doctor [--fix] | Diagnose the installation; --fix repairs broken links and missing shims when the store is intact. |
-| rv cleanup | Remove old store versions and stale cache entries. |
+| rv cleanup [--dry-run] | Remove old store versions and stale cache entries; --dry-run only lists them. |
 | rv tap add/list/remove | Manage third-party Git taps. |
 | rv repo build/sign/keygen/public-key | Maintainer tooling for indexes and keys. |
 | rv config path/get/set | Inspect or edit config. |
 | rv init [--no-path] | Install the binaries, configure the catalog, and optionally update the user PATH. |
+| rv self-update [--force] | Replace the installed binaries with the latest release. |
+| rv self-uninstall --yes | Remove packages, PATH entry, and the Rivet root. |
+
+Install and remove are idempotent: installing an already-installed package is a no-op, and removing an absent package succeeds without changing anything.
 
 Add --json before the subcommand for machine-readable search, list, status, and info:
 
@@ -207,7 +211,7 @@ Release packaging:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\release.ps1
 ~~~
 
-This builds dist\rivet-v0.1.0-beta.3-windows-x64.zip, the binaries, install.ps1, and SHA256SUMS. It does not publish.
+This builds dist\rivet-v0.1.0-beta.4-windows-x64.zip, the binaries, install.ps1, and SHA256SUMS. It does not publish.
 
 ## Supported
 
@@ -222,7 +226,6 @@ This builds dist\rivet-v0.1.0-beta.3-windows-x64.zip, the binaries, install.ps1,
 - No artifact mirror or hosted CDN; artifacts come from the URLs in manifests.
 - No code-signing certificate for rv.exe or rv-shim.exe.
 - No full dependency solver; dependencies are recursive and latest-version by default, with explicit name@version respected.
-- No self-update or self-uninstall command.
 - No shell completions yet.
 - No central verified-tap registry; taps are trusted because the user adds them.
 

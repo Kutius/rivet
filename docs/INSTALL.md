@@ -46,7 +46,7 @@ This still installs to %LOCALAPPDATA%\Rivet\bin. Run rv by full path, or add the
 To pin a specific version:
 
 ~~~powershell
-.\install.ps1 -Version 0.1.0-beta.3
+.\install.ps1 -Version 0.1.0-beta.4
 ~~~
 
 To skip the catalog refresh:
@@ -57,12 +57,12 @@ To skip the catalog refresh:
 
 ## Manual zip install
 
-1. Download rivet-v0.1.0-beta.3-windows-x64.zip and SHA256SUMS from the release page.
+1. Download rivet-v0.1.0-beta.4-windows-x64.zip and SHA256SUMS from the release page.
 2. Verify the archive before extracting:
 
    ~~~powershell
-   $expected = (Get-Content .\SHA256SUMS | Select-String 'rivet-v0.1.0-beta.3-windows-x64.zip').Line.Split()[0]
-   (Get-FileHash .\rivet-v0.1.0-beta.3-windows-x64.zip -Algorithm SHA256).Hash.ToLower() -eq $expected
+   $expected = (Get-Content .\SHA256SUMS | Select-String 'rivet-v0.1.0-beta.4-windows-x64.zip').Line.Split()[0]
+   (Get-FileHash .\rivet-v0.1.0-beta.4-windows-x64.zip -Algorithm SHA256).Hash.ToLower() -eq $expected
    ~~~
 
 3. Extract the zip anywhere, then run:
@@ -78,7 +78,7 @@ To skip the catalog refresh:
    rv doctor
    ~~~
 
-The current beta is 0.1.0-beta.3.
+The current beta is 0.1.0-beta.4.
 
 ## Package source
 
@@ -109,19 +109,29 @@ For a signed remote index, the client fetches index.json.sig next to index.json.
 
 ## Upgrade Rivet
 
-There is no self-update command in the beta. Run the installer again:
+Use the built-in updater:
+
+~~~powershell
+rv self-update
+~~~
+
+The updater downloads the latest release, verifies SHA256SUMS, and replaces the binaries after the current rv process exits. Installed packages and persist data are not touched. Use `rv self-update --force` to reinstall the current version.
+
+The installer remains a fallback:
 
 ~~~powershell
 irm https://kutius.github.io/rivet/install.ps1 | iex
 ~~~
 
-Installed packages and persist data are not touched.
-
 ## Uninstall
 
-1. Remove installed packages with rv remove, adding --purge for packages whose persist data should also go.
-2. Remove the Rivet bin directory from the user PATH (Settings > System > About > Advanced system settings > Environment Variables).
-3. Delete %LOCALAPPDATA%\Rivet.
+~~~powershell
+rv self-uninstall --yes
+~~~
+
+This removes all installed packages (including persist data), removes the Rivet bin directory from the user PATH, and deletes %LOCALAPPDATA%\Rivet after the current process exits. The --yes flag is required because the operation is destructive.
+
+Manual fallback: remove packages with `rv remove`, remove the bin directory from PATH, then delete %LOCALAPPDATA%\Rivet.
 
 ## Build from source
 

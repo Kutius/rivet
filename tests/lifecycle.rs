@@ -94,6 +94,37 @@ fn add_broken_version(repo: &Path) -> Result<()> {
 }
 
 #[test]
+fn install_and_remove_are_idempotent() -> Result<()> {
+    let (_repo_dir, index) = prepare_repo()?;
+    let root = TempDir::new()?;
+    let root_path = root.path();
+    assert_success(&run_rv(root_path, &index, &["update"]));
+
+    assert_success(&run_rv(root_path, &index, &["install", "hello"]));
+    assert_success(&run_rv(root_path, &index, &["install", "hello"]));
+    let output = run_rv(root_path, &index, &["list"]);
+    assert_success(&output);
+    assert_eq!(
+        stdout(&output)
+            .lines()
+            .filter(|line| line.starts_with("hello "))
+            .count(),
+        1,
+        "duplicate list row: {}",
+        stdout(&output)
+    );
+
+    assert_success(&run_rv(root_path, &index, &["remove", "hello", "hello"]));
+    assert_success(&run_rv(root_path, &index, &["remove", "hello"]));
+    let output = run_rv(root_path, &index, &["list"]);
+    assert_success(&output);
+    assert!(stdout(&output).contains("no packages installed"));
+    assert_success(&run_rv(root_path, &index, &["remove", "missing"]));
+    assert_success(&run_rv(root_path, &index, &["verify"]));
+    Ok(())
+}
+
+#[test]
 fn pin_state_is_visible_and_blocks_upgrade_until_forced() -> Result<()> {
     let (_repo_dir, index) = prepare_repo()?;
     let root = TempDir::new()?;

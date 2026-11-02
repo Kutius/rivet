@@ -1,6 +1,6 @@
 # Performance
 
-Measurements were taken on the development Windows machine with the 0.1.0-beta.3 release build (size-optimized release profile):
+Measurements were taken on the development Windows machine with the 0.1.0-beta.3 release build (size-optimized release profile); beta.4 adds self-management commands without changing the measured paths:
 
 ~~~powershell
 cargo build --release --bins

@@ -21,6 +21,9 @@ pub fn run(cli: Cli) -> Result<()> {
     let insecure = cli.insecure;
     let json = cli.json;
     let paths = Paths::discover()?;
+    if let Commands::SelfUpdate { force } = &cli.command {
+        return crate::selfmanage::update(&paths, *force);
+    }
     if let Commands::Repo { command } = &cli.command {
         return cmd_repo(command.clone());
     }
@@ -71,12 +74,14 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::Unpin { packages } => cmd_pin(&db, &paths, &packages, false),
         Commands::Verify => cmd_verify(&db, &paths),
         Commands::Rollback { packages } => cmd_rollback(&db, &paths, &packages),
-        Commands::Cleanup => cmd_cleanup(&db, &paths, &config),
+        Commands::Cleanup { dry_run } => cmd_cleanup(&db, &paths, &config, dry_run),
         Commands::Doctor { fix } => cmd_doctor(&db, &paths, fix),
         Commands::Tap { command } => cmd_tap(&db, &paths, command, &config.trust()),
         Commands::Repo { command } => cmd_repo(command),
         Commands::Config { command } => cmd_config(&paths, command),
         Commands::Init { no_path } => cmd_init(&paths, no_path),
+        Commands::SelfUpdate { .. } => unreachable!("self-update is handled before database open"),
+        Commands::SelfUninstall { yes } => cmd_self_uninstall(&db, &paths, yes),
     }
 }
 
@@ -87,10 +92,11 @@ fn is_mutating(command: &Commands) -> bool {
         | Commands::Remove { .. }
         | Commands::Upgrade { .. }
         | Commands::Rollback { .. }
-        | Commands::Cleanup
         | Commands::Pin { .. }
         | Commands::Unpin { .. }
-        | Commands::Init { .. } => true,
+        | Commands::Init { .. }
+        | Commands::SelfUninstall { .. } => true,
+        Commands::Cleanup { dry_run } => !dry_run,
         Commands::Tap { command } => matches!(
             command,
             TapCommands::Add { .. } | TapCommands::Remove { .. }
@@ -578,8 +584,20 @@ fn cmd_remove(db: &Db, paths: &Paths, specs: &[String], purge: bool, force: bool
         bail!("specify at least one package");
     }
     let mut names = Vec::new();
+    let mut seen = HashSet::new();
     for spec in specs {
-        names.push(installed_name(db, spec)?);
+        let (_, name, _) = parse_spec(spec);
+        if !seen.insert(name.to_ascii_lowercase()) {
+            continue;
+        }
+        if db.installed(&name)?.is_none() {
+            println!("{name} is not installed");
+            continue;
+        }
+        names.push(name);
+    }
+    if names.is_empty() {
+        return Ok(());
     }
     if !force {
         for name in &names {
@@ -898,7 +916,7 @@ fn cmd_rollback(db: &Db, paths: &Paths, specs: &[String]) -> Result<()> {
     Ok(())
 }
 
-fn cmd_cleanup(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
+fn cmd_cleanup(db: &Db, paths: &Paths, config: &Config, dry_run: bool) -> Result<()> {
     let installed = db.list_installed()?;
     let keep_previous = config.keep_versions.max(1);
     for item in &installed {
@@ -919,6 +937,8 @@ fn cmd_cleanup(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
             }
             if extra.len() < keep_previous.saturating_sub(1) {
                 extra.push(version);
+            } else if dry_run {
+                println!("would remove {} {}", item.name, version);
             } else {
                 store::remove_version_dir(paths, &item.name, &version)?;
                 println!("removed {} {}", item.name, version);
@@ -933,8 +953,12 @@ fn cmd_cleanup(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
             if entry.file_type()?.is_dir() {
                 let name = entry.file_name().to_string_lossy().to_string();
                 if !installed_names.contains(&name) {
-                    fs::remove_dir_all(entry.path())?;
-                    println!("removed orphan store {}", name);
+                    if dry_run {
+                        println!("would remove orphan store {}", name);
+                    } else {
+                        fs::remove_dir_all(entry.path())?;
+                        println!("removed orphan store {}", name);
+                    }
                 }
             }
         }
@@ -961,8 +985,12 @@ fn cmd_cleanup(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
             }
             let name = entry.file_name().to_string_lossy().to_ascii_lowercase();
             if name.ends_with(".part") || !keep_hashes.contains(&name) {
-                fs::remove_file(entry.path())?;
-                println!("removed cache {}", name);
+                if dry_run {
+                    println!("would remove cache {}", name);
+                } else {
+                    fs::remove_file(entry.path())?;
+                    println!("removed cache {}", name);
+                }
             }
         }
     }
@@ -1275,6 +1303,36 @@ fn install_self(paths: &Paths) -> Result<()> {
     Ok(())
 }
 
+fn cmd_self_uninstall(db: &Db, paths: &Paths, yes: bool) -> Result<()> {
+    if !yes {
+        bail!("refusing to uninstall without --yes");
+    }
+    let names: Vec<String> = db
+        .list_installed()?
+        .into_iter()
+        .map(|item| item.name)
+        .collect();
+    if !names.is_empty() {
+        cmd_remove(db, paths, &names, true, true)?;
+    }
+    let bin = paths.bin.to_string_lossy().to_string();
+    let current = user_path()?;
+    if path_has_entry(&current, &bin) {
+        set_user_path(&remove_path_entry(&current, &bin))?;
+        if let Err(error) = broadcast_environment_change() {
+            eprintln!("warning: PATH was updated but the environment broadcast failed: {error}");
+        }
+    }
+    let log = crate::selfmanage::schedule_uninstall(paths)?;
+    println!("removed Rivet packages and PATH entry");
+    println!(
+        "the remaining {} will be deleted after this process exits",
+        paths.root.display()
+    );
+    println!("log: {}", log.display());
+    Ok(())
+}
+
 fn cmd_init(paths: &Paths, no_path: bool) -> Result<()> {
     paths.ensure_layout()?;
     install_self(paths)?;
@@ -1359,6 +1417,19 @@ fn append_path(current: &str, bin: &str) -> String {
     } else {
         format!("{};{}", current.trim_end_matches(';'), bin)
     }
+}
+
+fn remove_path_entry(current: &str, bin: &str) -> String {
+    current
+        .split(';')
+        .filter(|part| {
+            !part
+                .trim()
+                .trim_end_matches('\\')
+                .eq_ignore_ascii_case(bin.trim_end_matches('\\'))
+        })
+        .collect::<Vec<_>>()
+        .join(";")
 }
 
 fn user_path() -> Result<String> {
@@ -1524,7 +1595,8 @@ fn truncate(value: &str, length: usize) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{append_path, path_has_entry};
+    use super::{append_path, is_mutating, path_has_entry, remove_path_entry};
+    use crate::cli::Commands;
 
     #[test]
     fn path_entry_matches_case_and_trailing_slashes() {
@@ -1543,5 +1615,19 @@ mod tests {
             append_path(r"C:\Tools;", r"C:\Rivet\bin"),
             r"C:\Tools;C:\Rivet\bin"
         );
+    }
+
+    #[test]
+    fn remove_path_entry_matches_case_and_trailing_slashes() {
+        assert_eq!(
+            remove_path_entry(r"C:\Tools;C:\Rivet\bin\;D:\Other", r"c:\rivet\bin"),
+            r"C:\Tools;D:\Other"
+        );
+    }
+
+    #[test]
+    fn cleanup_dry_run_does_not_take_the_mutation_lock() {
+        assert!(!is_mutating(&Commands::Cleanup { dry_run: true }));
+        assert!(is_mutating(&Commands::Cleanup { dry_run: false }));
     }
 }
