@@ -1,6 +1,6 @@
 # Performance
 
-Measurements were taken on the development Windows machine with the 0.1.0-beta.1 release build:
+Measurements were taken on the development Windows machine with the 0.1.0-beta.1 release build; the measured code paths are unchanged in 0.1.0-beta.2:
 
 ~~~powershell
 cargo build --release --bins

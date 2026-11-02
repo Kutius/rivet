@@ -1,0 +1,11 @@
+name = "zoxide"
+version = "0.10.0"
+description = "Smarter cd command that learns your habits"
+homepage = "https://github.com/ajeetdsouza/zoxide"
+license = "MIT"
+tags = ["cd", "navigation", "shell"]
+arch = "x64"
+url = "https://github.com/ajeetdsouza/zoxide/releases/download/v0.10.0/zoxide-0.10.0-x86_64-pc-windows-msvc.zip"
+sha256 = "f465ae548f8754c8e7edbc60b45fbf58c92bfe123db83d790252d6810fa5daf1"
+extract = "zip"
+bin = [{ path = "zoxide.exe", name = "zoxide" }]

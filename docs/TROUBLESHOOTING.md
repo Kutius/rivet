@@ -6,12 +6,22 @@ Run rv doctor. If the bin directory is not in PATH, run rv init and open a new t
 
 ## main index is not configured
 
+`rv init` normally writes the official catalog URL and trusted key. If the config was created by an older build, run:
+
+~~~powershell
+rv config set main_index https://kutius.github.io/rivet/index.json
+rv config set trusted_key <64-hex-public-key>
+rv update
+~~~
+
+For local development, a file path is accepted and may be unsigned:
+
 ~~~powershell
 rv config set main_index C:\src\rivet\repo\main\index.json
 rv update
 ~~~
 
-For a remote index, use the https URL and configure trusted_key. A remote index without a valid signature is refused by design.
+A remote index without a valid signature is refused by design.
 
 ## signature verification failed
 

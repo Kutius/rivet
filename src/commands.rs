@@ -1245,6 +1245,7 @@ fn install_self(paths: &Paths) -> Result<()> {
 fn cmd_init(paths: &Paths, no_path: bool) -> Result<()> {
     paths.ensure_layout()?;
     install_self(paths)?;
+    let config = Config::load(paths)?;
     if no_path {
         println!(
             "installed {} and {}; PATH not changed (run 'rv init' to add {})",
@@ -1252,12 +1253,14 @@ fn cmd_init(paths: &Paths, no_path: bool) -> Result<()> {
             paths.bin.join("rv-shim.exe").display(),
             paths.bin.display()
         );
+        print_catalog(&config);
         return Ok(());
     }
     let bin = paths.bin.to_string_lossy().to_string();
     let current = user_path()?;
     if path_has_entry(&current, &bin) {
         println!("{} is already in the user PATH", paths.bin.display());
+        print_catalog(&config);
         return Ok(());
     }
     let new_path = append_path(&current, &bin);
@@ -1269,7 +1272,14 @@ fn cmd_init(paths: &Paths, no_path: bool) -> Result<()> {
         "added {} to the user PATH; open a new terminal to use it",
         paths.bin.display()
     );
+    print_catalog(&config);
     Ok(())
+}
+
+fn print_catalog(config: &Config) {
+    if let Some(location) = config.main_index_location() {
+        println!("catalog: {location}");
+    }
 }
 
 #[cfg(windows)]

@@ -23,4 +23,5 @@ jobs:
             dist/SHA256SUMS
             dist/rv.exe
             dist/rv-shim.exe
+            dist/install.ps1
           if-no-files-found: error

@@ -1,5 +1,7 @@
 # Rivet Public Beta Gate
 
+> This gate was closed for 0.1.0-beta.1. 0.1.0-beta.2 adds the hosted signed catalog and one-command installer; see CHANGELOG.md. The historical evidence below is left as recorded.
+
 Definition: Rivet is public-beta ready when a Windows user can download a signed release, install it without admin rights, install and manage packages from a signed catalog and a third-party tap, recover from the common broken states, and understand exactly what is supported — with no known P0/P1 defect.
 
 This file is the release gate, not a wish list. Do not check a box without a command, test name, file, or measured result recorded next to it.

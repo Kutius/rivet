@@ -46,6 +46,13 @@ fn init_no_path_installs_binaries_without_touching_path() {
         root_path.join("bin").join("rv.exe").exists(),
         "rv.exe was not installed"
     );
+    let config = fs::read_to_string(root_path.join("config.toml")).unwrap();
+    assert!(
+        config.contains("kutius.github.io/rivet/index.json"),
+        "{config}"
+    );
+    assert!(config.contains("trusted_keys"), "{config}");
+    assert!(text.contains("catalog:"), "stdout: {text}");
 
     let second = run_rv(root_path, &["init", "--no-path"]);
     assert_success(&second);

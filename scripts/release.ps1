@@ -76,8 +76,9 @@ Remove-Item $stage -Recurse -Force
 
 Copy-Item (Join-Path $release "rv.exe") (Join-Path $dist "rv.exe") -Force
 Copy-Item (Join-Path $release "rv-shim.exe") (Join-Path $dist "rv-shim.exe") -Force
+Copy-Item (Join-Path $root "install.ps1") (Join-Path $dist "install.ps1") -Force
 
-$checksumLines = foreach ($file in @("rv.exe", "rv-shim.exe", $archiveName)) {
+$checksumLines = foreach ($file in @("rv.exe", "rv-shim.exe", "install.ps1", $archiveName)) {
     $path = Join-Path $dist $file
     $fileHash = (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant()
     "$fileHash  $file"

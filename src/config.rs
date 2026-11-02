@@ -4,6 +4,10 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+pub const DEFAULT_MAIN_INDEX: &str = "https://kutius.github.io/rivet/index.json";
+pub const DEFAULT_TRUSTED_KEY: &str =
+    "001cde2fb60622861510c6a46563ddf97ad7274fce47f88fb21aaa1cbe9e4214";
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
     #[serde(default)]
@@ -29,10 +33,10 @@ fn default_keep_versions() -> usize {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            main_index: String::new(),
+            main_index: DEFAULT_MAIN_INDEX.to_string(),
             concurrency: default_concurrency(),
             keep_versions: default_keep_versions(),
-            trusted_keys: Vec::new(),
+            trusted_keys: vec![DEFAULT_TRUSTED_KEY.to_string()],
             allow_unsigned_remote: false,
         }
     }
@@ -105,6 +109,12 @@ impl Config {
             toml::from_str(&text)
                 .with_context(|| format!("parsing {}", paths.config_file.display()))?
         };
+        if config.main_index.trim().is_empty() {
+            config.main_index = DEFAULT_MAIN_INDEX.to_string();
+        }
+        if config.trusted_keys.is_empty() {
+            config.trusted_keys.push(DEFAULT_TRUSTED_KEY.to_string());
+        }
         if let Ok(main_index) = std::env::var("RIVET_MAIN_INDEX")
             && !main_index.trim().is_empty()
         {

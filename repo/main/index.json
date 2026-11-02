@@ -1,7 +1,111 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-02T09:55:40.287048200+00:00",
+  "generated_at": "2026-11-02T11:40:20.988352900+00:00",
   "packages": [
+    {
+      "name": "bat",
+      "version": "0.26.1",
+      "description": "Cat clone with syntax highlighting and Git integration",
+      "homepage": "https://github.com/sharkdp/bat",
+      "license": "MIT OR Apache-2.0",
+      "tags": [
+        "viewer",
+        "syntax",
+        "cli"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/sharkdp/bat/releases/download/v0.26.1/bat-v0.26.1-x86_64-pc-windows-msvc.zip",
+      "sha256": "0f729b4b6f5f28d395c641eacc2e9ff68d0096b85aa0eec344aa62425144b69b",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "bat.exe",
+          "name": "bat",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "delta",
+      "version": "0.20.1",
+      "description": "Syntax-highlighting pager for git, diff, and grep output",
+      "homepage": "https://github.com/dandavison/delta",
+      "license": "MIT",
+      "tags": [
+        "git",
+        "diff",
+        "pager"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/dandavison/delta/releases/download/0.20.1/delta-0.20.1-x86_64-pc-windows-msvc.zip",
+      "sha256": "c9af7484b33f1dbc1312a892fc7d5753a6d3365140a4000d49e575a2de742c25",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "delta.exe",
+          "name": "delta",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "fd",
+      "version": "10.5.0",
+      "description": "Fast, user-friendly alternative to find",
+      "homepage": "https://github.com/sharkdp/fd",
+      "license": "MIT OR Apache-2.0",
+      "tags": [
+        "search",
+        "files",
+        "cli"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/sharkdp/fd/releases/download/v10.5.0/fd-v10.5.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "a227701b8551c35a9931d9f6da75503cf86d88e182d71fb849a70864c5d57cd7",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "fd.exe",
+          "name": "fd",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "fzf",
+      "version": "0.74.5",
+      "description": "General-purpose command-line fuzzy finder",
+      "homepage": "https://github.com/junegunn/fzf",
+      "license": "MIT",
+      "tags": [
+        "fuzzy",
+        "search",
+        "cli"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/junegunn/fzf/releases/download/v0.74.5/fzf-0.74.5-windows_amd64.zip",
+      "sha256": "01f854ec8b9b47c99a7d78023638f7d2056cfb0af56b72dabd112032eed3993e",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "fzf.exe",
+          "name": "fzf",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
     {
       "name": "hello",
       "version": "1.0.0",
@@ -46,6 +150,111 @@
         {
           "path": "hello.cmd",
           "name": "hello",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "jq",
+      "version": "1.8.2",
+      "description": "Command-line JSON processor",
+      "homepage": "https://github.com/jqlang/jq",
+      "license": "MIT",
+      "tags": [
+        "json",
+        "query",
+        "cli"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-windows-amd64.exe",
+      "sha256": "a6fc67fedaf9128a3309a1e2ebb8b986aeccf70122ee46d2cb4849e423f0c627",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "jq.exe",
+          "name": "jq",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "ripgrep",
+      "version": "15.2.0",
+      "description": "Fast recursive search tool that respects .gitignore",
+      "homepage": "https://github.com/BurntSushi/ripgrep",
+      "license": "MIT OR Unlicense",
+      "tags": [
+        "search",
+        "grep",
+        "cli"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/BurntSushi/ripgrep/releases/download/15.2.0/ripgrep-15.2.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "71b2fef860abe467217a538ff31de02f5258807c0129f771846f87bd029aafc5",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "rg.exe",
+          "name": "rg",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "yq",
+      "version": "4.54.1",
+      "description": "Command-line YAML, JSON, and XML processor",
+      "homepage": "https://github.com/mikefarah/yq",
+      "license": "MIT",
+      "tags": [
+        "yaml",
+        "json",
+        "query",
+        "cli"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/mikefarah/yq/releases/download/v4.54.1/yq_windows_amd64.exe",
+      "sha256": "b645f47ebb3a0d2fbab52998550bbd0a1706f23b5ca5f5b48e638c580bb70928",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "yq.exe",
+          "name": "yq",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "zoxide",
+      "version": "0.10.0",
+      "description": "Smarter cd command that learns your habits",
+      "homepage": "https://github.com/ajeetdsouza/zoxide",
+      "license": "MIT",
+      "tags": [
+        "cd",
+        "navigation",
+        "shell"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/ajeetdsouza/zoxide/releases/download/v0.10.0/zoxide-0.10.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "f465ae548f8754c8e7edbc60b45fbf58c92bfe123db83d790252d6810fa5daf1",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "zoxide.exe",
+          "name": "zoxide",
           "args": []
         }
       ],

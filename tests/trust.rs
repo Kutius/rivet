@@ -151,10 +151,11 @@ fn signed_local_index_verifies_and_tampering_fails() -> Result<()> {
     let output = run_rv(root_path, Some(&index_text), Some(&key), &["update"]);
     assert_success(&output);
 
+    // The default catalog key is trusted; this locally generated key is not.
     let output = run_rv(root_path, Some(&index_text), None, &["update"]);
     assert!(!output.status.success(), "signed index needs a trusted key");
     assert!(
-        stderr(&output).contains("no trusted signing key"),
+        stderr(&output).contains("untrusted key"),
         "stderr: {}",
         stderr(&output)
     );

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-beta.2 — catalog and installer
+
+### Added
+
+- Hosted, signed main catalog at https://kutius.github.io/rivet/index.json with ripgrep, fd, bat, jq, fzf, delta, yq, and zoxide, in addition to the hello demo.
+- `install.ps1`: downloads the release, verifies SHA256SUMS, runs `rv init`, and refreshes the catalog. Supports `-NoPath`, `-NoUpdate`, and `-Version`.
+- `rv init` now writes the default catalog URL and trusted Ed25519 public key, so a fresh install can run `rv update` without manual configuration.
+- GitHub Pages workflow that publishes repo/main and install.ps1.
+
+### Changed
+
+- Release packaging now ships install.ps1 as a separate asset.
+- README and INSTALL describe the one-command install and the default catalog.
+
 ## 0.1.0-beta.1 — public beta
 
 Rivet is a portable-first Windows package manager built as one native Rust binary.

@@ -1,0 +1,12 @@
+name = "bat"
+version = "0.26.1"
+description = "Cat clone with syntax highlighting and Git integration"
+homepage = "https://github.com/sharkdp/bat"
+license = "MIT OR Apache-2.0"
+tags = ["viewer", "syntax", "cli"]
+arch = "x64"
+url = "https://github.com/sharkdp/bat/releases/download/v0.26.1/bat-v0.26.1-x86_64-pc-windows-msvc.zip"
+sha256 = "0f729b4b6f5f28d395c641eacc2e9ff68d0096b85aa0eec344aa62425144b69b"
+extract = "zip"
+strip_components = 1
+bin = [{ path = "bat.exe", name = "bat" }]

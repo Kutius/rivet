@@ -1,22 +1,67 @@
 # Install
 
-Rivet is a portable-first Windows package manager. The beta is a portable zip; there is no MSI or system-wide installer.
+Rivet is a portable-first Windows package manager. The beta is a portable zip plus a one-command installer; there is no MSI or system-wide installer.
 
 ## Supported
 
 - Windows 10 and Windows 11, x64.
 - PowerShell 7 or Windows PowerShell 5.1 for the commands shown here.
 - No administrator rights are required.
-- Git is required only for third-party taps, not for the main index.
+- Git is required only for third-party taps, not for the main catalog.
 
-## From a release zip
+## One command
 
-1. Download rivet-v0.1.0-beta.1-windows-x64.zip and SHA256SUMS from the release page.
+~~~powershell
+irm https://kutius.github.io/rivet/install.ps1 | iex
+~~~
+
+The installer:
+
+1. downloads the latest release zip and SHA256SUMS;
+2. verifies the zip hash before extracting it;
+3. copies rv.exe and rv-shim.exe to %LOCALAPPDATA%\Rivet\bin;
+4. appends that directory to the user PATH once and broadcasts the change;
+5. writes the default catalog URL and trusted key, then runs rv update.
+
+Open a new terminal and check:
+
+~~~powershell
+rv --version
+rv doctor
+rv search ripgrep
+~~~
+
+## Portable install
+
+To install the binaries without changing PATH:
+
+~~~powershell
+irm https://kutius.github.io/rivet/install.ps1 -OutFile install.ps1
+.\install.ps1 -NoPath
+~~~
+
+This still installs to %LOCALAPPDATA%\Rivet\bin. Run rv by full path, or add the directory to PATH yourself.
+
+To pin a specific version:
+
+~~~powershell
+.\install.ps1 -Version 0.1.0-beta.2
+~~~
+
+To skip the catalog refresh:
+
+~~~powershell
+.\install.ps1 -NoUpdate
+~~~
+
+## Manual zip install
+
+1. Download rivet-v0.1.0-beta.2-windows-x64.zip and SHA256SUMS from the release page.
 2. Verify the archive before extracting:
 
    ~~~powershell
-   $expected = (Get-Content .\SHA256SUMS | Select-String 'rivet-v0.1.0-beta.1-windows-x64.zip').Line.Split()[0]
-   (Get-FileHash .\rivet-v0.1.0-beta.1-windows-x64.zip -Algorithm SHA256).Hash.ToLower() -eq $expected
+   $expected = (Get-Content .\SHA256SUMS | Select-String 'rivet-v0.1.0-beta.2-windows-x64.zip').Line.Split()[0]
+   (Get-FileHash .\rivet-v0.1.0-beta.2-windows-x64.zip -Algorithm SHA256).Hash.ToLower() -eq $expected
    ~~~
 
 3. Extract the zip anywhere, then run:
@@ -25,8 +70,6 @@ Rivet is a portable-first Windows package manager. The beta is a portable zip; t
    .\rv.exe init
    ~~~
 
-   This copies rv.exe and rv-shim.exe to %LOCALAPPDATA%\Rivet\bin, appends that directory to the user PATH once, and broadcasts the environment change.
-
 4. Open a new terminal and check:
 
    ~~~powershell
@@ -34,22 +77,22 @@ Rivet is a portable-first Windows package manager. The beta is a portable zip; t
    rv doctor
    ~~~
 
-The current beta is 0.1.0-beta.1.
+The current beta is 0.1.0-beta.2.
 
-## Without changing PATH
+## Package source
 
-~~~powershell
-.\rv.exe init --no-path
+The default catalog is:
+
+~~~text
+https://kutius.github.io/rivet/index.json
 ~~~
 
-This installs the binaries into %LOCALAPPDATA%\Rivet\bin but leaves PATH alone. Run rv by full path, or add the directory yourself.
+rv init writes that URL and the matching Ed25519 public key into config.toml. No manual configuration is needed.
 
-## Configure a package source
-
-The main index is a generated index.json, not a Git checkout:
+For a custom catalog:
 
 ~~~powershell
-rv config set main_index https://example.invalid/rivet/index.json
+rv config set main_index https://example.com/rivet/index.json
 rv config set trusted_key <64-hex-public-key>
 rv update
 ~~~
@@ -65,7 +108,13 @@ For a signed remote index, the client fetches index.json.sig next to index.json.
 
 ## Upgrade Rivet
 
-There is no self-update command in the beta. Download the new zip, verify it, extract it, and run rv init again. Installed packages and persist data are not touched.
+There is no self-update command in the beta. Run the installer again:
+
+~~~powershell
+irm https://kutius.github.io/rivet/install.ps1 | iex
+~~~
+
+Installed packages and persist data are not touched.
 
 ## Uninstall
 

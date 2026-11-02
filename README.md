@@ -2,7 +2,7 @@
 
 Rivet is a fast, portable-first package manager for Windows, built as one native Rust binary. It keeps the useful parts of Scoop's model without the PowerShell startup, bucket scans, and implicit metadata refreshes.
 
-Current release: 0.1.0-beta.1.
+Current release: 0.1.0-beta.2.
 
 Rivet is not Scoop-compatible. Scoop manifests, buckets, and PowerShell hooks are intentionally out of scope.
 
@@ -26,30 +26,29 @@ Rivet moves those costs out of the hot path:
 
 ## Install
 
-Download rivet-v0.1.0-beta.1-windows-x64.zip, verify SHA256SUMS, extract it, then run:
+From PowerShell:
 
 ~~~powershell
-.\rv.exe init
+irm https://kutius.github.io/rivet/install.ps1 | iex
 ~~~
 
-This copies rv.exe and rv-shim.exe to %LOCALAPPDATA%\Rivet\bin, adds that directory to the user PATH once, and broadcasts the change. Open a new terminal and run rv --version.
+The installer downloads the release zip, verifies SHA256SUMS, copies rv.exe and rv-shim.exe to %LOCALAPPDATA%\Rivet\bin, adds that directory to the user PATH once, and fetches the signed main catalog. Open a new terminal and run rv --version.
 
 For a portable install without a PATH change:
 
 ~~~powershell
-.\rv.exe init --no-path
+irm https://kutius.github.io/rivet/install.ps1 -OutFile install.ps1
+.\install.ps1 -NoPath
 ~~~
 
-See [docs/INSTALL.md](docs/INSTALL.md) for upgrade, uninstall, and source-build instructions.
+Manual zip installation and uninstall are in [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Quick start
 
 ~~~powershell
-rv config set main_index https://example.invalid/rivet/index.json
-rv config set trusted_key <64-hex public key>
 rv update
-rv search hello
-rv install hello
+rv search ripgrep
+rv install ripgrep
 rv list
 rv status
 ~~~
@@ -92,7 +91,7 @@ The demo package installs a native shim at %RIVET_ROOT%\bin\hello.exe.
 | rv tap add/list/remove | Manage third-party Git taps. |
 | rv repo build/sign/keygen/public-key | Maintainer tooling for indexes and keys. |
 | rv config path/get/set | Inspect or edit config. |
-| rv init [--no-path] | Install the binaries and optionally update the user PATH. |
+| rv init [--no-path] | Install the binaries, configure the catalog, and optionally update the user PATH. |
 
 Add --json before the subcommand for machine-readable search, list, status, and info:
 
@@ -105,7 +104,7 @@ rv --json info hello
 
 ## Main repository
 
-The main repository is a normal Git repository of package manifests. Clients do not clone it. A CI job or maintainer command builds index.json:
+The main repository is a normal Git repository of package manifests. Clients do not clone it. The official catalog is served at https://kutius.github.io/rivet/index.json with its signature next to it; the source lives in repo/main. A CI job or maintainer command builds index.json:
 
 ~~~text
 repo/main/
@@ -208,7 +207,7 @@ Release packaging:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\release.ps1
 ~~~
 
-This builds dist\rivet-v0.1.0-beta.1-windows-x64.zip, the binaries, and SHA256SUMS. It does not publish.
+This builds dist\rivet-v0.1.0-beta.2-windows-x64.zip, the binaries, install.ps1, and SHA256SUMS. It does not publish.
 
 ## Supported
 
@@ -227,7 +226,7 @@ This builds dist\rivet-v0.1.0-beta.1-windows-x64.zip, the binaries, and SHA256SU
 - No shell completions yet.
 - No central verified-tap registry; taps are trusted because the user adds them.
 
-The next work is artifact mirroring, code signing, and a proper dependency solver only if real packages need one.
+The next work is artifact mirroring and a proper dependency solver only if real packages need one; code signing is deferred.
 
 ## Documentation
 
