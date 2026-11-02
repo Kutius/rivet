@@ -35,7 +35,7 @@ Evidence:
 
 Evidence:
 
-- Lock: `src/lock.rs` holds an exclusive file handle for the whole command. `src/commands.rs::is_mutating` covers `update`, `install`, `remove`, `upgrade`, `rollback`, `cleanup`, `tap add/remove`, `config set`, `init`, and `doctor --fix`; read-only commands take no lock. Tests: `tests/safety.rs::mutation_lock_blocks_concurrent_commands` (a held lock makes `rv update` fail with "another rv process"; releasing it succeeds and the lock file is removed) and the unit tests `lock::tests::second_lock_is_refused_until_the_first_is_dropped`, `lock::tests::a_leftover_lock_file_does_not_block`.
+- Lock: `src/lock.rs` holds an exclusive file handle for the whole command. `src/commands.rs::is_mutating` covers `update`, `install`, `remove`, `upgrade`, `rollback`, `cleanup`, `tap add/remove`, `config set`, `init`, and `doctor --fix`; read-only commands take no lock. Tests: `tests/safety.rs::mutation_lock_blocks_concurrent_commands` (a held lock makes `rv update` fail with "another rv process"; releasing it succeeds; the lock file is allowed to remain) and the unit tests `lock::tests::second_lock_is_refused_until_the_first_is_dropped`, `lock::tests::a_leftover_lock_file_does_not_block`.
 - Stale locks: the lock is an OS-held handle with `share_mode(0)`. Windows releases it when the process exits, including a crash, so a leftover file is not a lock. Documented in README "Concurrency and recovery".
 - Reverse dependencies: `src/commands.rs::reverse_dependents` blocks `rv remove` with "cannot remove ... depend on it ... pass --force"; `Remove --force` overrides. Test: `tests/safety.rs::remove_blocks_reverse_dependencies_until_forced` (install `app` -> `lib`; `rv remove lib` fails and keeps the shim; `rv remove lib --force` succeeds).
 - Doctor repair: `cmd_doctor` now checks every installed store path, `current` junction target, and each manifest bin shim. `--fix` recreates the junction and shims through the existing store/reconcile paths and persists them with `Db::save_install_state`. Tests: `doctor_fix_repairs_broken_link_and_missing_shim` (deleted junction and shim are restored), `doctor_reports_missing_store_as_unrepairable`.
@@ -73,7 +73,7 @@ Evidence:
 - No-path: `tests/install.rs::init_no_path_installs_binaries_without_touching_path` runs init twice, asserts the "PATH not changed" message and that `rv.exe` exists; it also asserts `rv doctor` reports the bin directory missing from PATH.
 - Version: `tests/install.rs::version_is_visible` asserts `rv --version`; release binary prints `rv 0.1.0-beta.1`.
 - Release: `scripts/release.ps1` builds `dist/rivet-v0.1.0-beta.1-windows-x64.zip` containing `rv.exe`, `rv-shim.exe`, README, LICENSE, docs, and an internal `SHA256SUMS`; `dist/SHA256SUMS` covers the binaries and the zip. Verified with `tar -tf` and `dist/rv.exe --version`.
-- Tests: 26 pass (5 unit + 4 e2e + 3 install + 3 lifecycle + 5 safety + 6 trust).
+- Tests: 30 pass (5 unit + 4 e2e + 3 install + 3 lifecycle + 4 output + 5 safety + 6 trust).
 
 ### B5. Scriptable output and errors
 
@@ -113,7 +113,7 @@ Evidence:
 - [x] cargo clippy --all-targets -- -D warnings passes.
 - [x] cargo test --offline passes all tests, including new trust/lock/pin/reverse-dependency/JSON/doctor tests.
 - [x] CI runs fmt, clippy, tests, and a release build on windows-latest.
-- [ ] A clean clone builds and tests offline.
+- [x] A clean clone builds and tests offline.
 - [x] Release smoke test runs from a fresh RIVET_ROOT with no developer state.
 
 Evidence:
@@ -121,7 +121,7 @@ Evidence:
 - cargo fmt --check: pass. cargo clippy --offline --all-targets -- -D warnings: pass. cargo test --offline: 30 tests pass (5 unit + 4 e2e + 3 install + 3 lifecycle + 4 output + 5 safety + 6 trust).
 - CI: .github/workflows/ci.yml runs cargo fetch --locked, fmt --check, clippy -D warnings, test --offline, and release build. .github/workflows/release.yml builds the zip and uploads artifacts on a v* tag.
 - Release smoke: from a fresh %TEMP% root, dist/rv.exe update, search, install, list, verify, status, native shim execution, and remove all succeeded.
-- Clean clone: pending final re-run after the last commit.
+- Clean clone: git clone to %TEMP%\rivet-clean-beta, then cargo fmt --check, cargo clippy --offline --all-targets -- -D warnings, cargo test --offline, cargo build --offline --release --bins, and scripts/release.ps1 -SkipBuild all succeeded. 30 tests passed.
 
 ### B8. Performance floor
 
@@ -143,7 +143,7 @@ Evidence:
 - [ ] Artifact mirror fallback per manifest.
 - [ ] rv cleanup --dry-run.
 - [ ] Shell completion generation.
-- [ ] rv status --json includes update availability.
+- [x] rv status --json includes update availability.
 - [ ] Basic telemetry-free crash report instructions.
 
 ## Explicit non-goals for this beta

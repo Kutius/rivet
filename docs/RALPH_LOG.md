@@ -25,7 +25,7 @@
 - `rv doctor --fix` repairs a broken `current` junction and missing shims from the intact store; a missing store is reported as unrepairable. `rv doctor` (without `--fix`) labels repairable problems.
 - Index replacement (package rows + FTS) and installed-state writes (installed row + shim rows) are now single transactions. `Db::save_install_state` replaced the separate `save_installed`/`save_shim` calls.
 - `store::recover_interrupted` runs at the start of every mutating command: removes `store/<name>/.tmp-*` staging directories and shim files that have no database record.
-- Tests: new `tests/safety.rs` (5 tests) and unit tests in `src/lock.rs` (2) and `src/db.rs` (1). Suite: 4 e2e + 6 trust + 5 safety + 3 unit, all pass.
+- Tests: new `tests/safety.rs` (5 tests) and unit tests in `src/lock.rs` (2) and `src/db.rs` (1). Suite: 4 e2e + 6 trust + 5 safety + 3 unit, all pass. The lock file is intentionally left in place; the open handle is the lock.
 - Docs: README "Concurrency and recovery", docs/BETA.md B2 evidence.
 - Remaining P0: B3–B8 (pin/verify, init PATH broadcast, JSON output, docs set, clippy, performance). Clippy still has pre-existing style warnings.
 - Next: B3 lifecycle completeness — `rv pin`/`rv unpin`, `rv verify`, and rollback coverage after failed upgrade and doctor repair.

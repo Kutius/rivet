@@ -123,8 +123,8 @@ fn mutation_lock_blocks_concurrent_commands() -> Result<()> {
     drop(held);
     assert_success(&run_rv(root_path, &index, &["update"]));
     assert!(
-        !root_path.join("rivet.lock").exists(),
-        "clean exit removes the lock"
+        root_path.join("rivet.lock").exists(),
+        "the lock file is allowed to remain; the OS handle is the lock"
     );
     Ok(())
 }

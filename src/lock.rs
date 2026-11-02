@@ -2,26 +2,16 @@ use crate::config::Paths;
 use anyhow::{Context, Result, bail};
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[cfg(windows)]
 use std::os::windows::fs::OpenOptionsExt;
 
 pub struct LockGuard {
-    file: Option<File>,
-    path: PathBuf,
+    _file: File,
 }
 
-impl Drop for LockGuard {
-    fn drop(&mut self) {
-        // Close the exclusive handle first, then remove the file so a clean
-        // exit leaves nothing behind.
-        drop(self.file.take());
-        let _ = fs::remove_file(&self.path);
-    }
-}
-
-pub fn lock_path(paths: &Paths) -> PathBuf {
+pub fn lock_path(paths: &Paths) -> std::path::PathBuf {
     paths.root.join("rivet.lock")
 }
 
@@ -34,7 +24,8 @@ pub fn acquire(paths: &Paths) -> Result<LockGuard> {
 /// The lock is an open file handle with exclusive sharing on Windows. The
 /// operating system releases it when the process exits, including a crash, so
 /// a leftover rivet.lock file never blocks a later run: the next process
-/// simply opens it again. Drop removes the file on a clean exit.
+/// simply opens it again. The file is intentionally left in place; the open
+/// handle, not the file's existence, is the lock.
 pub fn acquire_at(path: &Path) -> Result<LockGuard> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)
@@ -56,10 +47,7 @@ pub fn acquire_at(path: &Path) -> Result<LockGuard> {
     };
     let _ = writeln!(file, "pid={}", std::process::id());
     let _ = file.flush();
-    Ok(LockGuard {
-        file: Some(file),
-        path: path.to_path_buf(),
-    })
+    Ok(LockGuard { _file: file })
 }
 
 fn is_locked(error: &std::io::Error) -> bool {
@@ -90,7 +78,7 @@ mod tests {
         drop(first);
         let second = acquire_at(&path).expect("lock must be reusable after drop");
         drop(second);
-        assert!(!path.exists(), "clean drop removes the lock file");
+        assert!(path.exists(), "the lock file is allowed to remain");
     }
 
     #[test]

@@ -77,10 +77,10 @@ fn version_is_visible() {
 }
 
 #[test]
-fn init_no_path_does_not_create_a_user_path_change_marker() {
+fn init_no_path_leaves_no_active_lock() {
     let root = TempDir::new().unwrap();
     let output = run_rv(root.path(), &["init", "--no-path"]);
     assert_success(&output);
-    assert!(!root.path().join("rivet.lock").exists());
+    assert!(root.path().join("rivet.lock").exists());
     assert!(fs::metadata(root.path().join("bin").join("rv.exe")).is_ok());
 }

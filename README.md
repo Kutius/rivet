@@ -187,7 +187,7 @@ The store is the source of truth. The SQLite database is a cache and state index
 
 Every mutating command (update, install, remove, upgrade, rollback, cleanup, tap add/remove, config set, init, and doctor --fix) takes a single-process lock at <root>\rivet.lock.
 
-The lock is an exclusive open file handle. Windows releases it when the process exits, including a crash, so a leftover rivet.lock file never blocks a later command. A second rv command that finds the lock held fails with an actionable message and changes nothing.
+The lock is an exclusive open file handle. Windows releases it when the process exits, including a crash, so a leftover rivet.lock file never blocks a later command; the file is intentionally left in place. A second rv command that finds the lock held fails with an actionable message and changes nothing.
 
 Interrupted installs are recovered at the start of the next mutating command: staging directories under store\<name>\.tmp-* are deleted and shim files without a database record are removed. rv doctor --fix repairs a broken current junction and missing shims while the immutable store still contains the version; a missing store is reported as unrepairable.
 
