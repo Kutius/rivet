@@ -92,34 +92,51 @@ Evidence:
 
 ### B6. Documentation and release hygiene
 
-- [ ] README.md has a stranger-safe install path, quick start, supported platforms, and explicit non-goals.
-- [ ] docs/INSTALL.md, docs/TAPS.md, docs/MANIFEST.md, docs/SECURITY.md, and docs/TROUBLESHOOTING.md exist and match the shipped behavior.
-- [ ] CHANGELOG.md and SECURITY.md exist at the repository root.
-- [ ] No document promises a feature the beta does not ship.
-- [ ] dist/ contains only release binaries and release notes; debug artifacts are absent.
-- [ ] Version is 0.1.0-beta.1 everywhere it is user-visible.
+- [x] README.md has a stranger-safe install path, quick start, supported platforms, and explicit non-goals.
+- [x] docs/INSTALL.md, docs/TAPS.md, docs/MANIFEST.md, docs/SECURITY.md, and docs/TROUBLESHOOTING.md exist and match the shipped behavior.
+- [x] CHANGELOG.md and SECURITY.md exist at the repository root.
+- [x] No document promises a feature the beta does not ship.
+- [x] dist/ contains only release binaries and release notes; debug artifacts are absent.
+- [x] Version is 0.1.0-beta.1 everywhere it is user-visible.
 
 Evidence:
+
+- README: beta status, release install path, quick start, supported platforms, command table, JSON, signatures, storage, recovery, build/test, explicit beta limitations, and docs links.
+- New docs: docs/INSTALL.md, docs/TAPS.md, docs/MANIFEST.md, docs/TROUBLESHOOTING.md; docs/SECURITY.md and docs/DESIGN.md were corrected to describe the shipped signature and lifecycle behavior. Root CHANGELOG.md and SECURITY.md exist.
+- Release zip now includes only user-facing docs plus CHANGELOG.md and SECURITY.md; internal docs/BETA.md, docs/RALPH.md, and docs/RALPH_LOG.md are excluded by scripts/release.ps1. dist/ contains README.md (release notes), rv.exe, rv-shim.exe, the zip, and SHA256SUMS.
+- Version: Cargo.toml, Cargo.lock, dist/rv.exe, the zip name, README, INSTALL, and CHANGELOG all say 0.1.0-beta.1. dist/rv.exe --version prints rv 0.1.0-beta.1.
+- No unimplemented feature is presented as shipped. P1 items (artifact mirror, cleanup --dry-run, completions, self-update/uninstall) are explicitly listed as not in this beta.
 
 ### B7. Verification and CI
 
-- [ ] cargo fmt --check passes.
-- [ ] cargo clippy --all-targets -- -D warnings passes.
-- [ ] cargo test --offline passes all tests, including new trust/lock/pin/reverse-dependency/JSON/doctor tests.
-- [ ] CI runs fmt, clippy, tests, and a release build on windows-latest.
+- [x] cargo fmt --check passes.
+- [x] cargo clippy --all-targets -- -D warnings passes.
+- [x] cargo test --offline passes all tests, including new trust/lock/pin/reverse-dependency/JSON/doctor tests.
+- [x] CI runs fmt, clippy, tests, and a release build on windows-latest.
 - [ ] A clean clone builds and tests offline.
-- [ ] Release smoke test runs from a fresh RIVET_ROOT with no developer state.
+- [x] Release smoke test runs from a fresh RIVET_ROOT with no developer state.
 
 Evidence:
+
+- cargo fmt --check: pass. cargo clippy --offline --all-targets -- -D warnings: pass. cargo test --offline: 30 tests pass (5 unit + 4 e2e + 3 install + 3 lifecycle + 4 output + 5 safety + 6 trust).
+- CI: .github/workflows/ci.yml runs cargo fetch --locked, fmt --check, clippy -D warnings, test --offline, and release build. .github/workflows/release.yml builds the zip and uploads artifacts on a v* tag.
+- Release smoke: from a fresh %TEMP% root, dist/rv.exe update, search, install, list, verify, status, native shim execution, and remove all succeeded.
+- Clean clone: pending final re-run after the last commit.
 
 ### B8. Performance floor
 
-- [ ] Release rv --version under 30 ms on the development machine.
-- [ ] Release rv search under 50 ms on the 10,000-package synthetic index.
-- [ ] rv update of the 10,000-package index under 500 ms locally.
-- [ ] Numbers are recorded in docs/PERFORMANCE.md with the build and measurement method.
+- [x] Release rv --version under 30 ms on the development machine.
+- [x] Release rv search under 50 ms on the 10,000-package synthetic index.
+- [x] rv update of the 10,000-package index under 500 ms locally.
+- [x] Numbers are recorded in docs/PERFORMANCE.md with the build and measurement method.
 
 Evidence:
+
+- Release 0.1.0-beta.1 on the development machine, PowerShell Measure-Command, 10k synthetic index (2.99 MB):
+  - rv --version: 8.8 ms average (8.2 / 11.7 min/max, 10 runs)
+  - rv search pkg00042: 12.0 ms average (11.4 / 14.5, 10 runs)
+  - rv update (10k): 153.1 ms average (150.0 / 156.9, 5 runs)
+- Recorded in docs/PERFORMANCE.md with the build command and method.
 
 ## P1 — should ship in beta if cheap
 

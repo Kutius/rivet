@@ -1,8 +1,10 @@
 # Rivet
 
-Rivet is a fast, portable-first package manager for Windows, built as a clean redesign of the ideas that make Scoop useful without carrying Scoop's slow paths.
+Rivet is a fast, portable-first package manager for Windows, built as one native Rust binary. It keeps the useful parts of Scoop's model without the PowerShell startup, bucket scans, and implicit metadata refreshes.
 
-It is a working MVP, not a Scoop-compatible implementation. Scoop manifests, PowerShell hooks, and buckets are intentionally not supported.
+Current release: 0.1.0-beta.1.
+
+Rivet is not Scoop-compatible. Scoop manifests, buckets, and PowerShell hooks are intentionally out of scope.
 
 ## Why Rivet
 
@@ -15,113 +17,114 @@ Scoop's common commands pay for:
 
 Rivet moves those costs out of the hot path:
 
-- one native Rust binary (`rv`), no runtime scripts;
+- one native Rust binary (rv), no runtime scripts;
 - a local SQLite index for search and package metadata;
-- a small generated main index instead of a client-side Git bucket clone;
-- immutable version directories plus a `current` junction;
+- a generated main index instead of a client-side Git bucket clone;
+- immutable version directories plus a current junction;
 - native shims for app commands;
-- explicit `update` and `upgrade` commands, with no implicit update during install.
+- explicit update and upgrade commands, with no implicit update during install.
 
-## Status
+## Install
 
-Implemented:
-
-- `rv update`: refresh the main index and configured taps
-- `rv search`: local full-text search
-- `rv list`, `rv status`, `rv info`
-- `rv install`, `rv remove`, `rv upgrade`, `rv rollback`, `rv cleanup`
-- `rv doctor`
-- `rv tap add`, `rv tap list`, `rv tap remove`
-- `rv repo build`: generate `index.json` from `packages/*.toml`
-- `rv config path|get|set`
-- `rv init`: install a copy of `rv.exe`/`rv-shim.exe` into the Rivet bin directory and add it to the user PATH
-
-Not implemented in this MVP:
-
-- Scoop compatibility and PowerShell hooks
-- MSI/EXE system installers
-- code signing and repository signatures
-- artifact mirroring and a hosted CDN
-- complex dependency solving (dependencies are installed recursively, latest version, no backtracking)
-
-## Build
+Download rivet-v0.1.0-beta.1-windows-x64.zip, verify SHA256SUMS, extract it, then run:
 
 ~~~powershell
-cargo build --release --bins
-cargo test
+.\rv.exe init
 ~~~
 
-The project was developed with Rust 1.99 on Windows. If crates.io is slow or TLS-interrupted, use a local mirror such as rsproxy.cn and set `CARGO_REGISTRIES_CRATES_IO_INDEX=sparse+https://rsproxy.cn/index/`.
+This copies rv.exe and rv-shim.exe to %LOCALAPPDATA%\Rivet\bin, adds that directory to the user PATH once, and broadcasts the change. Open a new terminal and run rv --version.
+
+For a portable install without a PATH change:
+
+~~~powershell
+.\rv.exe init --no-path
+~~~
+
+See [docs/INSTALL.md](docs/INSTALL.md) for upgrade, uninstall, and source-build instructions.
 
 ## Quick start
 
-From the repository root:
+~~~powershell
+rv config set main_index https://example.invalid/rivet/index.json
+rv config set trusted_key <64-hex public key>
+rv update
+rv search hello
+rv install hello
+rv list
+rv status
+~~~
+
+A local directory or index.json is accepted for development and may be unsigned:
 
 ~~~powershell
-$env:RIVET_ROOT = Join-Path $env:LOCALAPPDATA "Rivet"
+rv config set main_index C:\src\rivet\repo\main\index.json
+rv update
+~~~
+
+For a disposable demo from this repository:
+
+~~~powershell
+$env:RIVET_ROOT = Join-Path $env:TEMP "rivet-demo"
 $env:RIVET_MAIN_INDEX = (Resolve-Path "repo\main\index.json").Path
-
 .\target\release\rv.exe update
-.\target\release\rv.exe search hello
 .\target\release\rv.exe install hello
-.\target\release\rv.exe list
 ~~~
 
-The demo package installs a native shim at `$env:RIVET_ROOT\bin\hello.exe`.
+The demo package installs a native shim at %RIVET_ROOT%\bin\hello.exe.
 
-To add the Rivet bin directory to the user PATH:
+## Commands
+
+| Command | Purpose |
+|---|---|
+| rv update | Refresh the main index and taps. Never changes installed packages. |
+| rv search [query] | Local full-text search; omit the query to list packages. |
+| rv info PACKAGE | Show metadata and available versions. |
+| rv install PACKAGE... | Install packages and dependencies. Supports name, repo/name, owner/repo/name, and name@version. |
+| rv list | List installed packages and pin state. |
+| rv status [--check] | Show installed versus latest versions. --check refreshes metadata; it falls back to the cached index if the network is unavailable. |
+| rv upgrade [PACKAGE...] [--all] [--force] | Upgrade packages. Pinned packages are skipped unless forced. |
+| rv remove PACKAGE... [--purge] [--force] | Remove packages. Dependents block removal unless forced. --purge deletes persist data. |
+| rv rollback PACKAGE... | Switch back to the previous version. |
+| rv pin / rv unpin PACKAGE... | Hold or release a package at its current version. |
+| rv verify | Check store paths, current links, shims, and recorded versions. Non-zero on damage. |
+| rv doctor [--fix] | Diagnose the installation; --fix repairs broken links and missing shims when the store is intact. |
+| rv cleanup | Remove old store versions and stale cache entries. |
+| rv tap add/list/remove | Manage third-party Git taps. |
+| rv repo build/sign/keygen/public-key | Maintainer tooling for indexes and keys. |
+| rv config path/get/set | Inspect or edit config. |
+| rv init [--no-path] | Install the binaries and optionally update the user PATH. |
+
+Add --json before the subcommand for machine-readable search, list, status, and info:
 
 ~~~powershell
-.\target\release\rv.exe init
-# open a new terminal
+rv --json search hello
+rv --json list
+rv --json status
+rv --json info hello
 ~~~
-
-For a disposable demo, run `scripts\demo.ps1`.
 
 ## Main repository
 
-The main repository is a normal Git repository of package manifests. Clients do not clone it. A CI job or a local maintainer command builds `index.json`:
+The main repository is a normal Git repository of package manifests. Clients do not clone it. A CI job or maintainer command builds index.json:
 
 ~~~text
 repo/main/
   packages/*.toml
   artifacts/
   index.json
+  index.json.sig
 ~~~
-
-Build the index:
 
 ~~~powershell
 rv repo build repo\main
+rv repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
 ~~~
 
-A minimal package manifest:
-
-~~~toml
-name = "hello"
-version = "1.0.0"
-description = "Rivet demo package"
-homepage = "https://example.invalid/rivet/hello"
-license = "MIT"
-tags = ["demo"]
-url = "artifacts/hello-1.0.0.zip"
-sha256 = "f61c5c9c48e6b681a11543043dc730571d7d9e1501615f7139b3cdda0e73d5d0"
-extract = "zip"
-bin = [{ path = "hello.cmd", name = "hello" }]
-~~~
-
-Fields:
-
-- `url`: absolute URL or a path relative to `index.json`
-- `sha256`: lowercase or uppercase 64-character hex digest
-- `extract`: `zip`, `tar.gz`, `tar`, `7z`, or `none`
-- `bin`: one or more `{ path, name, args }` entries
-- `depends`: package names, optionally `repo/name` or `name@version`
-- `persist`: directory paths preserved across versions
+See [docs/MANIFEST.md](docs/MANIFEST.md) for every field and [docs/SECURITY.md](docs/SECURITY.md) for the trust model.
 
 ## Taps
 
-Taps are third-party Git repositories in the Homebrew style. They contain `packages/*.toml` and may contain a generated `index.json`.
+Taps are third-party Git repositories in the Homebrew style. They contain packages/*.toml and may contain a generated index.json.
 
 ~~~powershell
 rv tap add owner/repo
@@ -136,11 +139,11 @@ Packages from a tap are namespaced:
 rv install demo/hello
 ~~~
 
-If the tap has no `index.json`, `rv update` builds one locally from its manifests. Search is always local; network access only occurs during explicit `rv update`, `rv tap add`, and artifact downloads.
+If the tap has no index.json, rv update builds one locally from its manifests. Search is always local; network access only occurs during explicit rv update, rv tap add, and artifact downloads. See [docs/TAPS.md](docs/TAPS.md).
 
 ## Signing the index
 
-The client verifies an Ed25519 signature over the exact `index.json` bytes before parsing them. Maintainers generate a key pair, sign the index, and publish `index.json.sig` next to `index.json`:
+The client verifies an Ed25519 signature over the exact index.json bytes before parsing them. Maintainers generate a key pair, sign the index, and publish index.json.sig next to index.json:
 
 ~~~powershell
 rv repo keygen --out C:\secure\rivet-keys
@@ -148,7 +151,7 @@ rv repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
 rv repo public-key --key C:\secure\rivet-keys\rivet-signing.key
 ~~~
 
-`rv repo keygen` writes `rivet-signing.key` (private) and `rivet-signing.pub` (public, hex). It prints only the public key. Never commit the private key.
+rv repo keygen writes rivet-signing.key (private) and rivet-signing.pub (public, hex). It prints only the public key. Never commit the private key.
 
 Clients trust a key explicitly:
 
@@ -160,9 +163,9 @@ $env:RIVET_TRUSTED_KEY = "<64-hex public key>"
 
 Rules:
 
-- HTTP indexes must be signed; a missing, untrusted, or invalid signature fails `rv update` before parsing.
+- HTTP indexes must be signed; a missing, untrusted, or invalid signature fails rv update before parsing.
 - Local file and directory indexes may be unsigned for development.
-- `--insecure` (or `rv config set allow_unsigned_remote true`) accepts unsigned remote indexes. It is a deliberate downgrade; use it only for testing.
+- --insecure (or rv config set allow_unsigned_remote true) accepts unsigned remote indexes. It is a deliberate downgrade; use it only for testing.
 
 ## Storage layout
 
@@ -178,34 +181,61 @@ Rules:
   config.toml
 ~~~
 
-The store is the source of truth. The SQLite database is a cache and state index; `rv doctor` reports broken links and missing store paths.
+The store is the source of truth. The SQLite database is a cache and state index; rv doctor reports broken links and missing store paths.
 
 ## Concurrency and recovery
 
-Every command that mutates the Rivet root (`update`, `install`, `remove`, `upgrade`, `rollback`, `cleanup`, `tap add/remove`, `config set`, `init`, and `doctor --fix`) takes a single-process lock at `<root>\rivet.lock`.
+Every mutating command (update, install, remove, upgrade, rollback, cleanup, tap add/remove, config set, init, and doctor --fix) takes a single-process lock at <root>\rivet.lock.
 
-The lock is an exclusive open file handle. Windows releases it when the process exits, including a crash, so a leftover `rivet.lock` file never blocks a later command: the next `rv` run simply opens it again. A second `rv` command that finds the lock held fails with an actionable message and changes nothing.
+The lock is an exclusive open file handle. Windows releases it when the process exits, including a crash, so a leftover rivet.lock file never blocks a later command. A second rv command that finds the lock held fails with an actionable message and changes nothing.
 
-Interrupted installs are recovered at the start of the next mutating command: staging directories under `store\<name>\.tmp-*` are deleted and shim files without a database record are removed. `rv doctor --fix` repairs a broken `current` junction and missing shims while the immutable store still contains the version; a missing store is reported as unrepairable.
+Interrupted installs are recovered at the start of the next mutating command: staging directories under store\<name>\.tmp-* are deleted and shim files without a database record are removed. rv doctor --fix repairs a broken current junction and missing shims while the immutable store still contains the version; a missing store is reported as unrepairable.
 
-## Design notes
+## Build and test
 
-The full rationale is in [docs/DESIGN.md](docs/DESIGN.md). Measured numbers are in [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
+~~~powershell
+cargo build --release --bins
+cargo test --offline
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+~~~
 
-The short version:
+The project targets Rust 1.99 on Windows with the MSVC toolchain. If crates.io is slow or TLS-interrupted, use a local mirror such as rsproxy.cn and set CARGO_REGISTRIES_CRATES_IO_INDEX=sparse+https://rsproxy.cn/index/.
 
-- one main index, optionally several official repos later;
-- third-party taps, explicitly trusted by the user;
-- generated index files instead of client-side bucket scans;
-- portable-first packages, no arbitrary install scripts;
-- immutable store plus pointer switch, so upgrades do not uninstall the old version first;
-- native shims instead of PATH entries per app;
-- no implicit `scoop update` equivalent during install.
+Release packaging:
 
-## Limitations and next steps
+~~~powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\release.ps1
+~~~
 
-- Add minisign or Ed25519 signatures before public distribution.
-- Add an optional artifact mirror for packages whose upstream downloads are slow.
-- Add a proper version solver if dependency complexity grows.
-- Add code signing for `rv.exe` and `rv-shim.exe`.
-- Add an optional MSI/EXE vendor channel as a separate, explicitly trusted mode.
+This builds dist\rivet-v0.1.0-beta.1-windows-x64.zip, the binaries, and SHA256SUMS. It does not publish.
+
+## Supported
+
+- Windows 10 and Windows 11, x64.
+- No administrator rights for normal installs.
+- Git only for third-party taps.
+
+## Beta limitations
+
+- No Scoop compatibility and no PowerShell hooks.
+- No MSI/EXE system-installer channel.
+- No artifact mirror or hosted CDN; artifacts come from the URLs in manifests.
+- No code-signing certificate for rv.exe or rv-shim.exe.
+- No full dependency solver; dependencies are recursive and latest-version by default, with explicit name@version respected.
+- No self-update or self-uninstall command.
+- No shell completions yet.
+- No central verified-tap registry; taps are trusted because the user adds them.
+
+The next work is artifact mirroring, code signing, and a proper dependency solver only if real packages need one.
+
+## Documentation
+
+- [Install](docs/INSTALL.md)
+- [Taps](docs/TAPS.md)
+- [Manifest reference](docs/MANIFEST.md)
+- [Security](docs/SECURITY.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Design](docs/DESIGN.md)
+- [Performance](docs/PERFORMANCE.md)
+- [Changelog](CHANGELOG.md)

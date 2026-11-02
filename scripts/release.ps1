@@ -53,7 +53,15 @@ foreach ($doc in @("CHANGELOG.md", "SECURITY.md")) {
 }
 $docs = Join-Path $root "docs"
 if (Test-Path $docs) {
-    Copy-Item $docs (Join-Path $stage "docs") -Recurse
+    $userDocs = @("INSTALL.md", "TAPS.md", "MANIFEST.md", "SECURITY.md", "TROUBLESHOOTING.md", "DESIGN.md", "PERFORMANCE.md")
+    $docDestination = Join-Path $stage "docs"
+    New-Item -ItemType Directory -Force -Path $docDestination | Out-Null
+    foreach ($doc in $userDocs) {
+        $source = Join-Path $docs $doc
+        if (Test-Path $source) {
+            Copy-Item $source $docDestination
+        }
+    }
 }
 
 $stageChecksums = foreach ($file in (Get-ChildItem $stage -File | Sort-Object Name)) {

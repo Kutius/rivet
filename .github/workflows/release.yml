@@ -1,0 +1,26 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fetch --locked
+      - run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rivet-windows-x64
+          path: |
+            dist/rivet-v*-windows-x64.zip
+            dist/SHA256SUMS
+            dist/rv.exe
+            dist/rv-shim.exe
+          if-no-files-found: error

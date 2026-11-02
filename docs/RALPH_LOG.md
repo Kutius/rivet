@@ -58,3 +58,25 @@
 - Tests: new `tests/output.rs` with 4 tests (JSON shapes, offline status, missing artifact, unknown package + bad archive). Suite: 30 tests pass.
 - Remaining P0: B6–B8.
 - Next: B6 docs and release hygiene, then B7 fmt/clippy/CI, then B8 performance.
+
+## Round 6 — B6 documentation and release hygiene
+
+- Rewrote README for the beta: install from the release zip, quick start, command table, JSON, signatures, storage, recovery, build/test, supported platforms, explicit limitations, and docs links.
+- Added CHANGELOG.md, SECURITY.md, docs/INSTALL.md, docs/TAPS.md, docs/MANIFEST.md, and docs/TROUBLESHOOTING.md. Corrected docs/SECURITY.md and docs/DESIGN.md so they describe the shipped signature and lifecycle behavior.
+- scripts/release.ps1 now ships only user-facing docs; internal BETA/RALPH files are excluded. dist/ contains release notes, binaries, the zip, and SHA256SUMS.
+- Version is 0.1.0-beta.1 in Cargo.toml, Cargo.lock, binaries, zip name, README, INSTALL, and CHANGELOG.
+- Remaining P0: B7 clean-clone check; B8 performance.
+
+## Round 7 — B7 verification and CI
+
+- Added .github/workflows/ci.yml with fmt --check, clippy -D warnings, test --offline, and release build. Added .github/workflows/release.yml for tag builds and artifact upload.
+- Fixed all clippy findings (collapsed ifs, literal format strings, consecutive replace, function-argument allowance) and ran cargo fmt.
+- Release smoke test from a fresh %TEMP% root: update, search, install, list, verify, status, native shim execution, and remove all succeeded.
+- Clean-clone offline test is the final remaining B7 item.
+
+## Round 8 — B8 performance
+
+- Built the release binary and a 10,000-package synthetic index (2.99 MB).
+- Measured with PowerShell Measure-Command: rv --version 8.8 ms (10 runs), rv search pkg00042 12.0 ms (10 runs), rv update 153.1 ms (5 runs). All are under the beta floors.
+- Recorded the build, method, and numbers in docs/PERFORMANCE.md.
+- Next: commit B6–B8, run the clean-clone check, and close the gate.

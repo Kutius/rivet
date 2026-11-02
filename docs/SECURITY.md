@@ -4,7 +4,7 @@ Rivet trusts two things explicitly: the signing key the user configures, and the
 
 ## Index signatures
 
-- The main index and tap indexes are signed with Ed25519 (via `ring`).
+- The main index can be signed with Ed25519 (via `ring`). Tap indexes may also be signed.
 - The signature covers the exact bytes of `index.json` and is checked before the JSON is parsed or written to SQLite.
 - `index.json.sig` is a small JSON document:
 

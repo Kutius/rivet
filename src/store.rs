@@ -167,10 +167,10 @@ pub fn list_version_dirs(paths: &Paths, name: &str) -> Result<Vec<String>> {
     let mut result = Vec::new();
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
-        if entry.file_type()?.is_dir() {
-            if let Some(name) = entry.file_name().to_str() {
-                result.push(name.to_string());
-            }
+        if entry.file_type()?.is_dir()
+            && let Some(name) = entry.file_name().to_str()
+        {
+            result.push(name.to_string());
         }
     }
     result.sort();
@@ -268,11 +268,11 @@ pub fn recover_interrupted(paths: &Paths, db: &crate::db::Db) -> Result<()> {
         for entry in fs::read_dir(&paths.bin)? {
             let entry = entry?;
             let file_name = entry.file_name().to_string_lossy().to_string();
-            if let Some(command) = file_name.strip_suffix(".rvshim") {
-                if !known.contains(&command.to_ascii_lowercase()) {
-                    let _ = fs::remove_file(paths.bin.join(format!("{command}.exe")));
-                    let _ = fs::remove_file(entry.path());
-                }
+            if let Some(command) = file_name.strip_suffix(".rvshim")
+                && !known.contains(&command.to_ascii_lowercase())
+            {
+                let _ = fs::remove_file(paths.bin.join(format!("{command}.exe")));
+                let _ = fs::remove_file(entry.path());
             }
         }
     }

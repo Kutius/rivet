@@ -26,7 +26,7 @@ pub fn validate_tap_name(name: &str) -> Result<()> {
 }
 
 pub fn sanitize_tap_name(name: &str) -> String {
-    let sanitized = name.replace('/', "__").replace('\\', "__");
+    let sanitized = name.replace(['/', '\\'], "__");
     if sanitized.is_empty() || sanitized == "." || sanitized == ".." {
         "__invalid".to_string()
     } else {

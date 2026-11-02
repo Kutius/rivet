@@ -48,9 +48,7 @@ pub fn run(cli: Cli) -> Result<()> {
 
     match cli.command {
         Commands::Update => cmd_update(&db, &paths, &config),
-        Commands::Search { query } => {
-            cmd_search(&db, query.as_deref().unwrap_or(""), json)
-        }
+        Commands::Search { query } => cmd_search(&db, query.as_deref().unwrap_or(""), json),
         Commands::List => cmd_list(&db, json),
         Commands::Status { check } => cmd_status(&db, &paths, &config, check, json),
         Commands::Info { package } => cmd_info(&db, &package, json),
@@ -149,8 +147,8 @@ fn cmd_search(db: &Db, query: &str, json: bool) -> Result<()> {
         return Ok(());
     }
     println!(
-        "{:<24} {:<12} {:<14} {}",
-        "NAME", "VERSION", "REPO", "DESCRIPTION"
+        "{:<24} {:<12} {:<14} DESCRIPTION",
+        "NAME", "VERSION", "REPO"
     );
     for record in unique.values() {
         println!(
@@ -206,10 +204,8 @@ fn cmd_list(db: &Db, json: bool) -> Result<()> {
 }
 
 fn cmd_status(db: &Db, paths: &Paths, config: &Config, check: bool, json: bool) -> Result<()> {
-    if check {
-        if let Err(error) = cmd_update(db, paths, config) {
-            eprintln!("warning: metadata refresh failed; using cached index: {error}");
-        }
+    if check && let Err(error) = cmd_update(db, paths, config) {
+        eprintln!("warning: metadata refresh failed; using cached index: {error}");
     }
     let installed = db.list_installed()?;
     let mut outdated = 0usize;
@@ -251,10 +247,7 @@ fn cmd_status(db: &Db, paths: &Paths, config: &Config, check: bool, json: bool) 
         println!("no packages installed");
         return Ok(());
     }
-    println!(
-        "{:<24} {:<12} {:<12} {}",
-        "NAME", "INSTALLED", "LATEST", "STATUS"
-    );
+    println!("{:<24} {:<12} {:<12} STATUS", "NAME", "INSTALLED", "LATEST");
     for row in &rows {
         println!(
             "{:<24} {:<12} {:<12} {}",
@@ -341,6 +334,7 @@ fn cmd_install(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn install_spec(
     db: &Db,
     paths: &Paths,
@@ -386,14 +380,15 @@ fn install_one(
 ) -> Result<()> {
     let manifest = &record.manifest;
     let existing = db.installed(&manifest.name)?;
-    if let Some(current) = &existing {
-        if current.version == manifest.version && !force {
-            println!(
-                "{} {} is already installed",
-                manifest.name, manifest.version
-            );
-            return Ok(());
-        }
+    if let Some(current) = &existing
+        && current.version == manifest.version
+        && !force
+    {
+        println!(
+            "{} {} is already installed",
+            manifest.name, manifest.version
+        );
+        return Ok(());
     }
 
     let mut seen_commands = HashSet::new();
@@ -930,10 +925,10 @@ fn cmd_cleanup(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
         for version in versions.into_iter().flatten() {
             let manifest_path =
                 store::version_dir(paths, &item.name, &version).join("rivet-manifest.json");
-            if let Ok(text) = fs::read_to_string(manifest_path) {
-                if let Ok(manifest) = serde_json::from_str::<PackageManifest>(&text) {
-                    keep_hashes.insert(manifest.sha256.to_ascii_lowercase());
-                }
+            if let Ok(text) = fs::read_to_string(manifest_path)
+                && let Ok(manifest) = serde_json::from_str::<PackageManifest>(&text)
+            {
+                keep_hashes.insert(manifest.sha256.to_ascii_lowercase());
             }
         }
     }

@@ -11,7 +11,7 @@ This is the lean, individual-developer version of Rivet. It deliberately keeps o
 5. Installed versions are immutable directories. The active version is a `current` junction.
 6. App commands are native `rv-shim.exe` shims. There is one PATH entry, not one PATH entry per app.
 7. `rv update` refreshes metadata. `rv upgrade` changes installed packages. `rv install` never runs a full metadata update implicitly.
-8. Packages are portable archives by default. There is no arbitrary install hook and no MSI/EXE system-installer channel in this MVP.
+8. Packages are portable archives by default. There is no arbitrary install hook and no MSI/EXE system-installer channel in this beta.
 
 ## Components
 
@@ -33,8 +33,11 @@ main repo (Git) --CI--> index.json / artifacts --> GitHub Pages or Release
 |---|---|
 | `rv update` | Refresh main index and taps. Never changes installed packages. |
 | `rv upgrade` | Upgrade selected or all installed packages. Uses cached metadata. |
-| `rv install` | Install packages. Refreshes only when the package is unknown, or with `--refresh` in a future version. |
-| `rv status` | Show installed versions and available updates. `--check` refreshes metadata first. |
+| `rv install` | Install packages and dependencies. Never refreshes metadata implicitly. |
+| `rv status` | Show installed versions and available updates. `--check` refreshes metadata and falls back to the cached index on failure. |
+| `rv pin` / `rv unpin` | Hold or release a package at its current version. |
+| `rv verify` | Check store paths, current links, shims, and recorded versions. |
+| `rv doctor --fix` | Repair broken current links and missing shims when the store is intact. |
 | `rv tap add` | Clone a third-party Git tap and build its local index if needed. |
 
 ## Repository and index
@@ -55,7 +58,7 @@ The index is deliberately a single file. For a personal repository with tens to 
 
 A tap is a Git repository with `packages/*.toml` and optionally a checked-in `index.json`. When no index exists, `rv update` builds one in the tap directory. Tap packages use the namespace `owner/repo/package` in commands and `owner/repo` in metadata.
 
-Taps are trusted explicitly. There is no central verification tier in this MVP. A future public release should add minisign/Ed25519 signatures and a verified-repository list; it should not add a daemon.
+Taps are trusted explicitly. There is no central verification tier. Tap indexes may be signed with the same Ed25519 mechanism as the main index, but an unsigned tap remains usable; adding the tap is the trust decision.
 
 ## Storage and lifecycle
 
@@ -92,7 +95,7 @@ Upgrade installs the new version separately and switches the junction. The old v
 | Rust, not C# | Native startup, low memory, one binary, good file/HTTP concurrency | More Windows API plumbing than C# |
 | Generated index, not Git on client | No bucket scans, no Git pulls in the hot path | Depends on index hosting |
 | Upstream artifact URLs | No storage or legal burden for a solo developer | Download speed depends on the vendor |
-| No repository signatures | Smallest viable trust model for personal use | Repository compromise is not mitigated |
+| Optional Ed25519 index signatures | The maintainer can pin a key; HTTP indexes fail closed | Key distribution and rotation are manual |
 | Native shims | Per-app environment and no PATH bloat | Small process-launch overhead |
 | Portable-only | Clean uninstall and predictable behavior | Many Windows GUI apps are out of scope |
 | Single index file | Simple to build and cache | Does not scale to tens of thousands of packages |
@@ -104,13 +107,13 @@ Upgrade installs the new version separately and switches the junction. The old v
 - Artifact unreachable: install fails before activation; existing current version is untouched.
 - Bad archive: extraction fails into a temp directory; temp directory is removed.
 - Failed upgrade: old `current` junction remains until the new version is fully staged; the switch is the last step.
-- Corrupt SQLite: `rv doctor` should be used to inspect; the store remains authoritative.
-- Shim binary missing: install fails with an actionable message; run `cargo build --bins`.
+- Corrupt SQLite: `rv doctor` reports filesystem state; the store remains authoritative.
+- Shim binary missing: install fails with an actionable message; run `cargo build --bins` or `rv init` from a release zip.
+- Interrupted mutation: the next mutating command clears staging directories and orphan shims; `rv doctor --fix` repairs the rest.
 
 ## Roadmap
 
 - `rv lock`/`rv sync` for reproducible environment snapshots.
-- Optional minisign signatures.
 - Optional artifact mirror per package.
 - A proper dependency solver only when real packages need it.
-- Code signing and a polished bootstrap installer.
+- Code signing for the binaries and a smaller bootstrap installer.
