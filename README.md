@@ -34,7 +34,7 @@ Implemented:
 - `rv tap add`, `rv tap list`, `rv tap remove`
 - `rv repo build`: generate `index.json` from `packages/*.toml`
 - `rv config path|get|set`
-- `rv init`: add the Rivet bin directory to the user PATH
+- `rv init`: install a copy of `rv.exe`/`rv-shim.exe` into the Rivet bin directory and add it to the user PATH
 
 Not implemented in this MVP:
 

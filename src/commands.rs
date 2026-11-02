@@ -758,8 +758,50 @@ fn cmd_config(paths: &Paths, command: ConfigCommands) -> Result<()> {
     }
 }
 
+fn install_self(paths: &Paths) -> Result<()> {
+    let current = std::env::current_exe().context("locating current executable")?;
+    let rv_destination = paths.bin.join("rv.exe");
+    let same = current
+        .canonicalize()
+        .ok()
+        .zip(rv_destination.canonicalize().ok())
+        .is_some_and(|(left, right)| left == right);
+    if !same {
+        fs::copy(&current, &rv_destination).with_context(|| {
+            format!(
+                "copying {} to {}",
+                current.display(),
+                rv_destination.display()
+            )
+        })?;
+    }
+    let shim_source = current
+        .parent()
+        .context("current executable has no parent")?
+        .join("rv-shim.exe");
+    if shim_source.exists() {
+        let shim_destination = paths.bin.join("rv-shim.exe");
+        let same_shim = shim_source
+            .canonicalize()
+            .ok()
+            .zip(shim_destination.canonicalize().ok())
+            .is_some_and(|(left, right)| left == right);
+        if !same_shim {
+            fs::copy(&shim_source, &shim_destination).with_context(|| {
+                format!(
+                    "copying {} to {}",
+                    shim_source.display(),
+                    shim_destination.display()
+                )
+            })?;
+        }
+    }
+    Ok(())
+}
+
 fn cmd_init(paths: &Paths) -> Result<()> {
     paths.ensure_layout()?;
+    install_self(paths)?;
     let bin = paths.bin.to_string_lossy().to_string();
     let current = user_path()?;
     let already = current.split(';').any(|part| {
