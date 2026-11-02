@@ -106,35 +106,12 @@ pub fn install_shims(
     package: &str,
     bins: &[BinSpec],
 ) -> Result<Vec<(String, PathBuf, PathBuf)>> {
-    let _base = ensure_base_shim(paths)?;
+    let base = ensure_base_shim(paths)?;
     let mut created = Vec::new();
     for bin in bins {
         let command = bin.command_name();
         let target = current_link(paths, package).join(bin.path());
-        let extension = Path::new(bin.path())
-            .extension()
-            .and_then(|value| value.to_str())
-            .unwrap_or("")
-            .to_ascii_lowercase();
         let sidecar_path = paths.bin.join(format!("{command}.rvshim"));
-        if extension == "cmd" || extension == "bat" {
-            let shim_path = paths.bin.join(format!("{command}.cmd"));
-            remove_shim_files(paths, &command)?;
-            let mut content = String::from("@echo off\r\n");
-            content.push_str(&format!("call \"{}\"", target.display()));
-            for arg in bin.args() {
-                content.push(' ');
-                content.push_str(&format!("\"{}\"", arg.replace('"', "\"\"")));
-            }
-            content.push_str(" %*\r\n");
-            content.push_str("exit /b %errorlevel%\r\n");
-            fs::write(&shim_path, content)
-                .with_context(|| format!("writing {}", shim_path.display()))?;
-            created.push((command, shim_path, sidecar_path));
-            continue;
-        }
-
-        let base = ensure_base_shim(paths)?;
         let shim_path = paths.bin.join(format!("{command}.exe"));
         remove_shim_files(paths, &command)?;
         match fs::hard_link(&base, &shim_path) {

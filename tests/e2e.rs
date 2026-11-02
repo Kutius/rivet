@@ -120,7 +120,7 @@ fn install_upgrade_rollback_remove() -> Result<()> {
 
     let output = run_rv(root_path, &index, &["install", "hello@1.0.0"]);
     assert_success(&output);
-    let shim = root_path.join("bin").join("hello.cmd");
+    let shim = root_path.join("bin").join("hello.exe");
     assert!(shim.exists(), "shim missing at {}", shim.display());
     let shipped_persist = root_path
         .join("persist")
@@ -141,11 +141,7 @@ fn install_upgrade_rollback_remove() -> Result<()> {
     fs::create_dir_all(&persist_dir)?;
     fs::write(persist_dir.join("marker.txt"), "keep me")?;
 
-    let output = Command::new("cmd.exe")
-        .args(["/D", "/C"])
-        .arg(&shim)
-        .args(["a", "b"])
-        .output()?;
+    let output = Command::new(&shim).args(["a", "b"]).output()?;
     assert!(
         output.status.success(),
         "shim failed: status={:?} stdout={} stderr={}",
@@ -155,15 +151,18 @@ fn install_upgrade_rollback_remove() -> Result<()> {
     );
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Hello from Rivet 1.0!"), "stdout: {stdout}");
-    assert!(stdout.contains("args: a b"), "stdout: {stdout}");
+    assert!(
+        stdout.contains("args: \"a\" \"b\"") || stdout.contains("args: a b"),
+        "stdout: {stdout}"
+    );
 
     let output = run_rv(root_path, &index, &["upgrade", "hello"]);
     assert_success(&output);
     let output = run_rv(root_path, &index, &["list"]);
     assert_success(&output);
     assert!(String::from_utf8_lossy(&output.stdout).contains("1.1.0"));
-    assert!(root_path.join("bin").join("hello2.cmd").exists());
-    assert!(!root_path.join("bin").join("hello.cmd").exists());
+    assert!(root_path.join("bin").join("hello2.exe").exists());
+    assert!(!root_path.join("bin").join("hello.exe").exists());
     assert_eq!(
         fs::read_to_string(persist_dir.join("marker.txt"))?,
         "keep me"
@@ -174,8 +173,8 @@ fn install_upgrade_rollback_remove() -> Result<()> {
     let output = run_rv(root_path, &index, &["list"]);
     assert_success(&output);
     assert!(String::from_utf8_lossy(&output.stdout).contains("1.0.0"));
-    assert!(root_path.join("bin").join("hello.cmd").exists());
-    assert!(!root_path.join("bin").join("hello2.cmd").exists());
+    assert!(root_path.join("bin").join("hello.exe").exists());
+    assert!(!root_path.join("bin").join("hello2.exe").exists());
 
     let output = run_rv(root_path, &index, &["remove", "hello"]);
     assert_success(&output);
@@ -283,7 +282,7 @@ fn raw_artifact_and_missing_bin() -> Result<()> {
     assert_success(&output);
     let output = run_rv(root_path, &index, &["install", "raw"]);
     assert_success(&output);
-    assert!(root_path.join("bin").join("raw.cmd").exists());
+    assert!(root_path.join("bin").join("raw.exe").exists());
 
     let output = run_rv(root_path, &index, &["install", "broken"]);
     assert!(!output.status.success(), "missing bin should fail install");

@@ -67,7 +67,7 @@ $env:RIVET_MAIN_INDEX = (Resolve-Path "repo\main\index.json").Path
 .\target\release\rv.exe list
 ~~~
 
-The demo package installs a shim at `$env:RIVET_ROOT\bin\hello.cmd`; `.cmd`/`.bat` targets use a thin wrapper because Windows cannot execute batch files directly.
+The demo package installs a native shim at `$env:RIVET_ROOT\bin\hello.exe`.
 
 To add the Rivet bin directory to the user PATH:
 

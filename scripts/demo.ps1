@@ -25,7 +25,7 @@ try {
     & $rv search hello
     & $rv install hello
     & $rv list
-    & (Join-Path $root "bin\hello.cmd") demo
+    & (Join-Path $root "bin\hello.exe") demo
 }
 finally {
     Pop-Location

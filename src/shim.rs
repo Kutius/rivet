@@ -1,5 +1,7 @@
 use crate::store::ShimSpec;
 use anyhow::{Context, Result, bail};
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -18,6 +20,10 @@ pub fn run_from_current_exe() -> Result<()> {
     run_spec(&spec, &user_args)
 }
 
+fn cmd_quote(value: &str) -> String {
+    format!("\"{}\"", value.replace('"', "\"\""))
+}
+
 fn run_spec(spec: &ShimSpec, user_args: &[String]) -> Result<()> {
     let target = Path::new(&spec.target);
     if !target.exists() {
@@ -31,7 +37,18 @@ fn run_spec(spec: &ShimSpec, user_args: &[String]) -> Result<()> {
     let mut all_args = spec.args.clone();
     all_args.extend_from_slice(user_args);
 
-    let mut command = if extension == "ps1" {
+    let mut command = if extension == "cmd" || extension == "bat" {
+        let mut cmd = Command::new("cmd.exe");
+        let mut line = String::from("/D /C \"");
+        line.push_str(&cmd_quote(&target.to_string_lossy()));
+        for arg in &all_args {
+            line.push(' ');
+            line.push_str(&cmd_quote(arg));
+        }
+        line.push('"');
+        cmd.raw_arg(line);
+        cmd
+    } else if extension == "ps1" {
         let mut cmd = Command::new("powershell.exe");
         cmd.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]);
         cmd.arg(target);
