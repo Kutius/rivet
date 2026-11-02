@@ -43,6 +43,16 @@ pub struct Db {
     pub conn: Connection,
 }
 
+fn rebuild_fts_tx(conn: &Connection) -> Result<()> {
+    conn.execute("DELETE FROM packages_fts", [])?;
+    conn.execute(
+        "INSERT INTO packages_fts(rowid, name, description, tags, binaries)
+         SELECT id, name, description, tags, binaries FROM packages",
+        [],
+    )?;
+    Ok(())
+}
+
 impl Db {
     pub fn open(path: &Path) -> Result<Self> {
         if let Some(parent) = path.parent() {
@@ -185,8 +195,8 @@ impl Db {
         let tx = self.conn.unchecked_transaction()?;
         tx.execute("DELETE FROM packages WHERE repo = ?1", params![name])?;
         tx.execute("DELETE FROM repos WHERE name = ?1", params![name])?;
+        rebuild_fts_tx(&tx)?;
         tx.commit()?;
-        self.rebuild_fts()?;
         Ok(())
     }
 
@@ -215,18 +225,13 @@ impl Db {
                 ])?;
             }
         }
+        rebuild_fts_tx(&tx)?;
         tx.commit()?;
-        self.rebuild_fts()?;
         Ok(())
     }
 
     pub fn rebuild_fts(&self) -> Result<()> {
-        self.conn.execute("DELETE FROM packages_fts", [])?;
-        self.conn.execute(
-            "INSERT INTO packages_fts(rowid, name, description, tags, binaries)
-             SELECT id, name, description, tags, binaries FROM packages",
-            [],
-        )?;
+        rebuild_fts_tx(&self.conn)?;
         Ok(())
     }
 
@@ -464,6 +469,42 @@ impl Db {
         Ok(())
     }
 
+    /// Persist the installed row and the package's shim rows in one transaction.
+    pub fn save_install_state(&self, record: &InstalledRecord, shims: &[ShimRecord]) -> Result<()> {
+        let tx = self.conn.unchecked_transaction()?;
+        tx.execute(
+            "INSERT INTO installed(name, repo, version, previous_version, store_path, installed_at, pinned)
+             VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)
+             ON CONFLICT(name) DO UPDATE SET
+                repo=excluded.repo,
+                version=excluded.version,
+                previous_version=excluded.previous_version,
+                store_path=excluded.store_path,
+                installed_at=excluded.installed_at,
+                pinned=excluded.pinned",
+            params![
+                record.name,
+                record.repo,
+                record.version,
+                record.previous_version,
+                record.store_path,
+                record.installed_at,
+                if record.pinned { 1 } else { 0 }
+            ],
+        )?;
+        tx.execute("DELETE FROM shims WHERE package = ?1", params![record.name])?;
+        for shim in shims {
+            tx.execute(
+                "INSERT INTO shims(command, package, target, sidecar) VALUES(?1, ?2, ?3, ?4)
+                 ON CONFLICT(command) DO UPDATE SET
+                    package=excluded.package, target=excluded.target, sidecar=excluded.sidecar",
+                params![shim.command, shim.package, shim.target, shim.sidecar],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     pub fn set_pinned(&self, name: &str, pinned: bool) -> Result<()> {
         self.conn.execute(
             "UPDATE installed SET pinned = ?1 WHERE name = ?2",
@@ -532,5 +573,69 @@ impl Db {
         self.conn
             .execute("DELETE FROM shims WHERE command = ?1", params![command])?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::INDEX_SCHEMA;
+
+    fn manifest(name: &str, version: &str) -> PackageManifest {
+        PackageManifest {
+            name: name.to_string(),
+            version: version.to_string(),
+            description: String::new(),
+            homepage: String::new(),
+            license: String::new(),
+            tags: Vec::new(),
+            arch: None,
+            url: "artifact.zip".to_string(),
+            sha256: "0".repeat(64),
+            extract: None,
+            strip_components: None,
+            bin: vec![crate::model::BinSpec::Simple("tool.exe".to_string())],
+            depends: Vec::new(),
+            persist: Vec::new(),
+        }
+    }
+
+    fn index(packages: Vec<PackageManifest>) -> IndexFile {
+        IndexFile {
+            schema: INDEX_SCHEMA,
+            generated_at: String::new(),
+            packages,
+        }
+    }
+
+    #[test]
+    fn failed_index_replacement_keeps_the_previous_index() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let db = Db::open(&dir.path().join("state.db")).unwrap();
+        db.upsert_repo(&RepoRecord {
+            name: "main".to_string(),
+            kind: "main".to_string(),
+            location: "test".to_string(),
+            priority: 0,
+            enabled: true,
+            updated_at: None,
+        })
+        .unwrap();
+        db.replace_repo_packages("main", &index(vec![manifest("alpha", "1.0.0")]))
+            .unwrap();
+        assert_eq!(db.search("", 100).unwrap().len(), 1);
+
+        let duplicate = index(vec![manifest("beta", "1.0.0"), manifest("beta", "1.0.0")]);
+        assert!(
+            db.replace_repo_packages("main", &duplicate).is_err(),
+            "duplicate package versions must fail the replacement"
+        );
+        let packages = db.search("", 100).unwrap();
+        assert_eq!(
+            packages.len(),
+            1,
+            "old index must survive a failed replacement"
+        );
+        assert_eq!(packages[0].manifest.name, "alpha");
     }
 }

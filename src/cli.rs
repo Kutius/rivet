@@ -53,6 +53,8 @@ pub enum Commands {
         packages: Vec<String>,
         #[arg(long, help = "Also delete persist data")]
         purge: bool,
+        #[arg(long, help = "Remove even if another package depends on it")]
+        force: bool,
     },
     /// Upgrade installed packages
     Upgrade {
@@ -65,7 +67,10 @@ pub enum Commands {
     /// Remove old store versions and stale cache entries
     Cleanup,
     /// Check the Rivet installation for common problems
-    Doctor,
+    Doctor {
+        #[arg(long, help = "Repair broken links and missing shims")]
+        fix: bool,
+    },
     /// Manage third-party taps
     Tap {
         #[command(subcommand)]

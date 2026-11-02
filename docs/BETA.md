@@ -26,14 +26,22 @@ Evidence:
 
 ### B2. Mutation safety
 
-- [ ] One rv mutation at a time: install, remove, upgrade, rollback, cleanup, tap changes, config writes, and update use a process lock.
-- [ ] A crashed process cannot leave a permanent lock; stale-lock behavior is documented.
-- [ ] Removing a package that others depend on is blocked with an actionable message; an explicit force override exists.
-- [ ] rv doctor --fix repairs broken current links and missing shims when the store still contains the version.
-- [ ] Index replacement and installed-state writes are transactional.
-- [ ] Interrupted installs leave no active package, no orphan shim, and no partial version visible in rv list.
+- [x] One rv mutation at a time: install, remove, upgrade, rollback, cleanup, tap changes, config writes, and update use a process lock.
+- [x] A crashed process cannot leave a permanent lock; stale-lock behavior is documented.
+- [x] Removing a package that others depend on is blocked with an actionable message; an explicit force override exists.
+- [x] rv doctor --fix repairs broken current links and missing shims when the store still contains the version.
+- [x] Index replacement and installed-state writes are transactional.
+- [x] Interrupted installs leave no active package, no orphan shim, and no partial version visible in rv list.
 
 Evidence:
+
+- Lock: `src/lock.rs` holds an exclusive file handle for the whole command. `src/commands.rs::is_mutating` covers `update`, `install`, `remove`, `upgrade`, `rollback`, `cleanup`, `tap add/remove`, `config set`, `init`, and `doctor --fix`; read-only commands take no lock. Tests: `tests/safety.rs::mutation_lock_blocks_concurrent_commands` (a held lock makes `rv update` fail with "another rv process"; releasing it succeeds and the lock file is removed) and the unit tests `lock::tests::second_lock_is_refused_until_the_first_is_dropped`, `lock::tests::a_leftover_lock_file_does_not_block`.
+- Stale locks: the lock is an OS-held handle with `share_mode(0)`. Windows releases it when the process exits, including a crash, so a leftover file is not a lock. Documented in README "Concurrency and recovery".
+- Reverse dependencies: `src/commands.rs::reverse_dependents` blocks `rv remove` with "cannot remove ... depend on it ... pass --force"; `Remove --force` overrides. Test: `tests/safety.rs::remove_blocks_reverse_dependencies_until_forced` (install `app` -> `lib`; `rv remove lib` fails and keeps the shim; `rv remove lib --force` succeeds).
+- Doctor repair: `cmd_doctor` now checks every installed store path, `current` junction target, and each manifest bin shim. `--fix` recreates the junction and shims through the existing store/reconcile paths and persists them with `Db::save_install_state`. Tests: `doctor_fix_repairs_broken_link_and_missing_shim` (deleted junction and shim are restored), `doctor_reports_missing_store_as_unrepairable`.
+- Transactions: `src/db.rs::replace_repo_packages` and `remove_repo` rebuild FTS inside the same transaction as the package rows; `save_install_state` writes the installed row and all shim rows in one transaction. Test: `db::tests::failed_index_replacement_keeps_the_previous_index` (a duplicate-version replacement fails and the old index is still queryable).
+- Interrupted installs: `src/store.rs::recover_interrupted` runs at the start of every mutating command, deleting `store/<name>/.tmp-*` staging directories and shim files without a database record; `rv list` reads only the database, so an uncommitted version is never listed. Test: `tests/safety.rs::interrupted_install_artifacts_are_cleaned`.
+- Verification: `cargo test --offline` -> 4 e2e + 6 trust + 5 safety + 3 unit tests, all pass.
 
 ### B3. Lifecycle completeness
 

@@ -5,6 +5,7 @@ pub mod config;
 pub mod db;
 pub mod download;
 pub mod index;
+pub mod lock;
 pub mod model;
 pub mod repo;
 pub mod shim;

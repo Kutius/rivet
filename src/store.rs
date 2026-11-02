@@ -239,6 +239,46 @@ pub fn ensure_persist_junction(
     Ok(())
 }
 
+/// Remove artifacts of an interrupted install: staging directories under the
+/// store and shim files that have no database record. Safe to run at the start
+/// of every mutating command.
+pub fn recover_interrupted(paths: &Paths, db: &crate::db::Db) -> Result<()> {
+    if paths.store.is_dir() {
+        for app in fs::read_dir(&paths.store)? {
+            let app = app?;
+            if !app.file_type()?.is_dir() {
+                continue;
+            }
+            for entry in fs::read_dir(app.path())? {
+                let entry = entry?;
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.starts_with(".tmp-") {
+                    let _ = fs::remove_dir_all(entry.path());
+                }
+            }
+        }
+    }
+
+    let known: std::collections::HashSet<String> = db
+        .all_shims()?
+        .into_iter()
+        .map(|shim| shim.command.to_ascii_lowercase())
+        .collect();
+    if paths.bin.is_dir() {
+        for entry in fs::read_dir(&paths.bin)? {
+            let entry = entry?;
+            let file_name = entry.file_name().to_string_lossy().to_string();
+            if let Some(command) = file_name.strip_suffix(".rvshim") {
+                if !known.contains(&command.to_ascii_lowercase()) {
+                    let _ = fs::remove_file(paths.bin.join(format!("{command}.exe")));
+                    let _ = fs::remove_file(entry.path());
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn remove_tree(path: &Path) -> Result<()> {
     if path.exists() {
         if path.is_dir() {

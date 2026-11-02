@@ -17,3 +17,15 @@
 - Docs: README "Signing the index", new `docs/SECURITY.md`, `docs/BETA.md` B1 evidence, `.gitignore` ignores `*.key`.
 - Remaining P0: B2–B8. Clippy still reports pre-existing style warnings in `src/commands.rs`, `src/repo.rs`, and `src/store.rs` (B7).
 - Next: B2 mutation safety — process lock with stale-lock recovery, reverse-dependency protection with `--force`, and `rv doctor --fix`.
+
+## Round 2 — B2 mutation safety
+
+- Added `src/lock.rs`: `LockGuard` owns the open file handle (exclusive `share_mode(0)`), so the OS releases the lock on process exit and a crashed process cannot leave a permanent lock. `rv` acquires it for every mutating command (`update`, `install`, `remove`, `upgrade`, `rollback`, `cleanup`, `tap add/remove`, `config set`, `init`, `doctor --fix`); read-only commands stay lock-free.
+- `rv remove` now refuses to remove a package that another installed package depends on, with an actionable message and a `--force` override.
+- `rv doctor --fix` repairs a broken `current` junction and missing shims from the intact store; a missing store is reported as unrepairable. `rv doctor` (without `--fix`) labels repairable problems.
+- Index replacement (package rows + FTS) and installed-state writes (installed row + shim rows) are now single transactions. `Db::save_install_state` replaced the separate `save_installed`/`save_shim` calls.
+- `store::recover_interrupted` runs at the start of every mutating command: removes `store/<name>/.tmp-*` staging directories and shim files that have no database record.
+- Tests: new `tests/safety.rs` (5 tests) and unit tests in `src/lock.rs` (2) and `src/db.rs` (1). Suite: 4 e2e + 6 trust + 5 safety + 3 unit, all pass.
+- Docs: README "Concurrency and recovery", docs/BETA.md B2 evidence.
+- Remaining P0: B3–B8 (pin/verify, init PATH broadcast, JSON output, docs set, clippy, performance). Clippy still has pre-existing style warnings.
+- Next: B3 lifecycle completeness — `rv pin`/`rv unpin`, `rv verify`, and rollback coverage after failed upgrade and doctor repair.

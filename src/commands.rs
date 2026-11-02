@@ -4,6 +4,7 @@ use crate::config::{Config, Paths};
 use crate::db::{Db, InstalledRecord, PackageRecord, ShimRecord};
 use crate::download;
 use crate::index;
+use crate::lock;
 use crate::model::{BinSpec, PackageManifest, compare_manifests};
 use crate::repo;
 use crate::store;
@@ -30,11 +31,19 @@ pub fn run(cli: Cli) -> Result<()> {
         return Ok(());
     }
     paths.ensure_layout()?;
+    let lock_guard = if is_mutating(&cli.command) {
+        Some(lock::acquire(&paths)?)
+    } else {
+        None
+    };
     let mut config = Config::load(&paths)?;
     if insecure {
         config.allow_unsigned_remote = true;
     }
     let db = Db::open(&paths.db_file)?;
+    if lock_guard.is_some() {
+        store::recover_interrupted(&paths, &db)?;
+    }
 
     match cli.command {
         Commands::Update => cmd_update(&db, &paths, &config),
@@ -47,15 +56,38 @@ pub fn run(cli: Cli) -> Result<()> {
             no_deps,
             force,
         } => cmd_install(&db, &paths, &config, &packages, no_deps, force),
-        Commands::Remove { packages, purge } => cmd_remove(&db, &paths, &packages, purge),
+        Commands::Remove {
+            packages,
+            purge,
+            force,
+        } => cmd_remove(&db, &paths, &packages, purge, force),
         Commands::Upgrade { packages, all } => cmd_upgrade(&db, &paths, &config, &packages, all),
         Commands::Rollback { packages } => cmd_rollback(&db, &paths, &packages),
         Commands::Cleanup => cmd_cleanup(&db, &paths, &config),
-        Commands::Doctor => cmd_doctor(&db, &paths),
+        Commands::Doctor { fix } => cmd_doctor(&db, &paths, fix),
         Commands::Tap { command } => cmd_tap(&db, &paths, command, &config.trust()),
         Commands::Repo { command } => cmd_repo(command),
         Commands::Config { command } => cmd_config(&paths, command),
         Commands::Init => cmd_init(&paths),
+    }
+}
+
+fn is_mutating(command: &Commands) -> bool {
+    match command {
+        Commands::Update
+        | Commands::Install { .. }
+        | Commands::Remove { .. }
+        | Commands::Upgrade { .. }
+        | Commands::Rollback { .. }
+        | Commands::Cleanup
+        | Commands::Init => true,
+        Commands::Tap { command } => matches!(
+            command,
+            TapCommands::Add { .. } | TapCommands::Remove { .. }
+        ),
+        Commands::Config { command } => matches!(command, ConfigCommands::Set { .. }),
+        Commands::Doctor { fix } => *fix,
+        _ => false,
     }
 }
 
@@ -389,7 +421,7 @@ fn install_one(
 
     store::switch_current(paths, &manifest.name, &manifest.version)?;
 
-    reconcile_shims(db, paths, &manifest.name, manifest)?;
+    let shims = reconcile_shims(db, paths, &manifest.name, manifest)?;
 
     let previous = existing.as_ref().and_then(|item| {
         if item.version != manifest.version {
@@ -398,15 +430,18 @@ fn install_one(
             item.previous_version.clone()
         }
     });
-    db.save_installed(&InstalledRecord {
-        name: manifest.name.clone(),
-        repo: record.repo.clone(),
-        version: manifest.version.clone(),
-        previous_version: previous,
-        store_path: version_dir.to_string_lossy().to_string(),
-        installed_at: chrono::Utc::now().to_rfc3339(),
-        pinned: existing.as_ref().is_some_and(|item| item.pinned),
-    })?;
+    db.save_install_state(
+        &InstalledRecord {
+            name: manifest.name.clone(),
+            repo: record.repo.clone(),
+            version: manifest.version.clone(),
+            previous_version: previous,
+            store_path: version_dir.to_string_lossy().to_string(),
+            installed_at: chrono::Utc::now().to_rfc3339(),
+            pinned: existing.as_ref().is_some_and(|item| item.pinned),
+        },
+        &shims,
+    )?;
     println!(
         "installed {} {} ({} command{})",
         manifest.name,
@@ -422,12 +457,12 @@ fn reconcile_shims(
     paths: &Paths,
     package: &str,
     manifest: &PackageManifest,
-) -> Result<()> {
+) -> Result<Vec<ShimRecord>> {
     for shim in db.shims_for_package(package)? {
         store::remove_shim_files(paths, &shim.command)?;
-        db.remove_shim(&shim.command)?;
     }
     let created = store::install_shims(paths, package, &manifest.bin)?;
+    let mut records = Vec::new();
     for (command, _shim_path, sidecar_path) in &created {
         let target = store::current_link(paths, package).join(
             manifest
@@ -437,22 +472,36 @@ fn reconcile_shims(
                 .map(BinSpec::path)
                 .unwrap_or(""),
         );
-        db.save_shim(&ShimRecord {
+        records.push(ShimRecord {
             command: command.clone(),
             package: package.to_string(),
             target: target.to_string_lossy().to_string(),
             sidecar: sidecar_path.to_string_lossy().to_string(),
-        })?;
+        });
     }
-    Ok(())
+    Ok(records)
 }
 
-fn cmd_remove(db: &Db, paths: &Paths, specs: &[String], purge: bool) -> Result<()> {
+fn cmd_remove(db: &Db, paths: &Paths, specs: &[String], purge: bool, force: bool) -> Result<()> {
     if specs.is_empty() {
         bail!("specify at least one package");
     }
+    let mut names = Vec::new();
     for spec in specs {
-        let name = installed_name(db, spec)?;
+        names.push(installed_name(db, spec)?);
+    }
+    if !force {
+        for name in &names {
+            let dependents = reverse_dependents(db, name)?;
+            if !dependents.is_empty() {
+                bail!(
+                    "cannot remove '{name}': installed package(s) {} depend on it.\n  Remove the dependents first, or pass --force to remove it anyway.",
+                    dependents.join(", ")
+                );
+            }
+        }
+    }
+    for name in names {
         for shim in db.shims_for_package(&name)? {
             store::remove_shim_files(paths, &shim.command)?;
         }
@@ -560,16 +609,19 @@ fn cmd_rollback(db: &Db, paths: &Paths, specs: &[String]) -> Result<()> {
         let manifest_text = fs::read_to_string(&manifest_path)
             .with_context(|| format!("reading {}", manifest_path.display()))?;
         let manifest: PackageManifest = serde_json::from_str(&manifest_text)?;
-        reconcile_shims(db, paths, &item.name, &manifest)?;
-        db.save_installed(&InstalledRecord {
-            name: item.name.clone(),
-            repo: item.repo.clone(),
-            version: previous.clone(),
-            previous_version: Some(item.version.clone()),
-            store_path: previous_dir.to_string_lossy().to_string(),
-            installed_at: chrono::Utc::now().to_rfc3339(),
-            pinned: item.pinned,
-        })?;
+        let shims = reconcile_shims(db, paths, &item.name, &manifest)?;
+        db.save_install_state(
+            &InstalledRecord {
+                name: item.name.clone(),
+                repo: item.repo.clone(),
+                version: previous.clone(),
+                previous_version: Some(item.version.clone()),
+                store_path: previous_dir.to_string_lossy().to_string(),
+                installed_at: chrono::Utc::now().to_rfc3339(),
+                pinned: item.pinned,
+            },
+            &shims,
+        )?;
         println!("rolled back {} {} -> {}", item.name, item.version, previous);
     }
     Ok(())
@@ -646,18 +698,19 @@ fn cmd_cleanup(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
     Ok(())
 }
 
-fn cmd_doctor(db: &Db, paths: &Paths) -> Result<()> {
+fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
     println!("root:      {}", paths.root.display());
     println!("database:  {}", paths.db_file.display());
     let mut ok = true;
+    let mut repairable = 0usize;
     if !paths.bin.join("rv-shim.exe").exists() {
         println!(
-            "shim:      missing {} (run an install)",
+            "bin:       missing {} (run 'rv init')",
             paths.bin.join("rv-shim.exe").display()
         );
         ok = false;
     } else {
-        println!("shim:      ok");
+        println!("bin:       ok");
     }
     if store::path_contains(paths) {
         println!("PATH:      ok");
@@ -668,24 +721,103 @@ fn cmd_doctor(db: &Db, paths: &Paths) -> Result<()> {
         );
         ok = false;
     }
-    for shim in db.all_shims()? {
-        if !Path::new(&shim.target).exists() {
-            println!("shim:      broken {} -> {}", shim.command, shim.target);
-            ok = false;
-        }
-    }
     for item in db.list_installed()? {
-        if !Path::new(&item.store_path).exists() {
-            println!("install:   missing {} {}", item.name, item.store_path);
+        let store_path = Path::new(&item.store_path);
+        let manifest_path = store_path.join("rivet-manifest.json");
+        if !store_path.is_dir() || !manifest_path.is_file() {
+            println!(
+                "install:   missing store for {} at {} (cannot repair; reinstall it)",
+                item.name, item.store_path
+            );
             ok = false;
+            continue;
+        }
+        let manifest: PackageManifest = serde_json::from_str(&fs::read_to_string(&manifest_path)?)?;
+        let link = store::current_link(paths, &item.name);
+        let link_ok = match (fs::canonicalize(&link), fs::canonicalize(store_path)) {
+            (Ok(link_target), Ok(store_target)) => link_target == store_target,
+            _ => false,
+        };
+        if !link_ok {
+            if fix {
+                store::switch_current(paths, &item.name, &item.version)?;
+                println!("fixed:     current link {} -> {}", item.name, item.version);
+            } else {
+                println!(
+                    "current:   broken link for {} (repairable: rv doctor --fix)",
+                    item.name
+                );
+                repairable += 1;
+                ok = false;
+            }
+        }
+        let missing: Vec<String> = manifest
+            .bin
+            .iter()
+            .map(|bin| bin.command_name())
+            .filter(|command| !paths.bin.join(format!("{command}.exe")).exists())
+            .collect();
+        if !missing.is_empty() {
+            if fix {
+                let shims = reconcile_shims(db, paths, &item.name, &manifest)?;
+                db.save_install_state(&item, &shims)?;
+                println!(
+                    "fixed:     shims for {} ({})",
+                    item.name,
+                    missing.join(", ")
+                );
+            } else {
+                println!(
+                    "shim:      missing {} (repairable: rv doctor --fix)",
+                    missing.join(", ")
+                );
+                repairable += 1;
+                ok = false;
+            }
+        }
+        for shim in db.shims_for_package(&item.name)? {
+            if !Path::new(&shim.target).exists() {
+                println!(
+                    "shim:      broken {} -> {} (repairable: rv doctor --fix)",
+                    shim.command, shim.target
+                );
+                repairable += 1;
+                ok = false;
+            }
         }
     }
     if ok {
         println!("status:    ok");
+    } else if repairable > 0 {
+        println!("status:    issues found ({repairable} repairable with 'rv doctor --fix')");
     } else {
         println!("status:    issues found");
     }
     Ok(())
+}
+
+fn reverse_dependents(db: &Db, target: &str) -> Result<Vec<String>> {
+    let mut result = Vec::new();
+    for item in db.list_installed()? {
+        if item.name == target {
+            continue;
+        }
+        let manifest_path = Path::new(&item.store_path).join("rivet-manifest.json");
+        let Ok(text) = fs::read_to_string(&manifest_path) else {
+            continue;
+        };
+        let Ok(manifest) = serde_json::from_str::<PackageManifest>(&text) else {
+            continue;
+        };
+        if manifest
+            .depends
+            .iter()
+            .any(|dep| parse_spec(dep).1 == target)
+        {
+            result.push(item.name.clone());
+        }
+    }
+    Ok(result)
 }
 
 fn cmd_tap(db: &Db, paths: &Paths, command: TapCommands, trust: &trust::Trust) -> Result<()> {
