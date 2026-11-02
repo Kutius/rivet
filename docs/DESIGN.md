@@ -4,7 +4,7 @@ This is the lean, individual-developer version of Rivet. It deliberately keeps o
 
 ## Principles
 
-1. The client is one native Rust binary. No PowerShell, no script bootstrapping.
+1. The client is a native Rust CLI plus a tiny launcher shim. No PowerShell, no script bootstrapping.
 2. The client never clones the main repository. It downloads a generated `index.json`.
 3. Third-party sources are Homebrew-style taps: normal Git repositories, explicitly added by the user.
 4. Search and package lookup use a local SQLite database. The filesystem remains the source of truth for installed packages.

@@ -1,6 +1,6 @@
 # Rivet
 
-Rivet is a fast, portable-first package manager for Windows, built as one native Rust binary. It keeps the useful parts of Scoop's model without the PowerShell startup, bucket scans, and implicit metadata refreshes.
+Rivet is a fast, portable-first package manager for Windows, built as a native Rust CLI plus a tiny launcher shim. It keeps the useful parts of Scoop's model without the PowerShell startup, bucket scans, and implicit metadata refreshes.
 
 Current release: 0.1.0-beta.3.
 
@@ -17,7 +17,7 @@ Scoop's common commands pay for:
 
 Rivet moves those costs out of the hot path:
 
-- one native Rust binary (rv), no runtime scripts;
+- one native Rust CLI (rv), no runtime scripts; a 280 KB launcher shim only for script commands or systems without symlink permission;
 - a local SQLite index for search and package metadata;
 - a generated main index instead of a client-side Git bucket clone;
 - immutable version directories plus a current junction;
