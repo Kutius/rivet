@@ -15,6 +15,8 @@ pub struct Cli {
         help = "Allow unsigned remote indexes (insecure escape hatch)"
     )]
     pub insecure: bool,
+    #[arg(long, global = true, help = "Print machine-readable JSON")]
+    pub json: bool,
     #[command(subcommand)]
     pub command: Commands,
 }

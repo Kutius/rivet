@@ -49,3 +49,12 @@
 - Release zip verified: `rv.exe`, `rv-shim.exe`, README, LICENSE, docs, internal SHA256SUMS.
 - Remaining P0: B5–B8.
 - Next: B5 JSON output, status --check offline behavior, error/exit-code coverage.
+
+## Round 5 — B5 scriptable output and errors
+
+- Added a global `--json` flag. `rv search`, `rv list`, `rv status`, and `rv info` now emit machine-readable JSON with no table text.
+- `rv status --check` catches a metadata refresh failure, prints a warning on stderr, and reports the cached index instead of failing outright.
+- Added download and extract context in `install_one`; unknown package, missing artifact, bad checksum, and bad archive now have distinct actionable messages.
+- Tests: new `tests/output.rs` with 4 tests (JSON shapes, offline status, missing artifact, unknown package + bad archive). Suite: 30 tests pass.
+- Remaining P0: B6–B8.
+- Next: B6 docs and release hygiene, then B7 fmt/clippy/CI, then B8 performance.

@@ -77,12 +77,18 @@ Evidence:
 
 ### B5. Scriptable output and errors
 
-- [ ] rv search, rv list, rv status, and rv info support machine-readable JSON.
-- [ ] Commands use non-zero exit codes for failure; errors do not print success text before failing.
-- [ ] rv install of an unknown package, failed download, bad checksum, and bad archive each produce a distinct actionable error.
-- [ ] rv status --check remains usable when the network is unavailable and reports the cached state honestly.
+- [x] rv search, rv list, rv status, and rv info support machine-readable JSON.
+- [x] Commands use non-zero exit codes for failure; errors do not print success text before failing.
+- [x] rv install of an unknown package, failed download, bad checksum, and bad archive each produce a distinct actionable error.
+- [x] rv status --check remains usable when the network is unavailable and reports the cached state honestly.
 
 Evidence:
+
+- Global `--json` in `src/cli.rs`, implemented for `search`, `list`, `status`, and `info` in `src/commands.rs`. JSON is printed as the only stdout payload; empty lists print `[]`.
+- Tests, `tests/output.rs`: `json_views_are_machine_readable` parses all four JSON shapes and checks the status fields; `status_check_falls_back_to_cached_metadata` points `RIVET_MAIN_INDEX` at a closed local port, asserts success, cached `1.0.0` output, and a `metadata refresh failed` warning on stderr.
+- Error paths: `unknown_package_and_bad_archive_fail_with_actionable_errors` asserts unknown package exit code 1 and `not found`; bad zip fails with an `extracting` context. `missing_artifact_reports_a_download_error` asserts `downloading` and the missing filename. Bad checksum is covered by `tests/trust.rs::bad_checksum_is_rejected_before_extraction`.
+- Context: `src/commands.rs::install_one` adds `downloading <url>` and `extracting <url>` context around the cache and archive steps.
+- Result: 30 tests pass (5 unit + 4 e2e + 3 install + 3 lifecycle + 4 output + 5 safety + 6 trust).
 
 ### B6. Documentation and release hygiene
 

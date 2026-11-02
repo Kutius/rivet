@@ -19,6 +19,7 @@ use std::process::Command;
 pub fn run(cli: Cli) -> Result<()> {
     download::init_crypto();
     let insecure = cli.insecure;
+    let json = cli.json;
     let paths = Paths::discover()?;
     if let Commands::Repo { command } = &cli.command {
         return cmd_repo(command.clone());
@@ -47,10 +48,12 @@ pub fn run(cli: Cli) -> Result<()> {
 
     match cli.command {
         Commands::Update => cmd_update(&db, &paths, &config),
-        Commands::Search { query } => cmd_search(&db, query.as_deref().unwrap_or("")),
-        Commands::List => cmd_list(&db),
-        Commands::Status { check } => cmd_status(&db, &paths, &config, check),
-        Commands::Info { package } => cmd_info(&db, &package),
+        Commands::Search { query } => {
+            cmd_search(&db, query.as_deref().unwrap_or(""), json)
+        }
+        Commands::List => cmd_list(&db, json),
+        Commands::Status { check } => cmd_status(&db, &paths, &config, check, json),
+        Commands::Info { package } => cmd_info(&db, &package, json),
         Commands::Install {
             packages,
             no_deps,
@@ -112,7 +115,7 @@ fn cmd_update(db: &Db, paths: &Paths, config: &Config) -> Result<()> {
     Ok(())
 }
 
-fn cmd_search(db: &Db, query: &str) -> Result<()> {
+fn cmd_search(db: &Db, query: &str, json: bool) -> Result<()> {
     let records = db.search(query, 100)?;
     let mut unique: BTreeMap<(String, String), PackageRecord> = BTreeMap::new();
     for record in records {
@@ -123,6 +126,23 @@ fn cmd_search(db: &Db, query: &str) -> Result<()> {
                 unique.insert(key, record);
             }
         }
+    }
+    if json {
+        let rows: Vec<serde_json::Value> = unique
+            .values()
+            .map(|record| {
+                serde_json::json!({
+                    "name": record.manifest.name,
+                    "version": record.manifest.version,
+                    "repo": record.repo,
+                    "description": record.manifest.description,
+                    "homepage": record.manifest.homepage,
+                    "license": record.manifest.license,
+                })
+            })
+            .collect();
+        println!("{}", serde_json::to_string_pretty(&rows)?);
+        return Ok(());
     }
     if unique.is_empty() {
         println!("no packages found");
@@ -144,8 +164,26 @@ fn cmd_search(db: &Db, query: &str) -> Result<()> {
     Ok(())
 }
 
-fn cmd_list(db: &Db) -> Result<()> {
+fn cmd_list(db: &Db, json: bool) -> Result<()> {
     let installed = db.list_installed()?;
+    if json {
+        let rows: Vec<serde_json::Value> = installed
+            .iter()
+            .map(|item| {
+                serde_json::json!({
+                    "name": item.name,
+                    "repo": item.repo,
+                    "version": item.version,
+                    "previous_version": item.previous_version,
+                    "pinned": item.pinned,
+                    "store_path": item.store_path,
+                    "installed_at": item.installed_at,
+                })
+            })
+            .collect();
+        println!("{}", serde_json::to_string_pretty(&rows)?);
+        return Ok(());
+    }
     if installed.is_empty() {
         println!("no packages installed");
         return Ok(());
@@ -167,33 +205,27 @@ fn cmd_list(db: &Db) -> Result<()> {
     Ok(())
 }
 
-fn cmd_status(db: &Db, paths: &Paths, config: &Config, check: bool) -> Result<()> {
+fn cmd_status(db: &Db, paths: &Paths, config: &Config, check: bool, json: bool) -> Result<()> {
     if check {
-        cmd_update(db, paths, config)?;
+        if let Err(error) = cmd_update(db, paths, config) {
+            eprintln!("warning: metadata refresh failed; using cached index: {error}");
+        }
     }
     let installed = db.list_installed()?;
-    if installed.is_empty() {
-        println!("no packages installed");
-        return Ok(());
-    }
-    println!(
-        "{:<24} {:<12} {:<12} {}",
-        "NAME", "INSTALLED", "LATEST", "STATUS"
-    );
     let mut outdated = 0usize;
+    let mut rows = Vec::new();
     for item in installed {
         let versions = db.package_versions(&item.repo, &item.name)?;
         let latest = versions
             .last()
             .map(|record| record.manifest.version.clone());
-        let latest_text = latest.clone().unwrap_or_else(|| "-".to_string());
         let status = if item.pinned {
             "pinned".to_string()
         } else {
             match latest {
                 None => "missing metadata".to_string(),
-                Some(latest) => {
-                    if Version::parse(&latest)? > Version::parse(&item.version)? {
+                Some(ref latest) => {
+                    if Version::parse(latest)? > Version::parse(&item.version)? {
                         outdated += 1;
                         "outdated".to_string()
                     } else {
@@ -202,12 +234,34 @@ fn cmd_status(db: &Db, paths: &Paths, config: &Config, check: bool) -> Result<()
                 }
             }
         };
+        rows.push(serde_json::json!({
+            "name": item.name,
+            "repo": item.repo,
+            "installed": item.version,
+            "latest": latest,
+            "pinned": item.pinned,
+            "status": status,
+        }));
+    }
+    if json {
+        println!("{}", serde_json::to_string_pretty(&rows)?);
+        return Ok(());
+    }
+    if rows.is_empty() {
+        println!("no packages installed");
+        return Ok(());
+    }
+    println!(
+        "{:<24} {:<12} {:<12} {}",
+        "NAME", "INSTALLED", "LATEST", "STATUS"
+    );
+    for row in &rows {
         println!(
             "{:<24} {:<12} {:<12} {}",
-            item.name,
-            item.version,
-            latest_text,
-            status
+            row["name"].as_str().unwrap_or("-"),
+            row["installed"].as_str().unwrap_or("-"),
+            row["latest"].as_str().unwrap_or("-"),
+            row["status"].as_str().unwrap_or("-")
         );
     }
     if outdated > 0 {
@@ -216,9 +270,31 @@ fn cmd_status(db: &Db, paths: &Paths, config: &Config, check: bool) -> Result<()
     Ok(())
 }
 
-fn cmd_info(db: &Db, spec: &str) -> Result<()> {
+fn cmd_info(db: &Db, spec: &str, json: bool) -> Result<()> {
     let record = find_package(db, spec)?;
     let versions = db.package_versions(&record.repo, &record.manifest.name)?;
+    let version_list: Vec<String> = versions
+        .iter()
+        .map(|version| version.manifest.version.clone())
+        .collect();
+    if json {
+        let value = serde_json::json!({
+            "name": record.manifest.name,
+            "repo": record.repo,
+            "version": record.manifest.version,
+            "description": record.manifest.description,
+            "homepage": record.manifest.homepage,
+            "license": record.manifest.license,
+            "url": record.manifest.url,
+            "sha256": record.manifest.sha256,
+            "tags": record.manifest.tags,
+            "depends": record.manifest.depends,
+            "persist": record.manifest.persist,
+            "versions": version_list,
+        });
+        println!("{}", serde_json::to_string_pretty(&value)?);
+        return Ok(());
+    }
     println!("name:        {}", record.manifest.name);
     println!("repo:        {}", record.repo);
     println!("version:     {}", record.manifest.version);
@@ -233,14 +309,7 @@ fn cmd_info(db: &Db, spec: &str) -> Result<()> {
     if !record.manifest.persist.is_empty() {
         println!("persist:     {}", record.manifest.persist.join(", "));
     }
-    println!(
-        "versions:    {}",
-        versions
-            .iter()
-            .map(|v| v.manifest.version.clone())
-            .collect::<Vec<_>>()
-            .join(", ")
-    );
+    println!("versions:    {}", version_list.join(", "));
     Ok(())
 }
 
@@ -366,7 +435,8 @@ fn install_one(
             "Installing {} {} from {}",
             manifest.name, manifest.version, record.repo
         );
-        let blob = download::cache_blob(&paths.cache, &url, &manifest.sha256)?;
+        let blob = download::cache_blob(&paths.cache, &url, &manifest.sha256)
+            .with_context(|| format!("downloading {}", url))?;
         let kind = manifest
             .extract
             .clone()
@@ -389,7 +459,8 @@ fn install_one(
                 &staging,
                 kind.as_deref(),
                 manifest.strip_components.unwrap_or(0),
-            )?;
+            )
+            .with_context(|| format!("extracting {}", manifest.url))?;
         }
         for bin in &manifest.bin {
             let bin_path = staging.join(bin.path());
