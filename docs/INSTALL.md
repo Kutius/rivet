@@ -27,10 +27,12 @@ The installer:
 Open a new terminal and check:
 
 ~~~powershell
-rv --version
-rv doctor
-rv search ripgrep
+rv.exe --version
+rv.exe doctor
+rv.exe search ripgrep
 ~~~
+
+PowerShell defines a read-only `rv` alias for `Remove-Variable`, so `rv` may not reach Rivet. Use `rv.exe`, or remove the alias with `Remove-Item Alias:rv -Force` in the current session. The README's PowerShell note has the profile-level version.
 
 ## Portable install
 

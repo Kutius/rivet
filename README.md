@@ -32,7 +32,7 @@ From PowerShell:
 irm https://kutius.github.io/rivet/install.ps1 | iex
 ~~~
 
-The installer downloads the release zip, verifies SHA256SUMS, copies rv.exe and rv-shim.exe to %LOCALAPPDATA%\Rivet\bin, adds that directory to the user PATH once, and fetches the signed main catalog. Open a new terminal and run rv --version.
+The installer downloads the release zip, verifies SHA256SUMS, copies rv.exe and rv-shim.exe to %LOCALAPPDATA%\Rivet\bin, adds that directory to the user PATH once, and fetches the signed main catalog. Open a new terminal and run `rv.exe --version`; see the PowerShell note below if you want to use `rv`.
 
 For a portable install without a PATH change:
 
@@ -42,6 +42,35 @@ irm https://kutius.github.io/rivet/install.ps1 -OutFile install.ps1
 ~~~
 
 Manual zip installation and uninstall are in [docs/INSTALL.md](docs/INSTALL.md).
+
+### PowerShell note: the `rv` alias
+
+PowerShell ships a read-only alias named `rv` for `Remove-Variable`. Alias resolution happens before PATH lookup, so in a normal PowerShell session `rv --version` invokes `Remove-Variable`, not Rivet, and fails with an error such as "Cannot find a variable named '--version'".
+
+This is a PowerShell built-in, not a Rivet alias. Use one of these:
+
+- Invoke the executable explicitly:
+
+  ~~~powershell
+  rv.exe --version
+  ~~~
+
+- Remove the alias for the current session, then use `rv`:
+
+  ~~~powershell
+  Remove-Item Alias:rv -Force
+  rv --version
+  ~~~
+
+- Remove it for every new session by adding this line to `$PROFILE`:
+
+  ~~~powershell
+  if (Test-Path Alias:rv) { Remove-Item Alias:rv -Force -ErrorAction SilentlyContinue }
+  ~~~
+
+  Open a new terminal after saving the profile.
+
+`cmd.exe` does not have this alias, so `rv` works there. PowerShell sessions started with `-NoProfile` keep the alias; use `rv.exe` in those sessions.
 
 ## Quick start
 
