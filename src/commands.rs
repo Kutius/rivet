@@ -61,7 +61,14 @@ pub fn run(cli: Cli) -> Result<()> {
             purge,
             force,
         } => cmd_remove(&db, &paths, &packages, purge, force),
-        Commands::Upgrade { packages, all } => cmd_upgrade(&db, &paths, &config, &packages, all),
+        Commands::Upgrade {
+            packages,
+            all,
+            force,
+        } => cmd_upgrade(&db, &paths, &config, &packages, all, force),
+        Commands::Pin { packages } => cmd_pin(&db, &paths, &packages, true),
+        Commands::Unpin { packages } => cmd_pin(&db, &paths, &packages, false),
+        Commands::Verify => cmd_verify(&db, &paths),
         Commands::Rollback { packages } => cmd_rollback(&db, &paths, &packages),
         Commands::Cleanup => cmd_cleanup(&db, &paths, &config),
         Commands::Doctor { fix } => cmd_doctor(&db, &paths, fix),
@@ -80,6 +87,8 @@ fn is_mutating(command: &Commands) -> bool {
         | Commands::Upgrade { .. }
         | Commands::Rollback { .. }
         | Commands::Cleanup
+        | Commands::Pin { .. }
+        | Commands::Unpin { .. }
         | Commands::Init => true,
         Commands::Tap { command } => matches!(
             command,
@@ -141,11 +150,18 @@ fn cmd_list(db: &Db) -> Result<()> {
         println!("no packages installed");
         return Ok(());
     }
-    println!("{:<24} {:<12} {:<14} PATH", "NAME", "VERSION", "REPO");
+    println!(
+        "{:<24} {:<12} {:<14} {:<8} PATH",
+        "NAME", "VERSION", "REPO", "PINNED"
+    );
     for item in installed {
         println!(
-            "{:<24} {:<12} {:<14} {}",
-            item.name, item.version, item.repo, item.store_path
+            "{:<24} {:<12} {:<14} {:<8} {}",
+            item.name,
+            item.version,
+            item.repo,
+            if item.pinned { "yes" } else { "-" },
+            item.store_path
         );
     }
     Ok(())
@@ -170,14 +186,19 @@ fn cmd_status(db: &Db, paths: &Paths, config: &Config, check: bool) -> Result<()
         let latest = versions
             .last()
             .map(|record| record.manifest.version.clone());
-        let status = match latest {
-            None => "missing metadata".to_string(),
-            Some(ref latest) => {
-                if Version::parse(&latest)? > Version::parse(&item.version)? {
-                    outdated += 1;
-                    "outdated".to_string()
-                } else {
-                    "ok".to_string()
+        let latest_text = latest.clone().unwrap_or_else(|| "-".to_string());
+        let status = if item.pinned {
+            "pinned".to_string()
+        } else {
+            match latest {
+                None => "missing metadata".to_string(),
+                Some(latest) => {
+                    if Version::parse(&latest)? > Version::parse(&item.version)? {
+                        outdated += 1;
+                        "outdated".to_string()
+                    } else {
+                        "ok".to_string()
+                    }
                 }
             }
         };
@@ -185,7 +206,7 @@ fn cmd_status(db: &Db, paths: &Paths, config: &Config, check: bool) -> Result<()
             "{:<24} {:<12} {:<12} {}",
             item.name,
             item.version,
-            latest.as_deref().unwrap_or("-"),
+            latest_text,
             status
         );
     }
@@ -531,8 +552,16 @@ fn cmd_remove(db: &Db, paths: &Paths, specs: &[String], purge: bool, force: bool
     Ok(())
 }
 
-fn cmd_upgrade(db: &Db, paths: &Paths, config: &Config, specs: &[String], all: bool) -> Result<()> {
+fn cmd_upgrade(
+    db: &Db,
+    paths: &Paths,
+    config: &Config,
+    specs: &[String],
+    all: bool,
+    force: bool,
+) -> Result<()> {
     let installed = db.list_installed()?;
+    let explicit = !all && !specs.is_empty();
     let targets: Vec<InstalledRecord> = if all || specs.is_empty() {
         installed
     } else {
@@ -549,10 +578,26 @@ fn cmd_upgrade(db: &Db, paths: &Paths, config: &Config, specs: &[String], all: b
         println!("no packages installed");
         return Ok(());
     }
+    if explicit && !force {
+        let pinned: Vec<String> = targets
+            .iter()
+            .filter(|item| item.pinned)
+            .map(|item| format!("{} {}", item.name, item.version))
+            .collect();
+        if !pinned.is_empty() {
+            bail!(
+                "package(s) {} are pinned; pass --force to upgrade them",
+                pinned.join(", ")
+            );
+        }
+    }
     for item in targets {
         if item.pinned {
-            println!("{} is pinned; skipping", item.name);
-            continue;
+            if !explicit {
+                println!("{} is pinned; skipping", item.name);
+                continue;
+            }
+            println!("{} is pinned; upgrading anyway (--force)", item.name);
         }
         let versions = db.package_versions(&item.repo, &item.name)?;
         let Some(latest) = versions.last() else {
@@ -578,6 +623,145 @@ fn cmd_upgrade(db: &Db, paths: &Paths, config: &Config, specs: &[String], all: b
         )?;
     }
     Ok(())
+}
+
+fn cmd_pin(db: &Db, paths: &Paths, specs: &[String], pinned: bool) -> Result<()> {
+    let _ = paths;
+    if specs.is_empty() {
+        bail!("specify at least one package");
+    }
+    for spec in specs {
+        let name = installed_name(db, spec)?;
+        let item = db
+            .installed(&name)?
+            .ok_or_else(|| anyhow::anyhow!("package '{name}' is not installed"))?;
+        if item.pinned == pinned {
+            println!(
+                "{} {} is already {}",
+                item.name,
+                item.version,
+                if pinned { "pinned" } else { "unpinned" }
+            );
+            continue;
+        }
+        db.set_pinned(&name, pinned)?;
+        println!(
+            "{} {} {}",
+            item.name,
+            item.version,
+            if pinned { "pinned" } else { "unpinned" }
+        );
+    }
+    Ok(())
+}
+
+fn cmd_verify(db: &Db, paths: &Paths) -> Result<()> {
+    let mut problems = 0usize;
+    for item in db.list_installed()? {
+        let store_path = Path::new(&item.store_path);
+        let manifest_path = store_path.join("rivet-manifest.json");
+        if !store_path.is_dir() {
+            println!(
+                "damage:    {} store path missing: {}",
+                item.name, item.store_path
+            );
+            problems += 1;
+            continue;
+        }
+        if !manifest_path.is_file() {
+            println!(
+                "damage:    {} manifest missing: {}",
+                item.name,
+                manifest_path.display()
+            );
+            problems += 1;
+            continue;
+        }
+        let manifest: PackageManifest =
+            match serde_json::from_str(&fs::read_to_string(&manifest_path)?) {
+                Ok(manifest) => manifest,
+                Err(error) => {
+                    println!("damage:    {} manifest invalid: {error}", item.name);
+                    problems += 1;
+                    continue;
+                }
+            };
+        if manifest.version != item.version {
+            println!(
+                "damage:    {} recorded version {} but store manifest is {}",
+                item.name, item.version, manifest.version
+            );
+            problems += 1;
+        }
+        let link = store::current_link(paths, &item.name);
+        let link_ok = match (fs::canonicalize(&link), fs::canonicalize(store_path)) {
+            (Ok(link_target), Ok(store_target)) => link_target == store_target,
+            _ => false,
+        };
+        if !link_ok {
+            println!(
+                "damage:    {} current link missing or wrong: {}",
+                item.name,
+                link.display()
+            );
+            problems += 1;
+        }
+        for bin in &manifest.bin {
+            let command = bin.command_name();
+            let shim_path = paths.bin.join(format!("{command}.exe"));
+            let sidecar_path = paths.bin.join(format!("{command}.rvshim"));
+            if !shim_path.is_file() {
+                println!(
+                    "damage:    {} shim missing: {}",
+                    item.name,
+                    shim_path.display()
+                );
+                problems += 1;
+            }
+            match fs::read_to_string(&sidecar_path) {
+                Ok(text) => {
+                    if serde_json::from_str::<crate::store::ShimSpec>(&text).is_err() {
+                        println!(
+                            "damage:    {} shim sidecar invalid: {}",
+                            item.name,
+                            sidecar_path.display()
+                        );
+                        problems += 1;
+                    }
+                }
+                Err(_) => {
+                    println!(
+                        "damage:    {} shim sidecar missing: {}",
+                        item.name,
+                        sidecar_path.display()
+                    );
+                    problems += 1;
+                }
+            }
+        }
+        for shim in db.shims_for_package(&item.name)? {
+            if !Path::new(&shim.target).exists() {
+                println!(
+                    "damage:    {} shim target missing: {} -> {}",
+                    item.name, shim.command, shim.target
+                );
+                problems += 1;
+            }
+            if !Path::new(&shim.sidecar).exists() {
+                println!(
+                    "damage:    {} recorded shim sidecar missing: {}",
+                    item.name, shim.sidecar
+                );
+                problems += 1;
+            }
+        }
+    }
+    if problems == 0 {
+        println!("verify:    ok");
+        Ok(())
+    } else {
+        bail!("verify found {problems} problem(s)")
+    }
 }
 
 fn cmd_rollback(db: &Db, paths: &Paths, specs: &[String]) -> Result<()> {

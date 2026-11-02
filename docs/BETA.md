@@ -45,13 +45,18 @@ Evidence:
 
 ### B3. Lifecycle completeness
 
-- [ ] rv pin and rv unpin work; rv list and rv status show pin state.
-- [ ] rv upgrade --all skips pinned packages; upgrading a pinned package requires an explicit override.
-- [ ] rv verify checks installed store paths, current links, shims, and recorded versions, and exits non-zero on damage.
-- [ ] rv doctor distinguishes repairable state from missing-store damage.
-- [ ] Rollback still works after a failed upgrade and after rv doctor --fix.
+- [x] rv pin and rv unpin work; rv list and rv status show pin state.
+- [x] rv upgrade --all skips pinned packages; upgrading a pinned package requires an explicit override.
+- [x] rv verify checks installed store paths, current links, shims, and recorded versions, and exits non-zero on damage.
+- [x] rv doctor distinguishes repairable state from missing-store damage.
+- [x] Rollback still works after a failed upgrade and after rv doctor --fix.
 
 Evidence:
+
+- Commands: `rv pin <packages...>`, `rv unpin <packages...>`, `rv verify`, and `rv upgrade --force` in `src/cli.rs`; `cmd_pin`, `cmd_verify`, and the pinned checks in `cmd_upgrade` in `src/commands.rs`.
+- Visibility: `rv list` prints a PINNED column; `rv status` reports `pinned` and does not count pinned packages as outdated.
+- Tests, `cargo test --offline` -> `tests/lifecycle.rs`: `pin_state_is_visible_and_blocks_upgrade_until_forced` (pin, list/status, explicit upgrade fails, --all skips, --force upgrades, unpin), `verify_detects_damage_and_passes_after_doctor_fix` (deleted shim -> verify fails with "shim missing" -> doctor --fix -> verify passes), `rollback_works_after_failed_upgrade_and_doctor_fix` (bad checksum leaves 1.1.0 active, rollback restores 1.0.0, doctor --fix repairs a removed junction, rollback still works).
+- Result: 18 tests pass (3 unit + 4 e2e + 3 lifecycle + 5 safety + 6 trust); release build succeeds.
 
 ### B4. Install and first run
 

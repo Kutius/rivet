@@ -61,7 +61,15 @@ pub enum Commands {
         packages: Vec<String>,
         #[arg(long, help = "Upgrade every installed package")]
         all: bool,
+        #[arg(long, help = "Upgrade even if the package is pinned")]
+        force: bool,
     },
+    /// Pin installed packages at their current version
+    Pin { packages: Vec<String> },
+    /// Unpin installed packages
+    Unpin { packages: Vec<String> },
+    /// Check installed packages for damage
+    Verify,
     /// Switch a package back to its previous version
     Rollback { packages: Vec<String> },
     /// Remove old store versions and stale cache entries

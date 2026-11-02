@@ -29,3 +29,13 @@
 - Docs: README "Concurrency and recovery", docs/BETA.md B2 evidence.
 - Remaining P0: B3–B8 (pin/verify, init PATH broadcast, JSON output, docs set, clippy, performance). Clippy still has pre-existing style warnings.
 - Next: B3 lifecycle completeness — `rv pin`/`rv unpin`, `rv verify`, and rollback coverage after failed upgrade and doctor repair.
+
+## Round 3 — B3 lifecycle completeness
+
+- Added `rv pin` / `rv unpin`, a PINNED column in `rv list`, and a pinned state in `rv status`. Pinned packages are skipped by `rv upgrade --all`; explicitly upgrading one fails unless `--force` is passed.
+- Added `rv verify`: checks the installed store path, manifest presence and version, current junction target, shim executable and sidecar, and recorded shim targets; exits non-zero on damage.
+- `rv doctor` continues to distinguish repairable link/shim damage from a missing store, and `--fix` restores the repairable cases.
+- Tests: new `tests/lifecycle.rs` with 3 tests (pin lifecycle, verify/doctor repair, rollback after failed upgrade and doctor fix). Suite: 18 tests pass.
+- Docs: BETA B3 evidence.
+- Remaining P0: B4–B8.
+- Next: B4 install/first run — `rv init --no-path`, environment broadcast, release zip contents.
