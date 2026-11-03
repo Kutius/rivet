@@ -1,0 +1,19 @@
+name = "hyperfine"
+version = "2.0.0"
+description = "A command-line benchmarking tool"
+homepage = "https://github.com/sharkdp/hyperfine"
+license = "Apache-2.0"
+tags = ["benchmark", "performance", "cli"]
+arch = "x64"
+url = "https://github.com/sharkdp/hyperfine/releases/download/v2.0.0/hyperfine-v2.0.0-x86_64-pc-windows-msvc.zip"
+sha256 = "3dec51acee1060908e67948838d6bc0a7aacde0774acebfa4afb220dcf0bc078"
+extract = "zip"
+strip_components = 1
+depends = []
+persist = []
+
+[[bin]]
+path = "hyperfine.exe"
+name = "hyperfine"
+args = []
+

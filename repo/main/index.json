@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-02T11:40:20.988352900+00:00",
+  "generated_at": "2026-11-03T04:20:48.615829+00:00",
   "packages": [
     {
       "name": "bat",
@@ -29,6 +29,32 @@
       "persist": []
     },
     {
+      "name": "bottom",
+      "version": "0.15.0",
+      "description": "Yet another cross-platform graphical process/system monitor.",
+      "homepage": "https://bottom.pages.dev",
+      "license": "MIT",
+      "tags": [
+        "monitor",
+        "system",
+        "tui"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/ClementTsang/bottom/releases/download/0.15.0/bottom_x86_64-pc-windows-msvc.zip",
+      "sha256": "aeff72e355116516d2583f34348e31f60c5899e394a08eeda79a2bdb361e27bd",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "btm.exe",
+          "name": "btm",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "delta",
       "version": "0.20.1",
       "description": "Syntax-highlighting pager for git, diff, and grep output",
@@ -48,6 +74,32 @@
         {
           "path": "delta.exe",
           "name": "delta",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "dust",
+      "version": "1.2.7",
+      "description": "A more intuitive version of du in rust",
+      "homepage": "https://github.com/bootandy/dust",
+      "license": "Apache-2.0",
+      "tags": [
+        "disk",
+        "usage",
+        "cli"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/bootandy/dust/releases/download/v1.2.7/dust-v1.2.7-x86_64-pc-windows-msvc.zip",
+      "sha256": "d07a41521958895e701ad55f342302b7362799d6a328c843e8e2208ba0564c30",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "dust.exe",
+          "name": "dust",
           "args": []
         }
       ],
@@ -157,6 +209,32 @@
       "persist": []
     },
     {
+      "name": "hyperfine",
+      "version": "2.0.0",
+      "description": "A command-line benchmarking tool",
+      "homepage": "https://github.com/sharkdp/hyperfine",
+      "license": "Apache-2.0",
+      "tags": [
+        "benchmark",
+        "performance",
+        "cli"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/sharkdp/hyperfine/releases/download/v2.0.0/hyperfine-v2.0.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "3dec51acee1060908e67948838d6bc0a7aacde0774acebfa4afb220dcf0bc078",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "hyperfine.exe",
+          "name": "hyperfine",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "jq",
       "version": "1.8.2",
       "description": "Command-line JSON processor",
@@ -183,6 +261,32 @@
       "persist": []
     },
     {
+      "name": "just",
+      "version": "1.59.0",
+      "description": "🤖 Just a command runner",
+      "homepage": "https://just.systems",
+      "license": "CC0-1.0",
+      "tags": [
+        "task",
+        "runner",
+        "cli"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/casey/just/releases/download/1.59.0/just-1.59.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "9c5463e2d0974e31bee71346aa5cbf19167de1585a4abc1bae7b3b04604ea9c0",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "just.exe",
+          "name": "just",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "ripgrep",
       "version": "15.2.0",
       "description": "Fast recursive search tool that respects .gitignore",
@@ -202,6 +306,32 @@
         {
           "path": "rg.exe",
           "name": "rg",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "starship",
+      "version": "1.27.0",
+      "description": "☄🌌️  The minimal, blazing-fast, and infinitely customizable prompt for any shell!",
+      "homepage": "https://starship.rs",
+      "license": "ISC",
+      "tags": [
+        "prompt",
+        "shell",
+        "cli"
+      ],
+      "arch": "x64",
+      "url": "https://github.com/starship/starship/releases/download/v1.27.0/starship-x86_64-pc-windows-msvc.zip",
+      "sha256": "7764f861805376af2812dd78c84fadc16b714cf3f346baed9b597bfda8484403",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "starship.exe",
+          "name": "starship",
           "args": []
         }
       ],

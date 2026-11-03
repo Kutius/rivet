@@ -1,0 +1,18 @@
+name = "starship"
+version = "1.27.0"
+description = "☄🌌️  The minimal, blazing-fast, and infinitely customizable prompt for any shell!"
+homepage = "https://starship.rs"
+license = "ISC"
+tags = ["prompt", "shell", "cli"]
+arch = "x64"
+url = "https://github.com/starship/starship/releases/download/v1.27.0/starship-x86_64-pc-windows-msvc.zip"
+sha256 = "7764f861805376af2812dd78c84fadc16b714cf3f346baed9b597bfda8484403"
+extract = "zip"
+depends = []
+persist = []
+
+[[bin]]
+path = "starship.exe"
+name = "starship"
+args = []
+

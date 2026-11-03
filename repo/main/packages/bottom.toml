@@ -1,0 +1,18 @@
+name = "bottom"
+version = "0.15.0"
+description = "Yet another cross-platform graphical process/system monitor."
+homepage = "https://bottom.pages.dev"
+license = "MIT"
+tags = ["monitor", "system", "tui"]
+arch = "x64"
+url = "https://github.com/ClementTsang/bottom/releases/download/0.15.0/bottom_x86_64-pc-windows-msvc.zip"
+sha256 = "aeff72e355116516d2583f34348e31f60c5899e394a08eeda79a2bdb361e27bd"
+extract = "zip"
+depends = []
+persist = []
+
+[[bin]]
+path = "btm.exe"
+name = "btm"
+args = []
+

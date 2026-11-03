@@ -100,4 +100,6 @@ Rivet is a portable-first Windows package manager built as one native Rust binar
 
 ## Unreleased
 
-- Nothing yet.
+### Catalog
+
+- Added hyperfine, dust, bottom, just, and starship to the main catalog.
