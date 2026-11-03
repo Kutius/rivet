@@ -123,6 +123,7 @@ The main repository is a normal Git repository of package manifests. Clients do 
 ~~~text
 repo/main/
   packages/*.toml
+  sources.toml
   artifacts/
   index.json
   index.json.sig
@@ -132,12 +133,13 @@ Maintainers add GitHub-hosted tools without hand-writing metadata:
 
 ~~~powershell
 .\scripts\repo.ps1 add BurntSushi/ripgrep --path repo\main
+.\scripts\repo.ps1 sync repo\main --limit 10
 .\scripts\repo.ps1 update repo\main --check
 .\scripts\repo.ps1 update repo\main
 .\scripts\repo.ps1 sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
 ~~~
 
-The maintainer script builds the separate `rv-repo` tool. `add` downloads the latest release, picks the Windows x64 asset, infers the executable and archive layout, computes SHA-256, writes the manifest, and rebuilds the index. `update` does the same version bump for every GitHub-hosted package. Set `GITHUB_TOKEN` or `GH_TOKEN` to avoid the unauthenticated GitHub API rate limit. The daily catalog workflow runs `rv-repo update`, signs with the `RIVET_SIGNING_KEY_B64` Actions secret, smoke-installs changed packages, and pushes the result.
+The maintainer script builds the separate `rv-repo` tool. `add` imports one repository. `sync` reads the curated `repo/main/sources.toml`, imports every missing repository in batches, and skips existing manifests. `update` does the same version bump for every GitHub-hosted package. Set `GITHUB_TOKEN` or `GH_TOKEN` to avoid the unauthenticated GitHub API rate limit. The daily catalog workflow runs `rv-repo update`, signs with the `RIVET_SIGNING_KEY_B64` Actions secret, smoke-installs changed packages, and pushes the result. After a batch import, `scripts/verify-catalog.ps1` installs every package into a temporary root and smoke-tests each command; the weekly Catalog verify workflow runs the same check.
 
 See [docs/MANIFEST.md](docs/MANIFEST.md) for every field, [docs/SECURITY.md](docs/SECURITY.md) for the trust model, and [repo/main/README.md](repo/main/README.md) for the catalog workflow.
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `rv-repo sync`: import every missing GitHub repository from a curated `sources.toml`, with per-package name/asset/bin overrides, `--dry-run`, `--limit`, and per-source failure isolation.
+- `scripts/verify-catalog.ps1` and a weekly Catalog verify workflow that installs every package in a temporary root, verifies hashes, and smoke-tests exposed commands.
+- Improved release asset selection for bulk imports: two-part versions, scoped tags, `win32-x64` names, main-package preference, and single-executable assets.
+
+### Catalog
+
+- Expanded the main catalog from 22 to 51 package versions (50 packages), including air, biome, bun, cargo-binstall, cargo-deny, dasel, deno, dprint, duckdb, fq, gh, git-lfs, gofumpt, gojq, golangci-lint, hexyl, lazydocker, lazygit, mdbook, miller, pandoc, pnpm, rclone, restic, ruff, shfmt, task, uv, and xsv.
+- Added `repo/main/sources.toml` as the curated source list for future batch imports.
+
 ## 0.1.0-beta.6 — maintainer tooling split
 
 ### Changed

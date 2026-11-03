@@ -27,6 +27,8 @@ pub struct PackageManifest {
     pub tags: Vec<String>,
     #[serde(default)]
     pub arch: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub asset: Option<String>,
     pub url: String,
     pub sha256: String,
     #[serde(default)]

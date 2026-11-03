@@ -54,6 +54,24 @@ enum Commands {
         #[arg(long)]
         package: Option<String>,
     },
+    /// Add every missing package listed in sources.toml
+    Sync {
+        /// Repository root containing packages/ (defaults to repo/main)
+        #[arg(default_value = "repo/main")]
+        path: String,
+        /// Source list (defaults to <path>/sources.toml)
+        #[arg(long)]
+        sources: Option<String>,
+        /// Show what would be added without changing files
+        #[arg(long)]
+        dry_run: bool,
+        /// Add at most N missing packages
+        #[arg(long)]
+        limit: Option<usize>,
+        /// Exit successfully when some sources fail
+        #[arg(long)]
+        allow_failures: bool,
+    },
     /// Generate an Ed25519 signing key pair
     Keygen {
         /// Directory for rivet-signing.key and rivet-signing.pub
@@ -123,6 +141,29 @@ fn run() -> Result<()> {
             } else {
                 println!("updated {} package(s); index rebuilt", changes.len());
             }
+            Ok(())
+        }
+        Commands::Sync {
+            path,
+            sources,
+            dry_run,
+            limit,
+            allow_failures,
+        } => {
+            let root = PathBuf::from(path);
+            let sources = sources
+                .map(PathBuf::from)
+                .unwrap_or_else(|| root.join("sources.toml"));
+            let report =
+                catalog::sync_github_packages(&root, &sources, dry_run, limit, allow_failures)?;
+            let verb = if dry_run { "would add" } else { "added" };
+            println!(
+                "{} {} package(s), {} already present, {} failed",
+                verb,
+                report.added.len(),
+                report.skipped.len(),
+                report.failed.len()
+            );
             Ok(())
         }
         Commands::Keygen { out } => {

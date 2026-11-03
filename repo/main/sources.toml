@@ -1,0 +1,81 @@
+# Candidate GitHub repositories for the main catalog.
+#
+# rv-repo sync adds every repository that has no manifest yet. Existing
+# manifests are matched by their GitHub release URL and skipped.
+#
+# Compact form:
+#   repositories = ["owner/repo", ...]
+#
+# Per-package overrides when auto-detection needs help:
+#   [[source]]
+#   repository = "owner/repo"
+#   name = "package-name"
+#   asset = "release-asset-substring"
+#   bin = "path/inside/archive.exe"
+
+repositories = [
+  # Already published
+  "BurntSushi/ripgrep",
+  "sharkdp/fd",
+  "sharkdp/bat",
+  "jqlang/jq",
+  "junegunn/fzf",
+  "dandavison/delta",
+  "mikefarah/yq",
+  "ajeetdsouza/zoxide",
+  "sharkdp/hyperfine",
+  "bootandy/dust",
+  "ClementTsang/bottom",
+  "casey/just",
+  "starship/starship",
+  "ducaale/xh",
+  "chmln/sd",
+  "dalance/procs",
+  "eza-community/eza",
+  "lsd-rs/lsd",
+  "watchexec/watchexec",
+  "typst/typst",
+
+  # Batch 1: small, portable CLIs with Windows x64 release archives
+  "sharkdp/hexyl",
+  "BurntSushi/xsv",
+  "TomWright/dasel",
+  "itchyny/gojq",
+  "johnkerl/miller",
+  "wader/fq",
+  "duckdb/duckdb",
+  "jgm/pandoc",
+  "rust-lang/mdBook",
+
+  # Batch 2: developer tooling
+  "cargo-bins/cargo-binstall",
+  "EmbarkStudios/cargo-deny",
+  "dprint/dprint",
+  "biomejs/biome",
+  "denoland/deno",
+  "oven-sh/bun",
+  "pnpm/pnpm",
+  "astral-sh/uv",
+  "astral-sh/ruff",
+  "go-task/task",
+  "mvdan/sh",
+  "mvdan/gofumpt",
+  "golangci/golangci-lint",
+  "air-verse/air",
+  "jesseduffield/lazygit",
+  "jesseduffield/lazydocker",
+
+  # Batch 3: infrastructure and operations
+  "git-lfs/git-lfs",
+  "rclone/rclone",
+  "restic/restic",
+]
+
+# The repository name is not the command name.
+[[source]]
+repository = "cli/cli"
+name = "gh"
+
+[[source]]
+repository = "mvdan/sh"
+name = "shfmt"

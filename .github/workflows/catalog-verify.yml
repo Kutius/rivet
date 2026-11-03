@@ -1,0 +1,24 @@
+name: Catalog verify
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - run: cargo build --locked --release --bin rv --bin rv-repo
+
+      - name: Install and smoke test every package
+        shell: pwsh
+        run: .\scripts\verify-catalog.ps1 -Root repo/main

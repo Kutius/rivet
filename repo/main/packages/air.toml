@@ -1,0 +1,18 @@
+name = "air"
+version = "1.67.4"
+description = "☁️ Live reload for Go apps"
+homepage = "https://github.com/air-verse/air"
+license = "GPL-3.0"
+tags = []
+arch = "x64"
+url = "https://github.com/air-verse/air/releases/download/v1.67.4/air_1.67.4_windows_amd64.exe"
+sha256 = "b7f986b24fae6fa2941b37d63f7f7e82f7716033fd739f8f3e7c272e0903e9d5"
+extract = "none"
+depends = []
+persist = []
+
+[[bin]]
+path = "air.exe"
+name = "air"
+args = []
+

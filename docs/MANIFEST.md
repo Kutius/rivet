@@ -32,6 +32,7 @@ persist = ["data"]
 | license | no | SPDX-style license identifier. |
 | tags | no | Search keywords. |
 | arch | no | Advisory architecture string, for example x64. The beta does not enforce it. |
+| asset | no | Release asset name or substring used by `rv-repo update` when auto-detection needs help. |
 | url | yes | Absolute URL, or a path relative to index.json. |
 | sha256 | yes | 64 hexadecimal characters. Required and verified before extraction. |
 | extract | no | zip, tar.gz, tar, 7z, or none. Inferred from the URL when omitted. |
@@ -99,6 +100,43 @@ Refresh all GitHub-hosted packages:
 ~~~
 
 Set `GITHUB_TOKEN` or `GH_TOKEN` to raise the GitHub API rate limit. Packages with non-GitHub URLs or an installer instead of a portable archive still need a hand-written manifest.
+
+## Bulk import
+
+Keep the curated candidate list in `repo/main/sources.toml`. It supports a compact repository list and per-package overrides:
+
+~~~toml
+repositories = [
+  "BurntSushi/ripgrep",
+  "sharkdp/fd",
+]
+
+[[source]]
+repository = "cli/cli"
+name = "gh"
+
+[[source]]
+repository = "owner/repo"
+asset = "tool-windows-amd64.zip"
+bin = "bin/tool.exe"
+~~~
+
+Add every missing package:
+
+~~~powershell
+.\scripts\repo.ps1 sync repo\main --dry-run
+.\scripts\repo.ps1 sync repo\main --limit 10
+.\scripts\repo.ps1 sync repo\main
+~~~
+
+`sync` matches existing manifests by their GitHub release URL, generates only missing packages, continues after individual failures, and rebuilds the index once at the end. Use `--allow-failures` for an exploratory run; without it, any failed source makes the command exit non-zero after the successful additions are written. Run in batches and verify before committing:
+
+~~~powershell
+cargo build --release --bin rv --bin rv-repo
+.\scripts\verify-catalog.ps1 -Root repo\main
+~~~
+
+The verification script installs every package into a temporary `RIVET_ROOT`, runs `rivet verify`, and smoke-tests each command with a version argument. The weekly Catalog verify workflow runs the same check.
 
 ## Build and sign
 

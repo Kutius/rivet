@@ -1,0 +1,18 @@
+name = "shfmt"
+version = "3.14.1"
+description = "A shell parser, formatter, and interpreter with bash and zsh support; includes shfmt"
+homepage = "https://pkg.go.dev/mvdan.cc/sh/v3"
+license = "BSD-3-Clause"
+tags = []
+arch = "x64"
+url = "https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_windows_amd64.exe"
+sha256 = "13629ce28442ca80b6b5a819f7574ab39e1c28c6e26734ca816c9714e04851df"
+extract = "none"
+depends = []
+persist = []
+
+[[bin]]
+path = "shfmt.exe"
+name = "shfmt"
+args = []
+

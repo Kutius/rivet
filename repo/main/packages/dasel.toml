@@ -1,0 +1,18 @@
+name = "dasel"
+version = "3.11.2"
+description = "Unified querying, transformation, and modification of JSON, TOML, YAML, XML, INI, HCL, KDL and CSV."
+homepage = "https://daseldocs.tomwright.me"
+license = "MIT"
+tags = []
+arch = "x64"
+url = "https://github.com/TomWright/dasel/releases/download/v3.11.2/dasel_windows_amd64.exe"
+sha256 = "7f37a5aba88c702884edca3bcf2ad0a67b3f2533cbfbf1f6bc414e25e2fe1d24"
+extract = "none"
+depends = []
+persist = []
+
+[[bin]]
+path = "dasel.exe"
+name = "dasel"
+args = []
+

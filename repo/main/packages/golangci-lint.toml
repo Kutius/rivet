@@ -1,0 +1,19 @@
+name = "golangci-lint"
+version = "2.15.0"
+description = "Fast linters runner for Go"
+homepage = "https://golangci-lint.run"
+license = "GPL-3.0"
+tags = []
+arch = "x64"
+url = "https://github.com/golangci/golangci-lint/releases/download/v2.15.0/golangci-lint-2.15.0-windows-amd64.zip"
+sha256 = "cd7ea6063c95de245e17e5246e42bdc14bb221792c429dbd239ab3a6ade6ca6a"
+extract = "zip"
+strip_components = 1
+depends = []
+persist = []
+
+[[bin]]
+path = "golangci-lint.exe"
+name = "golangci-lint"
+args = []
+

@@ -1,0 +1,19 @@
+name = "gojq"
+version = "0.12.20"
+description = "Pure Go implementation of jq"
+homepage = "https://github.com/itchyny/gojq"
+license = "MIT"
+tags = []
+arch = "x64"
+url = "https://github.com/itchyny/gojq/releases/download/v0.12.20/gojq_v0.12.20_windows_amd64.zip"
+sha256 = "fa418a4a97422d10e4f65f093ea4c35eab239f9c0957810d4f4fc1c4253fbf7c"
+extract = "zip"
+strip_components = 1
+depends = []
+persist = []
+
+[[bin]]
+path = "gojq.exe"
+name = "gojq"
+args = []
+

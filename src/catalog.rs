@@ -4,6 +4,7 @@ use crate::model::{BinSpec, PackageManifest};
 use anyhow::{Context, Result, bail};
 use semver::Version;
 use serde::Deserialize;
+use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -15,6 +16,24 @@ pub struct AddOptions {
     pub name: Option<String>,
     pub asset: Option<String>,
     pub bin: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SourceEntry {
+    pub repository: String,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub asset: Option<String>,
+    #[serde(default)]
+    pub bin: Option<String>,
+}
+
+#[derive(Debug, Default)]
+pub struct SyncReport {
+    pub added: Vec<String>,
+    pub skipped: Vec<String>,
+    pub failed: Vec<(String, String)>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -48,6 +67,16 @@ struct License {
 }
 
 pub fn add_github_package(root: &Path, repository: &str, options: &AddOptions) -> Result<PathBuf> {
+    let path = add_github_package_inner(root, repository, options)?;
+    index::build_index(root, None)?;
+    Ok(path)
+}
+
+fn add_github_package_inner(
+    root: &Path,
+    repository: &str,
+    options: &AddOptions,
+) -> Result<PathBuf> {
     let (owner, repo) = parse_repository(repository)?;
     let client = download::http_client()?;
     let info: Repository = github_json(
@@ -83,10 +112,9 @@ pub fn add_github_package(root: &Path, repository: &str, options: &AddOptions) -
             .and_then(|license| license.spdx_id)
             .filter(|value| value != "NOASSERTION")
             .unwrap_or_default(),
+        asset: options.asset.clone(),
     };
-    let path = write_manifest_from_asset(root, &draft, asset, &repo, options.bin.as_deref())?;
-    index::build_index(root, None)?;
-    Ok(path)
+    write_manifest_from_asset(root, &draft, asset, &repo, options.bin.as_deref())
 }
 
 pub fn update_github_packages(
@@ -141,7 +169,12 @@ pub fn update_github_packages(
             continue;
         }
 
-        let asset = match choose_asset(&release.assets, None, &manifest.name, &repo) {
+        let asset = match choose_asset(
+            &release.assets,
+            manifest.asset.as_deref(),
+            &manifest.name,
+            &repo,
+        ) {
             Ok(asset) => asset,
             Err(error) => {
                 errors.push(format!("{}: {error:#}", manifest.name));
@@ -220,6 +253,152 @@ pub fn update_github_packages(
     Ok(changed)
 }
 
+pub fn sync_github_packages(
+    root: &Path,
+    sources: &Path,
+    dry_run: bool,
+    limit: Option<usize>,
+    allow_failures: bool,
+) -> Result<SyncReport> {
+    let entries = read_sources(sources)?;
+    let mut report = SyncReport::default();
+    let mut existing_sources = HashSet::new();
+    let mut existing_names = HashMap::new();
+    for path in manifest_files(root)? {
+        let text =
+            fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+        let manifest: PackageManifest =
+            toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
+        existing_names.insert(manifest.name.clone(), path.clone());
+        if let Some((owner, repo)) = github_release_source(&manifest.url) {
+            existing_sources.insert((owner.to_ascii_lowercase(), repo.to_ascii_lowercase()));
+        }
+    }
+
+    let mut attempted = 0usize;
+    for entry in entries {
+        let (owner, repo) = match parse_repository(&entry.repository) {
+            Ok(value) => value,
+            Err(error) => {
+                report
+                    .failed
+                    .push((entry.repository.clone(), format!("{error:#}")));
+                continue;
+            }
+        };
+        let key = (owner.to_ascii_lowercase(), repo.to_ascii_lowercase());
+        let label = format!("{owner}/{repo}");
+        if existing_sources.contains(&key) {
+            report.skipped.push(label);
+            continue;
+        }
+        let name = entry
+            .name
+            .clone()
+            .unwrap_or_else(|| repo.to_ascii_lowercase());
+        if let Some(path) = existing_names.get(&name) {
+            report.failed.push((
+                label.clone(),
+                format!(
+                    "package name '{name}' is already used by {}",
+                    path.display()
+                ),
+            ));
+            continue;
+        }
+        if limit.is_some_and(|limit| attempted >= limit) {
+            break;
+        }
+        attempted += 1;
+        if dry_run {
+            println!("would add {label} as {name}");
+            report.added.push(label);
+            existing_sources.insert(key);
+            existing_names.insert(name, PathBuf::from("<source list>"));
+            continue;
+        }
+        println!("adding {label} as {name}");
+        let options = AddOptions {
+            name: entry.name,
+            asset: entry.asset,
+            bin: entry.bin,
+        };
+        match add_github_package_inner(root, &label, &options) {
+            Ok(path) => {
+                println!("added {label} ({})", path.display());
+                report.added.push(label);
+                existing_sources.insert(key);
+                existing_names.insert(name, path);
+            }
+            Err(error) => {
+                eprintln!("failed {label}: {error:#}");
+                report.failed.push((label, format!("{error:#}")));
+            }
+        }
+    }
+
+    if !dry_run && !report.added.is_empty() {
+        index::build_index(root, None)?;
+        println!("rebuilt index with {} new package(s)", report.added.len());
+    }
+    if !report.failed.is_empty() && !allow_failures {
+        let details = report
+            .failed
+            .iter()
+            .map(|(repository, error)| format!("{repository}: {error}"))
+            .collect::<Vec<_>>()
+            .join(
+                "
+  ",
+            );
+        bail!(
+            "{} source(s) failed:
+  {details}",
+            report.failed.len()
+        );
+    }
+    Ok(report)
+}
+
+fn read_sources(path: &Path) -> Result<Vec<SourceEntry>> {
+    #[derive(Deserialize, Default)]
+    struct SourcesFile {
+        #[serde(default)]
+        repositories: Vec<String>,
+        #[serde(default)]
+        source: Vec<SourceEntry>,
+    }
+
+    let text = fs::read_to_string(path)
+        .with_context(|| format!("reading source list {}", path.display()))?;
+    let file: SourcesFile =
+        toml::from_str(&text).with_context(|| format!("parsing source list {}", path.display()))?;
+    let mut entries: Vec<SourceEntry> = file
+        .repositories
+        .into_iter()
+        .map(|repository| SourceEntry {
+            repository,
+            name: None,
+            asset: None,
+            bin: None,
+        })
+        .collect();
+    for entry in file.source {
+        if let Some(existing) = entries
+            .iter_mut()
+            .find(|existing| existing.repository.eq_ignore_ascii_case(&entry.repository))
+        {
+            *existing = entry;
+        } else {
+            entries.push(entry);
+        }
+    }
+    if entries.is_empty() {
+        bail!("no sources found in {}", path.display());
+    }
+    Ok(entries)
+}
+
 fn options_bin_can_change(current: &BinSpec, guessed: &Inspected) -> bool {
     current.path() == guessed.bin.path() && guessed.extract == "none"
 }
@@ -238,6 +417,7 @@ struct ManifestDraft {
     description: String,
     homepage: String,
     license: String,
+    asset: Option<String>,
 }
 
 fn write_manifest_from_asset(
@@ -256,6 +436,7 @@ fn write_manifest_from_asset(
         license: draft.license.clone(),
         tags: Vec::new(),
         arch: Some("x64".to_string()),
+        asset: draft.asset.clone(),
         url: asset.browser_download_url.clone(),
         sha256: guessed.sha256,
         extract: Some(guessed.extract),
@@ -443,6 +624,24 @@ fn choose_asset<'a>(
             .then_with(|| left.0.name.cmp(&right.0.name))
     });
     let Some((best, best_score)) = ranked.first() else {
+        let executables: Vec<&Asset> = assets
+            .iter()
+            .filter(|asset| {
+                let lower = asset.name.to_ascii_lowercase();
+                let is_32_bit = (lower.contains("x86")
+                    && !lower.contains("x86_64")
+                    && !lower.contains("x86-64"))
+                    || lower.contains("i386")
+                    || lower.contains("i686");
+                lower.ends_with(".exe")
+                    && !lower.contains("arm")
+                    && !lower.contains("aarch64")
+                    && !is_32_bit
+            })
+            .collect();
+        if let [asset] = executables.as_slice() {
+            return Ok(asset);
+        }
         bail!("no Windows x64 release asset found; pass --asset <name>");
     };
     let best = *best;
@@ -478,14 +677,19 @@ fn asset_score(name: &str, package_name: &str, repo_name: &str) -> Option<i32> {
         || lower.contains("source")
         || lower.contains("installer")
         || lower.contains("setup")
+        || lower.contains("-libs")
+        || lower.contains("_libs")
     {
         return None;
     }
-    let windows = lower.contains("windows")
-        || lower.contains("win64")
-        || lower.contains("win32")
-        || lower.contains("_win")
-        || lower.contains("-win");
+    let windows = !lower.contains("darwin")
+        && (lower.contains("windows")
+            || lower.contains("win64")
+            || lower.contains("win32")
+            || lower.contains("_win")
+            || lower.contains("-win")
+            || lower.contains("win-")
+            || lower.contains("win_"));
     let x64 = lower.contains("x86_64")
         || lower.contains("amd64")
         || lower.contains("x64")
@@ -498,7 +702,7 @@ fn asset_score(name: &str, package_name: &str, repo_name: &str) -> Option<i32> {
         || lower.contains("armv")
         || lower.contains("i386")
         || lower.contains("i686")
-        || lower.contains("win32")
+        || (lower.contains("win32") && !x64)
     {
         return None;
     }
@@ -522,8 +726,18 @@ fn asset_score(name: &str, package_name: &str, repo_name: &str) -> Option<i32> {
     }
     let package_key = package_name.to_ascii_lowercase();
     let repo_key = repo_name.to_ascii_lowercase();
+    let main_asset = lower == package_key
+        || lower.starts_with(&format!("{package_key}-"))
+        || lower.starts_with(&format!("{package_key}_"))
+        || lower.starts_with(&format!("{package_key}."));
+    if main_asset {
+        score += 10;
+    }
     if lower.contains(&package_key) || lower.contains(&repo_key) {
         score += 2;
+    }
+    if lower.contains("baseline") || lower.contains("profile") || lower.contains(".full.") {
+        score -= 5;
     }
     Some(score)
 }
@@ -698,16 +912,31 @@ fn github_release_source(value: &str) -> Option<(String, String)> {
 
 fn release_version(tag: &str) -> Result<Version> {
     let direct = tag.trim_start_matches(['v', 'V']);
-    if let Ok(version) = Version::parse(direct) {
+    if let Some(version) = parse_semver_lenient(direct) {
         return Ok(version);
     }
-    for candidate in tag.split(['-', '_']).rev() {
+    for candidate in tag.split(['-', '_', '@']).rev() {
         let candidate = candidate.trim_start_matches(['v', 'V']);
-        if let Ok(version) = Version::parse(candidate) {
+        if let Some(version) = parse_semver_lenient(candidate) {
             return Ok(version);
         }
     }
     bail!("release tag '{tag}' is not a semantic version")
+}
+
+fn parse_semver_lenient(value: &str) -> Option<Version> {
+    if let Ok(version) = Version::parse(value) {
+        return Some(version);
+    }
+    let parts: Vec<&str> = value.split('.').collect();
+    if parts.len() == 2
+        && parts
+            .iter()
+            .all(|part| !part.is_empty() && part.chars().all(|c| c.is_ascii_digit()))
+    {
+        return Version::parse(&format!("{value}.0")).ok();
+    }
+    None
 }
 
 fn github_json<T: for<'de> Deserialize<'de>>(
@@ -746,7 +975,7 @@ fn manifest_files(root: &Path) -> Result<Vec<PathBuf>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{command_name, parse_repository, release_version};
+    use super::{asset_score, command_name, parse_repository, read_sources, release_version};
 
     #[test]
     fn parses_github_repository_forms() {
@@ -773,10 +1002,53 @@ mod tests {
     }
 
     #[test]
+    fn ranks_main_windows_assets() {
+        assert!(
+            asset_score(
+                "duckdb-shared-libs-windows-amd64.tar.gz",
+                "duckdb",
+                "duckdb"
+            )
+            .is_none()
+        );
+        let deno = asset_score("deno-x86_64-pc-windows-msvc.zip", "deno", "deno").unwrap();
+        let denort = asset_score("denort-x86_64-pc-windows-msvc.zip", "deno", "deno").unwrap();
+        assert!(deno > denort);
+        let bun = asset_score("bun-windows-x64.zip", "bun", "bun").unwrap();
+        let baseline = asset_score("bun-windows-x64-baseline.zip", "bun", "bun").unwrap();
+        assert!(bun > baseline);
+        assert!(asset_score("bun-darwin-x64.zip", "bun", "bun").is_none());
+    }
+
+    #[test]
+    fn reads_compact_and_detailed_sources() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("sources.toml");
+        std::fs::write(
+            &path,
+            r#"
+repositories = ["BurntSushi/ripgrep", "jqlang/jq"]
+
+[[source]]
+repository = "jqlang/jq"
+asset = "jq-windows-amd64.exe"
+"#,
+        )
+        .unwrap();
+        let entries = read_sources(&path).unwrap();
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].repository, "BurntSushi/ripgrep");
+        assert_eq!(entries[1].repository, "jqlang/jq");
+        assert_eq!(entries[1].asset.as_deref(), Some("jq-windows-amd64.exe"));
+    }
+
+    #[test]
     fn accepts_common_release_tag_forms() {
         assert_eq!(release_version("v0.26.1").unwrap().to_string(), "0.26.1");
         assert_eq!(release_version("jq-1.8.2").unwrap().to_string(), "1.8.2");
         assert_eq!(release_version("15.2.0").unwrap().to_string(), "15.2.0");
+        assert_eq!(release_version("3.13").unwrap().to_string(), "3.13.0");
         assert!(release_version("latest").is_err());
+        assert!(release_version("2026-11-02").is_err());
     }
 }

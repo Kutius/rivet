@@ -591,6 +591,7 @@ mod tests {
             license: String::new(),
             tags: Vec::new(),
             arch: None,
+            asset: None,
             url: "artifact.zip".to_string(),
             sha256: "0".repeat(64),
             extract: None,

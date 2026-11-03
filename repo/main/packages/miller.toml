@@ -1,0 +1,19 @@
+name = "miller"
+version = "6.22.0"
+description = "Miller is like awk, sed, cut, join, and sort for name-indexed data such as CSV, TSV, and tabular JSON"
+homepage = "https://miller.readthedocs.io"
+license = ""
+tags = []
+arch = "x64"
+url = "https://github.com/johnkerl/miller/releases/download/v6.22.0/miller-6.22.0-windows-amd64.zip"
+sha256 = "a8b7f5fe321528d181c771948f631115b9c17a8ebdf1c5809de835349a9dd304"
+extract = "zip"
+strip_components = 1
+depends = []
+persist = []
+
+[[bin]]
+path = "mlr.exe"
+name = "mlr"
+args = []
+

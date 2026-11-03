@@ -1,0 +1,18 @@
+name = "lazydocker"
+version = "0.25.2"
+description = "The lazier way to manage everything docker"
+homepage = "https://github.com/jesseduffield/lazydocker"
+license = "MIT"
+tags = []
+arch = "x64"
+url = "https://github.com/jesseduffield/lazydocker/releases/download/v0.25.2/lazydocker_0.25.2_Windows_x86_64.zip"
+sha256 = "facae8869c1bf144468191c563002162273a2c2761f052659170530cae3fa8a9"
+extract = "zip"
+depends = []
+persist = []
+
+[[bin]]
+path = "lazydocker.exe"
+name = "lazydocker"
+args = []
+

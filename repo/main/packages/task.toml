@@ -1,0 +1,18 @@
+name = "task"
+version = "3.54.0"
+description = "A fast, cross-platform build tool inspired by Make, designed for modern workflows."
+homepage = "https://taskfile.dev"
+license = "MIT"
+tags = []
+arch = "x64"
+url = "https://github.com/go-task/task/releases/download/v3.54.0/task_windows_amd64.zip"
+sha256 = "837f42f71899ea41d07a47acc81d4d6ea80cb41c68292345f915c656473efcb7"
+extract = "zip"
+depends = []
+persist = []
+
+[[bin]]
+path = "task.exe"
+name = "task"
+args = []
+

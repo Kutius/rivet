@@ -1,7 +1,29 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-03T04:38:59.294159200+00:00",
+  "generated_at": "2026-11-03T09:13:57.904777600+00:00",
   "packages": [
+    {
+      "name": "air",
+      "version": "1.67.4",
+      "description": "☁️ Live reload for Go apps",
+      "homepage": "https://github.com/air-verse/air",
+      "license": "GPL-3.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/air-verse/air/releases/download/v1.67.4/air_1.67.4_windows_amd64.exe",
+      "sha256": "b7f986b24fae6fa2941b37d63f7f7e82f7716033fd739f8f3e7c272e0903e9d5",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "air.exe",
+          "name": "air",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
     {
       "name": "bat",
       "version": "0.26.1",
@@ -22,6 +44,28 @@
         {
           "path": "bat.exe",
           "name": "bat",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "biome",
+      "version": "2.6.4",
+      "description": "A toolchain for web projects, aimed to provide functionalities to maintain them. Biome offers formatter and linter, usable via CLI and LSP.",
+      "homepage": "https://biomejs.dev",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.6.4/biome-win32-x64.exe",
+      "sha256": "ed7aa62b0f22ac4258d3d8668e0af8d53085168d421a8d4ec708040c5e275c0c",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "biome.exe",
+          "name": "biome",
           "args": []
         }
       ],
@@ -55,6 +99,94 @@
       "persist": []
     },
     {
+      "name": "bun",
+      "version": "1.4.4",
+      "description": "Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one",
+      "homepage": "https://bun.com",
+      "license": "",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-windows-x64.zip",
+      "sha256": "cd2c0fccc78f3ede1f50ca827a15f063eda13d4d150a3d0674f4f6e323d864a5",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "bun.exe",
+          "name": "bun",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "cargo-binstall",
+      "version": "1.26.2",
+      "description": "Binary installation for rust projects",
+      "homepage": "https://github.com/cargo-bins/cargo-binstall",
+      "license": "GPL-3.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/cargo-bins/cargo-binstall/releases/download/v1.26.2/cargo-binstall-x86_64-pc-windows-msvc.zip",
+      "sha256": "c377a4977ffdbdcbf58dd263055b2f1d56ba873c69fbd6bfc60bef98256183a3",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "cargo-binstall.exe",
+          "name": "cargo-binstall",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "cargo-deny",
+      "version": "0.20.2",
+      "description": "❌ Cargo plugin for linting your dependencies 🦀",
+      "homepage": "http://embark.rs",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-pc-windows-msvc.tar.gz",
+      "sha256": "975a22143262fd27476d19ee00c7af67978426e40e1dee94eed6bbade1cf87dc",
+      "extract": "tar.gz",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "cargo-deny.exe",
+          "name": "cargo-deny",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "dasel",
+      "version": "3.11.2",
+      "description": "Unified querying, transformation, and modification of JSON, TOML, YAML, XML, INI, HCL, KDL and CSV.",
+      "homepage": "https://daseldocs.tomwright.me",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/TomWright/dasel/releases/download/v3.11.2/dasel_windows_amd64.exe",
+      "sha256": "7f37a5aba88c702884edca3bcf2ad0a67b3f2533cbfbf1f6bc414e25e2fe1d24",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "dasel.exe",
+          "name": "dasel",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "delta",
       "version": "0.20.1",
       "description": "Syntax-highlighting pager for git, diff, and grep output",
@@ -74,6 +206,72 @@
         {
           "path": "delta.exe",
           "name": "delta",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "deno",
+      "version": "2.9.8",
+      "description": "A modern runtime for JavaScript and TypeScript.",
+      "homepage": "https://deno.com",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/denoland/deno/releases/download/v2.9.8/deno-x86_64-pc-windows-msvc.zip",
+      "sha256": "cba84b26e0df5ae7f74fc66b86a95b866872a86292ebd84fa1e959927edd93bf",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "deno.exe",
+          "name": "deno",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "dprint",
+      "version": "0.64.3",
+      "description": "Pluggable and configurable code formatting platform that unifies all your formatters.",
+      "homepage": "https://dprint.dev",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/dprint/dprint/releases/download/0.64.3/dprint-x86_64-pc-windows-msvc.zip",
+      "sha256": "3beb87a2582f1e43a301efd0840565518484e53f8c7b0ad27b857eee08e0745f",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "dprint.exe",
+          "name": "dprint",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "duckdb",
+      "version": "2.0.0",
+      "description": "DuckDB is a high-performance analytical database system",
+      "homepage": "http://www.duckdb.org",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/duckdb/duckdb/releases/download/v2.0.0/duckdb-cli-windows-amd64.tar.gz",
+      "sha256": "91663c2f36c2a334b0e5e639006d8c29c29e013af0c477d80bb931df68870312",
+      "extract": "tar.gz",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "duckdb.exe",
+          "name": "duckdb",
           "args": []
         }
       ],
@@ -159,6 +357,28 @@
       "persist": []
     },
     {
+      "name": "fq",
+      "version": "0.18.0",
+      "description": "fq - jq for binary formats. Tool, language and decoders for working with binary formats.",
+      "homepage": "https://wader.github.io/fq/",
+      "license": "",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/wader/fq/releases/download/v0.18.0/fq_0.18.0_windows_amd64.zip",
+      "sha256": "b255a2f2716a25132607f235e6cb564659ad037eb8bf48d60815edd82f21758d",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "fq.exe",
+          "name": "fq",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "fzf",
       "version": "0.74.5",
       "description": "General-purpose command-line fuzzy finder",
@@ -178,6 +398,116 @@
         {
           "path": "fzf.exe",
           "name": "fzf",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "gh",
+      "version": "2.103.3",
+      "description": "GitHub’s official command line tool",
+      "homepage": "https://cli.github.com",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/cli/cli/releases/download/v2.103.3/gh_2.103.3_windows_amd64.zip",
+      "sha256": "98d0cfa794721665d7973dd728c78aff7bd836d58f10f6d7a03568eccb0a22e0",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "bin/gh.exe",
+          "name": "gh",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "git-lfs",
+      "version": "3.8.1",
+      "description": "Git extension for versioning large files",
+      "homepage": "https://git-lfs.com",
+      "license": "",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/git-lfs/git-lfs/releases/download/v3.8.1/git-lfs-windows-amd64-v3.8.1.zip",
+      "sha256": "5bb771c12b3dacc535e912d0270a010c209d4da2e63819c5918e3547c2defed9",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "git-lfs.exe",
+          "name": "git-lfs",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "gofumpt",
+      "version": "0.12.0",
+      "description": "A stricter gofmt",
+      "homepage": "https://pkg.go.dev/mvdan.cc/gofumpt",
+      "license": "BSD-3-Clause",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/mvdan/gofumpt/releases/download/v0.12.0/gofumpt_v0.12.0_windows_amd64.exe",
+      "sha256": "66bd679908b64864fc85417e7ea01148774b477364b9a02ab1c194333a55c997",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "gofumpt.exe",
+          "name": "gofumpt",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "gojq",
+      "version": "0.12.20",
+      "description": "Pure Go implementation of jq",
+      "homepage": "https://github.com/itchyny/gojq",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/itchyny/gojq/releases/download/v0.12.20/gojq_v0.12.20_windows_amd64.zip",
+      "sha256": "fa418a4a97422d10e4f65f093ea4c35eab239f9c0957810d4f4fc1c4253fbf7c",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "gojq.exe",
+          "name": "gojq",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "golangci-lint",
+      "version": "2.15.0",
+      "description": "Fast linters runner for Go",
+      "homepage": "https://golangci-lint.run",
+      "license": "GPL-3.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/golangci/golangci-lint/releases/download/v2.15.0/golangci-lint-2.15.0-windows-amd64.zip",
+      "sha256": "cd7ea6063c95de245e17e5246e42bdc14bb221792c429dbd239ab3a6ade6ca6a",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "golangci-lint.exe",
+          "name": "golangci-lint",
           "args": []
         }
       ],
@@ -228,6 +558,28 @@
         {
           "path": "hello.cmd",
           "name": "hello",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "hexyl",
+      "version": "0.17.0",
+      "description": "A command-line hex viewer",
+      "homepage": "https://github.com/sharkdp/hexyl",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/sharkdp/hexyl/releases/download/v0.17.0/hexyl-v0.17.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "ab5c3442cff63f585553d4fce330eaa1ef1bd2584643f1a0e29ab7c13fc9566d",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "hexyl.exe",
+          "name": "hexyl",
           "args": []
         }
       ],
@@ -313,6 +665,50 @@
       "persist": []
     },
     {
+      "name": "lazydocker",
+      "version": "0.25.2",
+      "description": "The lazier way to manage everything docker",
+      "homepage": "https://github.com/jesseduffield/lazydocker",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/jesseduffield/lazydocker/releases/download/v0.25.2/lazydocker_0.25.2_Windows_x86_64.zip",
+      "sha256": "facae8869c1bf144468191c563002162273a2c2761f052659170530cae3fa8a9",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "lazydocker.exe",
+          "name": "lazydocker",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "lazygit",
+      "version": "0.66.2",
+      "description": "simple terminal UI for git commands",
+      "homepage": "https://github.com/jesseduffield/lazygit",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.66.2/lazygit_0.66.2_windows_x86_64.zip",
+      "sha256": "8b1e2194c2d8ac660f0a132cb4384e9d2fe1405217a144e280df16383c18d45c",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "lazygit.exe",
+          "name": "lazygit",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "lsd",
       "version": "1.2.0",
       "description": "The next gen ls command",
@@ -332,6 +728,94 @@
         {
           "path": "lsd.exe",
           "name": "lsd",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "mdbook",
+      "version": "0.5.4",
+      "description": "Create book from markdown files. Like Gitbook but implemented in Rust",
+      "homepage": "https://rust-lang.github.io/mdBook/",
+      "license": "MPL-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/rust-lang/mdBook/releases/download/v0.5.4/mdbook-v0.5.4-x86_64-pc-windows-msvc.zip",
+      "sha256": "8a6b2421aa522de06d746871d2b8fff9c8d71773467e310a4516d2566e7f2de4",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "mdbook.exe",
+          "name": "mdbook",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "miller",
+      "version": "6.22.0",
+      "description": "Miller is like awk, sed, cut, join, and sort for name-indexed data such as CSV, TSV, and tabular JSON",
+      "homepage": "https://miller.readthedocs.io",
+      "license": "",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/johnkerl/miller/releases/download/v6.22.0/miller-6.22.0-windows-amd64.zip",
+      "sha256": "a8b7f5fe321528d181c771948f631115b9c17a8ebdf1c5809de835349a9dd304",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "mlr.exe",
+          "name": "mlr",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "pandoc",
+      "version": "3.13.0",
+      "description": "Universal markup converter",
+      "homepage": "https://pandoc.org",
+      "license": "GPL-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/jgm/pandoc/releases/download/3.13/pandoc-3.13-windows-x86_64.zip",
+      "sha256": "23e1f2e978a3df80db8bf65c9c59534f41a23140480cfb4f783a882ab7dc6a4e",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "pandoc.exe",
+          "name": "pandoc",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "pnpm",
+      "version": "12.16.1",
+      "description": "Fast, disk space efficient package manager",
+      "homepage": "https://pnpm.io",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/pnpm/pnpm/releases/download/v12.16.1/pnpm-win32-x64.zip",
+      "sha256": "253cd5caa8cdf3859a92995bdf1819d3b433690157616cc372af00d22eb0c6a4",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "pnpm.exe",
+          "name": "pnpm",
           "args": []
         }
       ],
@@ -365,6 +849,50 @@
       "persist": []
     },
     {
+      "name": "rclone",
+      "version": "1.75.2",
+      "description": "\"rsync for cloud storage\" - Google Drive, S3, Dropbox, Backblaze B2, One Drive, Swift, Hubic, Wasabi, Google Cloud Storage, Azure Blob, Azure Files, Yandex Files",
+      "homepage": "https://rclone.org",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/rclone/rclone/releases/download/v1.75.2/rclone-v1.75.2-windows-amd64.zip",
+      "sha256": "8a9db2bad1dc79a65b3348fd857069598e2aab7cf4d118b77b1df23055aff818",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "rclone.exe",
+          "name": "rclone",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "restic",
+      "version": "0.19.1",
+      "description": "Fast, secure, efficient backup program",
+      "homepage": "https://restic.net",
+      "license": "BSD-2-Clause",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/restic/restic/releases/download/v0.19.1/restic_0.19.1_windows_amd64.zip",
+      "sha256": "da948ad707ed690426473aaba2046cd61f8f90f6f0e7dab6be0d5796531de67d",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "restic_0.19.1_windows_amd64.exe",
+          "name": "restic",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "ripgrep",
       "version": "15.2.0",
       "description": "Fast recursive search tool that respects .gitignore",
@@ -384,6 +912,28 @@
         {
           "path": "rg.exe",
           "name": "rg",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "ruff",
+      "version": "0.17.3",
+      "description": "An extremely fast Python linter and code formatter, written in Rust.",
+      "homepage": "https://docs.astral.sh/ruff",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/astral-sh/ruff/releases/download/0.17.3/ruff-x86_64-pc-windows-msvc.zip",
+      "sha256": "a84d9ac74af8ef5bac84a1888a1634df18e6e985e2f930d35c052beacd00e813",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "ruff.exe",
+          "name": "ruff",
           "args": []
         }
       ],
@@ -417,6 +967,28 @@
       "persist": []
     },
     {
+      "name": "shfmt",
+      "version": "3.14.1",
+      "description": "A shell parser, formatter, and interpreter with bash and zsh support; includes shfmt",
+      "homepage": "https://pkg.go.dev/mvdan.cc/sh/v3",
+      "license": "BSD-3-Clause",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_windows_amd64.exe",
+      "sha256": "13629ce28442ca80b6b5a819f7574ab39e1c28c6e26734ca816c9714e04851df",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "shfmt.exe",
+          "name": "shfmt",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "starship",
       "version": "1.27.0",
       "description": "☄🌌️  The minimal, blazing-fast, and infinitely customizable prompt for any shell!",
@@ -443,6 +1015,28 @@
       "persist": []
     },
     {
+      "name": "task",
+      "version": "3.54.0",
+      "description": "A fast, cross-platform build tool inspired by Make, designed for modern workflows.",
+      "homepage": "https://taskfile.dev",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/go-task/task/releases/download/v3.54.0/task_windows_amd64.zip",
+      "sha256": "837f42f71899ea41d07a47acc81d4d6ea80cb41c68292345f915c656473efcb7",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "task.exe",
+          "name": "task",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "typst",
       "version": "0.15.1",
       "description": "A markup-based typesetting system that is powerful and easy to learn.",
@@ -462,6 +1056,28 @@
         {
           "path": "typst.exe",
           "name": "typst",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "uv",
+      "version": "0.13.7",
+      "description": "An extremely fast Python package and project manager, written in Rust.",
+      "homepage": "https://docs.astral.sh/uv",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/astral-sh/uv/releases/download/0.13.7/uv-x86_64-pc-windows-msvc.zip",
+      "sha256": "0cdc5b38fe5a8168ed6a25814f5ba43c21d313dd3187314fccb37b7cec46e021",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "uv.exe",
+          "name": "uv",
           "args": []
         }
       ],
@@ -514,6 +1130,28 @@
         {
           "path": "xh.exe",
           "name": "xh",
+          "args": []
+        }
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "xsv",
+      "version": "0.13.0",
+      "description": "A fast CSV command line toolkit written in Rust.",
+      "homepage": "https://github.com/BurntSushi/xsv",
+      "license": "Unlicense",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/BurntSushi/xsv/releases/download/0.13.0/xsv-0.13.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "3e319c08456031a9683c19c998ac9f61756a2e456413db17c8e6819b17818a1a",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "xsv.exe",
+          "name": "xsv",
           "args": []
         }
       ],

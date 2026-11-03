@@ -1,0 +1,18 @@
+name = "fq"
+version = "0.18.0"
+description = "fq - jq for binary formats. Tool, language and decoders for working with binary formats."
+homepage = "https://wader.github.io/fq/"
+license = ""
+tags = []
+arch = "x64"
+url = "https://github.com/wader/fq/releases/download/v0.18.0/fq_0.18.0_windows_amd64.zip"
+sha256 = "b255a2f2716a25132607f235e6cb564659ad037eb8bf48d60815edd82f21758d"
+extract = "zip"
+depends = []
+persist = []
+
+[[bin]]
+path = "fq.exe"
+name = "fq"
+args = []
+

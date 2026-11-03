@@ -1,0 +1,18 @@
+name = "uv"
+version = "0.13.7"
+description = "An extremely fast Python package and project manager, written in Rust."
+homepage = "https://docs.astral.sh/uv"
+license = "Apache-2.0"
+tags = []
+arch = "x64"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.7/uv-x86_64-pc-windows-msvc.zip"
+sha256 = "0cdc5b38fe5a8168ed6a25814f5ba43c21d313dd3187314fccb37b7cec46e021"
+extract = "zip"
+depends = []
+persist = []
+
+[[bin]]
+path = "uv.exe"
+name = "uv"
+args = []
+

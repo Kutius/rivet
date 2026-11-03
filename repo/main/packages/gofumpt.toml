@@ -1,0 +1,18 @@
+name = "gofumpt"
+version = "0.12.0"
+description = "A stricter gofmt"
+homepage = "https://pkg.go.dev/mvdan.cc/gofumpt"
+license = "BSD-3-Clause"
+tags = []
+arch = "x64"
+url = "https://github.com/mvdan/gofumpt/releases/download/v0.12.0/gofumpt_v0.12.0_windows_amd64.exe"
+sha256 = "66bd679908b64864fc85417e7ea01148774b477364b9a02ab1c194333a55c997"
+extract = "none"
+depends = []
+persist = []
+
+[[bin]]
+path = "gofumpt.exe"
+name = "gofumpt"
+args = []
+
