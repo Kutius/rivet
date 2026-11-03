@@ -1,0 +1,19 @@
+name = "watchexec"
+version = "2.8.0"
+description = "Executes commands in response to file modifications"
+homepage = "https://watchexec.github.io"
+license = "Apache-2.0"
+tags = ["watch", "files", "cli"]
+arch = "x64"
+url = "https://github.com/watchexec/watchexec/releases/download/v2.8.0/watchexec-2.8.0-x86_64-pc-windows-msvc.zip"
+sha256 = "0c872fc18c8e801f21614c6daf2504a5826d5c705bb67f7a583d879f5410d9ea"
+extract = "zip"
+strip_components = 1
+depends = []
+persist = []
+
+[[bin]]
+path = "watchexec.exe"
+name = "watchexec"
+args = []
+

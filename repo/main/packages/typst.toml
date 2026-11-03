@@ -1,0 +1,19 @@
+name = "typst"
+version = "0.15.1"
+description = "A markup-based typesetting system that is powerful and easy to learn."
+homepage = "https://typst.app"
+license = "Apache-2.0"
+tags = ["typesetting", "markup", "cli"]
+arch = "x64"
+url = "https://github.com/typst/typst/releases/download/v0.15.1/typst-x86_64-pc-windows-msvc.zip"
+sha256 = "19ce3551153c2fe7ee9fa2f95208310c8f4d3209fedb699e0333faf8913f6736"
+extract = "zip"
+strip_components = 1
+depends = []
+persist = []
+
+[[bin]]
+path = "typst.exe"
+name = "typst"
+args = []
+

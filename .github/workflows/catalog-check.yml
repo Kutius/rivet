@@ -1,0 +1,70 @@
+name: Catalog check
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download latest rv.exe
+        shell: pwsh
+        run: |
+          $releases = Invoke-RestMethod -Headers @{ 'User-Agent' = 'rivet-catalog-check' } -Uri "https://api.github.com/repos/Kutius/rivet/releases?per_page=20"
+          $release = $releases | Where-Object { -not $_.draft } | Select-Object -First 1
+          if (-not $release) { throw "No Rivet release found." }
+          $asset = $release.assets | Where-Object { $_.name -eq "rv.exe" } | Select-Object -First 1
+          if (-not $asset) { throw "rv.exe not found in $($release.tag_name)." }
+          Invoke-WebRequest -UseBasicParsing $asset.browser_download_url -OutFile rv.exe
+
+      - name: Check catalog
+        id: check
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          $output = (& .\rv.exe repo update repo/main --check 2>&1 | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "catalog check failed" }
+          Write-Host $output
+          if ($output -match "update\(s\) available") {
+            "updates=true" >> $env:GITHUB_OUTPUT
+            $output | Set-Content -Path catalog-updates.txt -Encoding utf8
+          }
+
+      - name: Open or update issue
+        if: steps.check.outputs.updates == "true"
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $output = (Get-Content catalog-updates.txt -Raw).Trim()
+          $body = @(
+            "Catalog update check found available updates.",
+            "",
+            '```text',
+            $output,
+            '```',
+            "",
+            "Run locally:",
+            "",
+            '```powershell',
+            "rivet repo update repo/main",
+            "rivet repo build repo/main",
+            "rivet repo sign repo/main --key <offline-key>",
+            '```'
+          ) -join "`n"
+          $title = "Catalog updates available"
+          $existing = gh issue list --state open --search "$title in:title" --json number --jq ".[0].number"
+          if ($existing) {
+            gh issue edit $existing --body $body
+          } else {
+            gh issue create --title $title --body $body
+          }

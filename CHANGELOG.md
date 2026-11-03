@@ -102,4 +102,4 @@ Rivet is a portable-first Windows package manager built as one native Rust binar
 
 ### Catalog
 
-- Added hyperfine, dust, bottom, just, and starship to the main catalog.
+- Added hyperfine, dust, bottom, just, starship, xh, sd, procs, eza, lsd, watchexec, and typst to the main catalog.
