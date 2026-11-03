@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.0-beta.5 — PowerShell alias and catalog maintenance
+
+### Added
+
+- `rivet.exe` is installed next to `rv.exe`; PowerShell users get a command that is not shadowed by the built-in `rv` alias for `Remove-Variable`.
+- `rivet repo add owner/repo`: generate a manifest from the latest GitHub release, auto-detect the Windows x64 asset and executable, verify SHA-256, and rebuild the index.
+- `rivet repo update [--check] [--package NAME]`: refresh every GitHub-hosted package to its latest release.
+- `GITHUB_TOKEN` / `GH_TOKEN` support for higher GitHub API rate limits.
+
+### Changed
+
+- User-facing PowerShell examples use `rivet`; `rv` remains available for `cmd.exe` and compatible scripts.
+- `rivet doctor --fix` restores a missing `rivet.exe` alias.
+- `install.ps1` checks that `rivet.exe` was created and prints `rivet` in its guidance.
+
+### Tests
+
+- 38 tests, including the alias update path, GitHub repository/tag parsing, and command-name normalization.
+
 ## 0.1.0-beta.4 — self-management
 
 ### Added

@@ -80,7 +80,7 @@ fn native_exe_falls_back_to_a_launcher_when_symlinks_are_disabled() -> Result<()
         "launcher failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(String::from_utf8_lossy(&output.stdout).contains("rv "));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("rivet "));
     assert_success(&run_rv(root_path, &index, &["verify"]));
     Ok(())
 }

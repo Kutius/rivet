@@ -107,12 +107,12 @@ pub fn verify_signature(
     }
     if trust.keys.is_empty() {
         bail!(
-            "no trusted signing key is configured; refusing the index at {location}.\n  Trust the maintainer key with 'rv config set trusted_key <hex>' or set RIVET_TRUSTED_KEY."
+            "no trusted signing key is configured; refusing the index at {location}.\n  Trust the maintainer key with 'rivet config set trusted_key <hex>' or set RIVET_TRUSTED_KEY."
         );
     }
     if !trust.is_trusted(&signature.public_key) {
         bail!(
-            "index {location} is signed by an untrusted key {}.\n  Trust it with 'rv config set trusted_key {}' only if you expect that key.",
+            "index {location} is signed by an untrusted key {}.\n  Trust it with 'rivet config set trusted_key {}' only if you expect that key.",
             signature.public_key,
             signature.public_key
         );
@@ -140,7 +140,7 @@ pub fn verify_index(
             verify_signature(data, &parsed, trust, location)
         }
         None if remote && !trust.allow_unsigned => bail!(
-            "refusing unsigned remote index {location}: {location}{SIGNATURE_SUFFIX} was not found.\n  Sign the index with 'rv repo sign' and trust the key with 'rv config set trusted_key <hex>'.\n  Pass --insecure to override (not recommended)."
+            "refusing unsigned remote index {location}: {location}{SIGNATURE_SUFFIX} was not found.\n  Sign the index with 'rivet repo sign' and trust the key with 'rivet config set trusted_key <hex>'.\n  Pass --insecure to override (not recommended)."
         ),
         None => Ok(()),
     }

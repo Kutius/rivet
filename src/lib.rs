@@ -1,4 +1,5 @@
 pub mod archive;
+pub mod catalog;
 pub mod cli;
 pub mod commands;
 pub mod config;

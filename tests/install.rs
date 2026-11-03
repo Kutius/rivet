@@ -77,7 +77,7 @@ fn version_is_visible() {
     let output = run_rv(root.path(), &["--version"]);
     assert_success(&output);
     assert!(
-        stdout(&output).starts_with("rv "),
+        stdout(&output).starts_with("rivet "),
         "version: {}",
         stdout(&output)
     );
@@ -90,4 +90,5 @@ fn init_no_path_leaves_no_active_lock() {
     assert_success(&output);
     assert!(root.path().join("rivet.lock").exists());
     assert!(fs::metadata(root.path().join("bin").join("rv.exe")).is_ok());
+    assert!(fs::metadata(root.path().join("bin").join("rivet.exe")).is_ok());
 }

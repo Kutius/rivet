@@ -2,7 +2,7 @@
 
 Rivet is a fast, portable-first package manager for Windows, built as a native Rust CLI plus a tiny launcher shim. It keeps the useful parts of Scoop's model without the PowerShell startup, bucket scans, and implicit metadata refreshes.
 
-Current release: 0.1.0-beta.4.
+Current release: 0.1.0-beta.5.
 
 Rivet is not Scoop-compatible. Scoop manifests, buckets, and PowerShell hooks are intentionally out of scope.
 
@@ -17,7 +17,7 @@ Scoop's common commands pay for:
 
 Rivet moves those costs out of the hot path:
 
-- one native Rust CLI (rv), no runtime scripts; a 280 KB launcher shim only for script commands or systems without symlink permission;
+- one native Rust CLI (`rivet`, also installed as `rv.exe`), no runtime scripts; a 280 KB launcher shim only for script commands or systems without symlink permission;
 - a local SQLite index for search and package metadata;
 - a generated main index instead of a client-side Git bucket clone;
 - immutable version directories plus a current junction;
@@ -32,7 +32,7 @@ From PowerShell:
 irm https://kutius.github.io/rivet/install.ps1 | iex
 ~~~
 
-The installer downloads the release zip, verifies SHA256SUMS, copies rv.exe and rv-shim.exe to %LOCALAPPDATA%\Rivet\bin, adds that directory to the user PATH once, and fetches the signed main catalog. Open a new terminal and run `rv.exe --version`; see the PowerShell note below if you want to use `rv`.
+The installer downloads the release zip, verifies SHA256SUMS, installs rv.exe, rivet.exe, and rv-shim.exe into %LOCALAPPDATA%\Rivet\bin, adds that directory to the user PATH once, and fetches the signed main catalog. Open a new terminal and run `rivet --version`.
 
 For a portable install without a PATH change:
 
@@ -43,50 +43,31 @@ irm https://kutius.github.io/rivet/install.ps1 -OutFile install.ps1
 
 Manual zip installation and uninstall are in [docs/INSTALL.md](docs/INSTALL.md).
 
-### PowerShell note: the `rv` alias
+### PowerShell note: `rivet` and `rv`
 
-PowerShell ships a read-only alias named `rv` for `Remove-Variable`. Alias resolution happens before PATH lookup, so in a normal PowerShell session `rv --version` invokes `Remove-Variable`, not Rivet, and fails with an error such as "Cannot find a variable named '--version'".
+PowerShell ships a read-only alias named `rv` for `Remove-Variable`. Alias resolution happens before PATH lookup, so `rv --version` in PowerShell invokes the built-in alias, not Rivet.
 
-This is a PowerShell built-in, not a Rivet alias. Use one of these:
+Rivet therefore installs both `rivet.exe` and `rv.exe`. Use `rivet` in PowerShell. `rv` still works in `cmd.exe`; if you specifically need it in PowerShell, remove the alias or add this line to `$PROFILE`:
 
-- Invoke the executable explicitly:
-
-  ~~~powershell
-  rv.exe --version
-  ~~~
-
-- Remove the alias for the current session, then use `rv`:
-
-  ~~~powershell
-  Remove-Item Alias:rv -Force
-  rv --version
-  ~~~
-
-- Remove it for every new session by adding this line to `$PROFILE`:
-
-  ~~~powershell
-  if (Test-Path Alias:rv) { Remove-Item Alias:rv -Force -ErrorAction SilentlyContinue }
-  ~~~
-
-  Open a new terminal after saving the profile.
-
-`cmd.exe` does not have this alias, so `rv` works there. PowerShell sessions started with `-NoProfile` keep the alias; use `rv.exe` in those sessions.
+~~~powershell
+if (Test-Path Alias:rv) { Remove-Item Alias:rv -Force -ErrorAction SilentlyContinue }
+~~~
 
 ## Quick start
 
 ~~~powershell
-rv update
-rv search ripgrep
-rv install ripgrep
-rv list
-rv status
+rivet update
+rivet search ripgrep
+rivet install ripgrep
+rivet list
+rivet status
 ~~~
 
 A local directory or index.json is accepted for development and may be unsigned:
 
 ~~~powershell
-rv config set main_index C:\src\rivet\repo\main\index.json
-rv update
+rivet config set main_index C:\src\rivet\repo\main\index.json
+rivet update
 ~~~
 
 For a disposable demo from this repository:
@@ -104,35 +85,35 @@ The demo package installs a native shim at %RIVET_ROOT%\bin\hello.exe.
 
 | Command | Purpose |
 |---|---|
-| rv update | Refresh the main index and taps. Never changes installed packages. |
-| rv search [query] | Local full-text search; omit the query to list packages. |
-| rv info PACKAGE | Show metadata and available versions. |
-| rv install PACKAGE... | Install packages and dependencies. Supports name, repo/name, owner/repo/name, and name@version. |
-| rv list | List installed packages and pin state. |
-| rv status [--check] | Show installed versus latest versions. --check refreshes metadata; it falls back to the cached index if the network is unavailable. |
-| rv upgrade [PACKAGE...] [--all] [--force] | Upgrade packages. Pinned packages are skipped unless forced. |
-| rv remove PACKAGE... [--purge] [--force] | Remove packages. Dependents block removal unless forced. --purge deletes persist data. |
-| rv rollback PACKAGE... | Switch back to the previous version. |
-| rv pin / rv unpin PACKAGE... | Hold or release a package at its current version. |
-| rv verify | Check store paths, current links, shims, and recorded versions. Non-zero on damage. |
-| rv doctor [--fix] | Diagnose the installation; --fix repairs broken links and missing shims when the store is intact. |
-| rv cleanup [--dry-run] | Remove old store versions and stale cache entries; --dry-run only lists them. |
-| rv tap add/list/remove | Manage third-party Git taps. |
-| rv repo build/sign/keygen/public-key | Maintainer tooling for indexes and keys. |
-| rv config path/get/set | Inspect or edit config. |
-| rv init [--no-path] | Install the binaries, configure the catalog, and optionally update the user PATH. |
-| rv self-update [--force] | Replace the installed binaries with the latest release. |
-| rv self-uninstall --yes | Remove packages, PATH entry, and the Rivet root. |
+| rivet update | Refresh the main index and taps. Never changes installed packages. |
+| rivet search [query] | Local full-text search; omit the query to list packages. |
+| rivet info PACKAGE | Show metadata and available versions. |
+| rivet install PACKAGE... | Install packages and dependencies. Supports name, repo/name, owner/repo/name, and name@version. |
+| rivet list | List installed packages and pin state. |
+| rivet status [--check] | Show installed versus latest versions. --check refreshes metadata; it falls back to the cached index if the network is unavailable. |
+| rivet upgrade [PACKAGE...] [--all] [--force] | Upgrade packages. Pinned packages are skipped unless forced. |
+| rivet remove PACKAGE... [--purge] [--force] | Remove packages. Dependents block removal unless forced. --purge deletes persist data. |
+| rivet rollback PACKAGE... | Switch back to the previous version. |
+| rivet pin / rivet unpin PACKAGE... | Hold or release a package at its current version. |
+| rivet verify | Check store paths, current links, shims, and recorded versions. Non-zero on damage. |
+| rivet doctor [--fix] | Diagnose the installation; --fix repairs broken links and missing shims, and restores the `rivet.exe` alias. |
+| rivet cleanup [--dry-run] | Remove old store versions and stale cache entries; --dry-run only lists them. |
+| rivet tap add/list/remove | Manage third-party Git taps. |
+| rivet repo add/update/build/sign/keygen/public-key | Maintainer tooling for catalog packages, indexes, and keys. |
+| rivet config path/get/set | Inspect or edit config. |
+| rivet init [--no-path] | Install the binaries, configure the catalog, and optionally update the user PATH. |
+| rivet self-update [--force] | Replace the installed binaries with the latest release. |
+| rivet self-uninstall --yes | Remove packages, PATH entry, and the Rivet root. |
 
 Install and remove are idempotent: installing an already-installed package is a no-op, and removing an absent package succeeds without changing anything.
 
 Add --json before the subcommand for machine-readable search, list, status, and info:
 
 ~~~powershell
-rv --json search hello
-rv --json list
-rv --json status
-rv --json info hello
+rivet --json search hello
+rivet --json list
+rivet --json status
+rivet --json info hello
 ~~~
 
 ## Main repository
@@ -147,63 +128,69 @@ repo/main/
   index.json.sig
 ~~~
 
+Maintainers add GitHub-hosted tools without hand-writing metadata:
+
 ~~~powershell
-rv repo build repo\main
-rv repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
+rivet repo add BurntSushi/ripgrep --path repo\main
+rivet repo update repo\main --check
+rivet repo update repo\main
+rivet repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
 ~~~
 
-See [docs/MANIFEST.md](docs/MANIFEST.md) for every field and [docs/SECURITY.md](docs/SECURITY.md) for the trust model.
+`repo add` downloads the latest release, picks the Windows x64 asset, infers the executable and archive layout, computes SHA-256, writes the manifest, and rebuilds the index. `repo update` does the same version bump for every GitHub-hosted package. Set `GITHUB_TOKEN` or `GH_TOKEN` to avoid the unauthenticated GitHub API rate limit. Signing stays offline and explicit; it is never automated.
+
+See [docs/MANIFEST.md](docs/MANIFEST.md) for every field, [docs/SECURITY.md](docs/SECURITY.md) for the trust model, and [repo/main/README.md](repo/main/README.md) for the catalog workflow.
 
 ## Taps
 
 Taps are third-party Git repositories in the Homebrew style. They contain packages/*.toml and may contain a generated index.json.
 
 ~~~powershell
-rv tap add owner/repo
-rv tap add demo C:\path\to\tap
-rv tap list
-rv tap remove demo
+rivet tap add owner/repo
+rivet tap add demo C:\path\to\tap
+rivet tap list
+rivet tap remove demo
 ~~~
 
 Packages from a tap are namespaced:
 
 ~~~powershell
-rv install demo/hello
+rivet install demo/hello
 ~~~
 
-If the tap has no index.json, rv update builds one locally from its manifests. Search is always local; network access only occurs during explicit rv update, rv tap add, and artifact downloads. See [docs/TAPS.md](docs/TAPS.md).
+If the tap has no index.json, `rivet update` builds one locally from its manifests. Search is always local; network access only occurs during explicit `rivet update`, `rivet tap add`, and artifact downloads. See [docs/TAPS.md](docs/TAPS.md).
 
 ## Signing the index
 
 The client verifies an Ed25519 signature over the exact index.json bytes before parsing them. Maintainers generate a key pair, sign the index, and publish index.json.sig next to index.json:
 
 ~~~powershell
-rv repo keygen --out C:\secure\rivet-keys
-rv repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
-rv repo public-key --key C:\secure\rivet-keys\rivet-signing.key
+rivet repo keygen --out C:\secure\rivet-keys
+rivet repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
+rivet repo public-key --key C:\secure\rivet-keys\rivet-signing.key
 ~~~
 
-rv repo keygen writes rivet-signing.key (private) and rivet-signing.pub (public, hex). It prints only the public key. Never commit the private key.
+`rivet repo keygen` writes rivet-signing.key (private) and rivet-signing.pub (public, hex). It prints only the public key. Never commit the private key.
 
 Clients trust a key explicitly:
 
 ~~~powershell
-rv config set trusted_key <64-hex public key>
+rivet config set trusted_key <64-hex public key>
 # or for one invocation:
 $env:RIVET_TRUSTED_KEY = "<64-hex public key>"
 ~~~
 
 Rules:
 
-- HTTP indexes must be signed; a missing, untrusted, or invalid signature fails rv update before parsing.
+- HTTP indexes must be signed; a missing, untrusted, or invalid signature fails `rivet update` before parsing.
 - Local file and directory indexes may be unsigned for development.
-- --insecure (or rv config set allow_unsigned_remote true) accepts unsigned remote indexes. It is a deliberate downgrade; use it only for testing.
+- --insecure (or `rivet config set allow_unsigned_remote true`) accepts unsigned remote indexes. It is a deliberate downgrade; use it only for testing.
 
 ## Storage layout
 
 ~~~text
 %LOCALAPPDATA%\Rivet\
-  bin\                 # one PATH entry; rv-shim.exe and command shims
+  bin\                 # one PATH entry; rv.exe, rivet.exe, rv-shim.exe, command shims
   store\<name>\<version>\
   apps\<name>\current   # junction to the active version
   persist\<name>\
@@ -213,15 +200,15 @@ Rules:
   config.toml
 ~~~
 
-The store is the source of truth. The SQLite database is a cache and state index; rv doctor reports broken links and missing store paths.
+The store is the source of truth. The SQLite database is a cache and state index; `rivet doctor` reports broken links and missing store paths.
 
 ## Concurrency and recovery
 
 Every mutating command (update, install, remove, upgrade, rollback, cleanup, tap add/remove, config set, init, and doctor --fix) takes a single-process lock at <root>\rivet.lock.
 
-The lock is an exclusive open file handle. Windows releases it when the process exits, including a crash, so a leftover rivet.lock file never blocks a later command; the file is intentionally left in place. A second rv command that finds the lock held fails with an actionable message and changes nothing.
+The lock is an exclusive open file handle. Windows releases it when the process exits, including a crash, so a leftover rivet.lock file never blocks a later command; the file is intentionally left in place. A second `rivet` command that finds the lock held fails with an actionable message and changes nothing.
 
-Interrupted installs are recovered at the start of the next mutating command: staging directories under store\<name>\.tmp-* are deleted and shim files without a database record are removed. rv doctor --fix repairs a broken current junction and missing shims while the immutable store still contains the version; a missing store is reported as unrepairable.
+Interrupted installs are recovered at the start of the next mutating command: staging directories under store\<name>\.tmp-* are deleted and shim files without a database record are removed. `rivet doctor --fix` repairs a broken current junction and missing shims while the immutable store still contains the version; a missing store is reported as unrepairable.
 
 ## Build and test
 
@@ -240,7 +227,7 @@ Release packaging:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\release.ps1
 ~~~
 
-This builds dist\rivet-v0.1.0-beta.4-windows-x64.zip, the binaries, install.ps1, and SHA256SUMS. It does not publish.
+This builds dist\rivet-v0.1.0-beta.5-windows-x64.zip, the binaries, install.ps1, and SHA256SUMS. It does not publish.
 
 ## Supported
 
@@ -257,6 +244,7 @@ This builds dist\rivet-v0.1.0-beta.4-windows-x64.zip, the binaries, install.ps1,
 - No full dependency solver; dependencies are recursive and latest-version by default, with explicit name@version respected.
 - No shell completions yet.
 - No central verified-tap registry; taps are trusted because the user adds them.
+- `repo add` and `repo update` automate GitHub releases; packages distributed outside GitHub still need a manifest written or imported manually.
 
 The next work is artifact mirroring and a proper dependency solver only if real packages need one; code signing is deferred.
 

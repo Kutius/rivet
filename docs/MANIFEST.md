@@ -1,6 +1,6 @@
 # Manifest reference
 
-A package is one TOML file under packages/. rv repo build validates every manifest and writes a single index.json.
+A package is one TOML file under packages/. `rivet repo build` validates every manifest and writes a single index.json.
 
 ## Example
 
@@ -36,7 +36,7 @@ persist = ["data"]
 | sha256 | yes | 64 hexadecimal characters. Required and verified before extraction. |
 | extract | no | zip, tar.gz, tar, 7z, or none. Inferred from the URL when omitted. |
 | strip_components | no | Number of leading path components to remove after extraction. |
-| bin | no | Commands to expose through rv-shim.exe. |
+| bin | no | Commands to expose through a symlink or rv-shim.exe. |
 | depends | no | Package names, repo/name, or name@version. |
 | persist | no | Paths preserved across versions under persist/<package>/. |
 
@@ -75,12 +75,37 @@ persist = ["data", "config/settings.json"]
 
 On first install, files shipped inside the package at these paths are moved into persist/<package>/ and replaced with junctions. Later upgrades and rollbacks keep the persist data.
 
+## Add and update packages
+
+Generate a manifest from the latest GitHub release and rebuild the index:
+
+~~~powershell
+rivet repo add BurntSushi/ripgrep --path repo\main
+~~~
+
+Override auto-detection when needed:
+
+~~~powershell
+rivet repo add owner/repo --path repo\main --name package-name
+rivet repo add owner/repo --path repo\main --asset windows-x64.zip
+rivet repo add owner/repo --path repo\main --bin bin\tool.exe
+~~~
+
+Refresh all GitHub-hosted packages:
+
+~~~powershell
+rivet repo update repo\main --check
+rivet repo update repo\main
+~~~
+
+Set `GITHUB_TOKEN` or `GH_TOKEN` to raise the GitHub API rate limit. Packages with non-GitHub URLs or an installer instead of a portable archive still need a hand-written manifest.
+
 ## Build and sign
 
 ~~~powershell
-rv repo build repo\main
-rv repo keygen --out C:\keys\rivet
-rv repo sign repo\main --key C:\keys\rivet\rivet-signing.key
+rivet repo build repo\main
+rivet repo keygen --out C:\keys\rivet
+rivet repo sign repo\main --key C:\keys\rivet\rivet-signing.key
 ~~~
 
 Sign after every build; the signature covers the exact index.json bytes. Keep the private key outside the repository.

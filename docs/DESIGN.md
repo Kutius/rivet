@@ -4,13 +4,13 @@ This is the lean, individual-developer version of Rivet. It deliberately keeps o
 
 ## Principles
 
-1. The client is a native Rust CLI plus a tiny launcher shim. No PowerShell, no script bootstrapping.
+1. The client is a native Rust CLI (`rivet.exe`, with `rv.exe` kept as a compatibility name) plus a tiny launcher shim. No PowerShell, no script bootstrapping.
 2. The client never clones the main repository. It downloads a generated `index.json`.
 3. Third-party sources are Homebrew-style taps: normal Git repositories, explicitly added by the user.
 4. Search and package lookup use a local SQLite database. The filesystem remains the source of truth for installed packages.
 5. Installed versions are immutable directories. The active version is a `current` junction.
 6. App commands are direct symlinks when Developer Mode allows it, otherwise a lightweight `rv-shim.exe` launcher. There is one PATH entry, not one PATH entry per app.
-7. `rv update` refreshes metadata. `rv upgrade` changes installed packages. `rv install` never runs a full metadata update implicitly.
+7. `rivet update` refreshes metadata. `rivet upgrade` changes installed packages. `rivet install` never runs a full metadata update implicitly.
 8. Packages are portable archives by default. There is no arbitrary install hook and no MSI/EXE system-installer channel in this beta.
 
 ## Components
@@ -18,7 +18,7 @@ This is the lean, individual-developer version of Rivet. It deliberately keeps o
 ~~~text
 main repo (Git) --CI--> index.json / artifacts --> GitHub Pages or Release
                                                        |
-                                                  rv CLI
+                                                rivet CLI
                                                        |
                          +-----------------------------+-----------------------------+
                          |                             |                             |
@@ -31,17 +31,18 @@ main repo (Git) --CI--> index.json / artifacts --> GitHub Pages or Release
 
 | Command | Behaviour |
 |---|---|
-| `rv update` | Refresh main index and taps. Never changes installed packages. |
-| `rv upgrade` | Upgrade selected or all installed packages. Uses cached metadata. |
-| `rv install` | Install packages and dependencies. Never refreshes metadata implicitly. |
-| `rv status` | Show installed versions and available updates. `--check` refreshes metadata and falls back to the cached index on failure. |
-| `rv pin` / `rv unpin` | Hold or release a package at its current version. |
-| `rv verify` | Check store paths, current links, shims, and recorded versions. |
-| `rv doctor --fix` | Repair broken current links and missing shims when the store is intact. |
-| `rv tap add` | Clone a third-party Git tap and build its local index if needed. |
-| `rv self-update` | Fetch, verify, and stage the latest binaries; replace them after the current process exits. |
-| `rv self-uninstall --yes` | Remove packages, the PATH entry, and the Rivet root after the current process exits. |
-| `rv cleanup --dry-run` | List removable store versions and cache entries without deleting them. |
+| `rivet update` | Refresh main index and taps. Never changes installed packages. |
+| `rivet upgrade` | Upgrade selected or all installed packages. Uses cached metadata. |
+| `rivet install` | Install packages and dependencies. Never refreshes metadata implicitly. |
+| `rivet status` | Show installed versions and available updates. `--check` refreshes metadata and falls back to the cached index on failure. |
+| `rivet pin` / `rivet unpin` | Hold or release a package at its current version. |
+| `rivet verify` | Check store paths, current links, shims, and recorded versions. |
+| `rivet doctor --fix` | Repair broken current links and missing shims when the store is intact. |
+| `rivet tap add` | Clone a third-party Git tap and build its local index if needed. |
+| `rivet self-update` | Fetch, verify, and stage the latest binaries; replace them after the current process exits. |
+| `rivet self-uninstall --yes` | Remove packages, the PATH entry, and the Rivet root after the current process exits. |
+| `rivet cleanup --dry-run` | List removable store versions and cache entries without deleting them. |
+| `rivet repo add` / `rivet repo update` | Generate or refresh GitHub-release manifests and rebuild the index. |
 
 ## Repository and index
 
@@ -53,13 +54,13 @@ artifacts/<file>
 index.json
 ~~~
 
-`rv repo build` reads every TOML manifest, validates it, sorts packages, and writes a single `index.json`. The client downloads that file with an HTTP client and loads it into SQLite.
+`rivet repo build` reads every TOML manifest, validates it, sorts packages, and writes a single `index.json`. The client downloads that file with an HTTP client and loads it into SQLite. Maintainers use `rivet repo add owner/repo` to generate a manifest from the latest GitHub release and `rivet repo update` to bump every GitHub-hosted package; signing remains an explicit offline step.
 
 The index is deliberately a single file. For a personal repository with tens to hundreds of packages, this keeps implementation and publishing simple. If the repository grows past a few thousand packages, split the catalog and package manifests into a two-level index.
 
 ## Tap model
 
-A tap is a Git repository with `packages/*.toml` and optionally a checked-in `index.json`. When no index exists, `rv update` builds one in the tap directory. Tap packages use the namespace `owner/repo/package` in commands and `owner/repo` in metadata.
+A tap is a Git repository with `packages/*.toml` and optionally a checked-in `index.json`. When no index exists, `rivet update` builds one in the tap directory. Tap packages use the namespace `owner/repo/package` in commands and `owner/repo` in metadata.
 
 Taps are trusted explicitly. There is no central verification tier. Tap indexes may be signed with the same Ed25519 mechanism as the main index, but an unsigned tap remains usable; adding the tap is the trust decision.
 
@@ -89,7 +90,7 @@ Install flow:
 8. Create or update native symlinks, or shims when symlinks are unavailable.
 9. Record the installed version and previous version in SQLite.
 
-Upgrade installs the new version separately and switches the junction. The old version is retained for `rv rollback` and removed by `rv cleanup` when it is no longer current or previous.
+Upgrade installs the new version separately and switches the junction. The old version is retained for `rivet rollback` and removed by `rivet cleanup` when it is no longer current or previous.
 
 ## Tradeoffs
 
@@ -106,17 +107,17 @@ Upgrade installs the new version separately and switches the junction. The old v
 
 ## Failure modes
 
-- Index unreachable: cached index remains usable; `rv update` reports the error.
+- Index unreachable: cached index remains usable; `rivet update` reports the error.
 - Artifact unreachable: install fails before activation; existing current version is untouched.
 - Bad archive: extraction fails into a temp directory; temp directory is removed.
 - Failed upgrade: old `current` junction remains until the new version is fully staged; the switch is the last step.
-- Corrupt SQLite: `rv doctor` reports filesystem state; the store remains authoritative.
-- Shim binary missing: script shims cannot be created; install fails with an actionable message. Run `cargo build --bins` or `rv init` from a release zip.
-- Interrupted mutation: the next mutating command clears staging directories and orphan shims; `rv doctor --fix` repairs the rest.
+- Corrupt SQLite: `rivet doctor` reports filesystem state; the store remains authoritative.
+- Shim binary missing: script shims cannot be created; install fails with an actionable message. Run `cargo build --bins` or `rivet init` from a release zip.
+- Interrupted mutation: the next mutating command clears staging directories and orphan shims; `rivet doctor --fix` repairs the rest.
 
 ## Roadmap
 
-- `rv lock`/`rv sync` for reproducible environment snapshots.
+- `rivet lock`/`rivet sync` for reproducible environment snapshots.
 - Optional artifact mirror per package.
 - A proper dependency solver only when real packages need it.
-- Code signing for the binaries and a self-update helper.
+- Optional code signing for the binaries; deferred.

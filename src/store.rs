@@ -328,6 +328,7 @@ pub fn recover_interrupted(paths: &Paths, db: &crate::db::Db) -> Result<()> {
             }
             if let Some(command) = file_name.strip_suffix(".exe")
                 && !command.eq_ignore_ascii_case("rv")
+                && !command.eq_ignore_ascii_case("rivet")
                 && !command.eq_ignore_ascii_case("rv-shim")
                 && !known.contains(&command.to_ascii_lowercase())
                 && fs::symlink_metadata(entry.path())

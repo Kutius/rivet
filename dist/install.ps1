@@ -70,11 +70,14 @@ try {
     if (-not (Test-Path $installed)) {
         throw "rv init did not create $installed."
     }
+    if (-not (Test-Path (Join-Path $root "bin\rivet.exe"))) {
+        throw "rv init did not create rivet.exe."
+    }
 
     if (-not $NoUpdate) {
         & $installed update
         if ($LASTEXITCODE -ne 0) {
-            Write-Warning "The catalog update failed. Run 'rv update' after fixing the network."
+            Write-Warning "The catalog update failed. Run 'rivet update' after fixing the network."
         }
     }
 
@@ -84,9 +87,9 @@ try {
     if ($NoPath) {
         Write-Host "Add $root\bin to PATH, or run $installed directly."
     } else {
-        Write-Host "Open a new terminal and run: rv --version"
+        Write-Host "Open a new terminal and run: rivet --version"
     }
-    Write-Host "Then try: rv search ripgrep"
+    Write-Host "Then try: rivet search ripgrep"
 } finally {
     Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue
 }

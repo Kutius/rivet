@@ -1,4 +1,5 @@
 use crate::archive;
+use crate::catalog::{self, AddOptions};
 use crate::cli::{Cli, Commands, ConfigCommands, RepoCommands, TapCommands};
 use crate::config::{Config, Paths};
 use crate::db::{Db, InstalledRecord, PackageRecord, ShimRecord};
@@ -264,7 +265,7 @@ fn cmd_status(db: &Db, paths: &Paths, config: &Config, check: bool, json: bool) 
         );
     }
     if outdated > 0 {
-        println!("{outdated} package(s) can be upgraded with 'rv upgrade'");
+        println!("{outdated} package(s) can be upgraded with 'rivet upgrade'");
     }
     Ok(())
 }
@@ -1002,9 +1003,22 @@ fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
     println!("database:  {}", paths.db_file.display());
     let mut ok = true;
     let mut repairable = 0usize;
+    if !paths.bin.join("rivet.exe").exists() {
+        if fix {
+            install_self(paths)?;
+            println!("fixed:     rivet.exe");
+        } else {
+            println!(
+                "bin:       missing {} (repairable: rivet doctor --fix)",
+                paths.bin.join("rivet.exe").display()
+            );
+            ok = false;
+            repairable += 1;
+        }
+    }
     if !paths.bin.join("rv-shim.exe").exists() {
         println!(
-            "bin:       missing {} (run 'rv init')",
+            "bin:       missing {} (run 'rivet init')",
             paths.bin.join("rv-shim.exe").display()
         );
         ok = false;
@@ -1015,7 +1029,7 @@ fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
         println!("PATH:      ok");
     } else {
         println!(
-            "PATH:      {} is not in PATH (run 'rv init')",
+            "PATH:      {} is not in PATH (run 'rivet init')",
             paths.bin.display()
         );
         ok = false;
@@ -1043,7 +1057,7 @@ fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
                 println!("fixed:     current link {} -> {}", item.name, item.version);
             } else {
                 println!(
-                    "current:   broken link for {} (repairable: rv doctor --fix)",
+                    "current:   broken link for {} (repairable: rivet doctor --fix)",
                     item.name
                 );
                 repairable += 1;
@@ -1072,7 +1086,7 @@ fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
             }
         } else if !missing.is_empty() {
             println!(
-                "shim:      missing {} (repairable: rv doctor --fix)",
+                "shim:      missing {} (repairable: rivet doctor --fix)",
                 missing.join(", ")
             );
             repairable += 1;
@@ -1081,7 +1095,7 @@ fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
         for shim in db.shims_for_package(&item.name)? {
             if !Path::new(&shim.target).exists() {
                 println!(
-                    "shim:      broken {} -> {} (repairable: rv doctor --fix)",
+                    "shim:      broken {} -> {} (repairable: rivet doctor --fix)",
                     shim.command, shim.target
                 );
                 repairable += 1;
@@ -1089,7 +1103,7 @@ fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
             }
             if !shim.sidecar.is_empty() && !Path::new(&shim.sidecar).exists() {
                 println!(
-                    "shim:      sidecar missing {} (repairable: rv doctor --fix)",
+                    "shim:      sidecar missing {} (repairable: rivet doctor --fix)",
                     shim.sidecar
                 );
                 repairable += 1;
@@ -1100,7 +1114,7 @@ fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
     if ok {
         println!("status:    ok");
     } else if repairable > 0 {
-        println!("status:    issues found ({repairable} repairable with 'rv doctor --fix')");
+        println!("status:    issues found ({repairable} repairable with 'rivet doctor --fix')");
     } else {
         println!("status:    issues found");
     }
@@ -1161,6 +1175,38 @@ fn cmd_repo(command: RepoCommands) -> Result<()> {
             let output = output.map(std::path::PathBuf::from);
             let index = index::build_index(&path, output.as_deref())?;
             println!("built index with {} package versions", index.packages.len());
+            Ok(())
+        }
+        RepoCommands::Add {
+            repository,
+            path,
+            name,
+            asset,
+            bin,
+        } => {
+            let manifest = catalog::add_github_package(
+                Path::new(&path),
+                &repository,
+                &AddOptions { name, asset, bin },
+            )?;
+            println!("wrote {}", manifest.display());
+            println!("index rebuilt; sign it before publishing");
+            Ok(())
+        }
+        RepoCommands::Update {
+            path,
+            check,
+            package,
+        } => {
+            let changes =
+                catalog::update_github_packages(Path::new(&path), check, package.as_deref())?;
+            if changes.is_empty() {
+                println!("all GitHub-hosted packages are up to date");
+            } else if check {
+                println!("{} update(s) available", changes.len());
+            } else {
+                println!("updated {} package(s); index rebuilt", changes.len());
+            }
             Ok(())
         }
         RepoCommands::Keygen { out } => {
@@ -1279,6 +1325,7 @@ fn install_self(paths: &Paths) -> Result<()> {
             )
         })?;
     }
+    install_powershell_alias(&rv_destination, &paths.bin.join("rivet.exe"))?;
     let shim_source = current
         .parent()
         .context("current executable has no parent")?
@@ -1299,6 +1346,22 @@ fn install_self(paths: &Paths) -> Result<()> {
                 )
             })?;
         }
+    }
+    Ok(())
+}
+
+fn install_powershell_alias(rv: &std::path::Path, rivet: &std::path::Path) -> Result<()> {
+    let unchanged = rv
+        .canonicalize()
+        .ok()
+        .zip(rivet.canonicalize().ok())
+        .is_some_and(|(left, right)| left == right)
+        || (rv.exists()
+            && rivet.exists()
+            && crate::download::sha256_file(rv)? == crate::download::sha256_file(rivet)?);
+    if !unchanged {
+        fs::copy(rv, rivet)
+            .with_context(|| format!("copying {} to {}", rv.display(), rivet.display()))?;
     }
     Ok(())
 }
@@ -1339,8 +1402,9 @@ fn cmd_init(paths: &Paths, no_path: bool) -> Result<()> {
     let config = Config::load(paths)?;
     if no_path {
         println!(
-            "installed {} and {}; PATH not changed (run 'rv init' to add {})",
+            "installed {}, {}, and {}; PATH not changed (run 'rivet init' to add {})",
             paths.bin.join("rv.exe").display(),
+            paths.bin.join("rivet.exe").display(),
             paths.bin.join("rv-shim.exe").display(),
             paths.bin.display()
         );
@@ -1360,7 +1424,7 @@ fn cmd_init(paths: &Paths, no_path: bool) -> Result<()> {
         eprintln!("warning: PATH was updated but the environment broadcast failed: {error}");
     }
     println!(
-        "added {} to the user PATH; open a new terminal to use it",
+        "added {} to the user PATH; open a new terminal and run 'rivet'",
         paths.bin.display()
     );
     print_catalog(&config);
@@ -1492,7 +1556,7 @@ fn find_package(db: &Db, spec: &str) -> Result<PackageRecord> {
     }
     let all = db.packages_by_name(&name)?;
     if all.is_empty() {
-        bail!("package '{name}' not found; run 'rv update' or check 'rv search'");
+        bail!("package '{name}' not found; run 'rivet update' or check 'rivet search'");
     }
     let mut repos = all
         .iter()
@@ -1595,8 +1659,24 @@ fn truncate(value: &str, length: usize) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{append_path, is_mutating, path_has_entry, remove_path_entry};
+    use super::{
+        append_path, install_powershell_alias, is_mutating, path_has_entry, remove_path_entry,
+    };
     use crate::cli::Commands;
+    use std::fs;
+
+    #[test]
+    fn rivet_alias_tracks_the_rv_binary() {
+        let directory = tempfile::tempdir().unwrap();
+        let rv = directory.path().join("rv.exe");
+        let rivet = directory.path().join("rivet.exe");
+        fs::write(&rv, b"first").unwrap();
+        install_powershell_alias(&rv, &rivet).unwrap();
+        assert_eq!(fs::read(&rivet).unwrap(), b"first");
+        fs::write(&rv, b"second").unwrap();
+        install_powershell_alias(&rv, &rivet).unwrap();
+        assert_eq!(fs::read(&rivet).unwrap(), b"second");
+    }
 
     #[test]
     fn path_entry_matches_case_and_trailing_slashes() {
