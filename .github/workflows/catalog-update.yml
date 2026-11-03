@@ -1,0 +1,90 @@
+name: Catalog update
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: catalog-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.ref == 'refs/heads/master'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Download latest rv.exe
+        shell: pwsh
+        run: |
+          $releases = Invoke-RestMethod -Headers @{ 'User-Agent' = 'rivet-catalog-update' } -Uri "https://api.github.com/repos/Kutius/rivet/releases?per_page=20"
+          $release = $releases | Where-Object { -not $_.draft } | Select-Object -First 1
+          if (-not $release) { throw "No Rivet release found." }
+          $asset = $release.assets | Where-Object { $_.name -eq "rv.exe" } | Select-Object -First 1
+          if (-not $asset) { throw "rv.exe not found in $($release.tag_name)." }
+          Invoke-WebRequest -UseBasicParsing $asset.browser_download_url -OutFile rv.exe
+
+      - name: Update and sign catalog
+        id: update
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RIVET_SIGNING_KEY_B64: ${{ secrets.RIVET_SIGNING_KEY_B64 }}
+        run: |
+          $keyPath = Join-Path $env:RUNNER_TEMP "rivet-signing.key"
+          [IO.File]::WriteAllBytes($keyPath, [Convert]::FromBase64String($env:RIVET_SIGNING_KEY_B64))
+          try {
+            & .\rv.exe repo update repo/main
+            if ($LASTEXITCODE -ne 0) { throw "catalog update failed" }
+            $changed = @(git diff --name-only -- repo/main/packages)
+            if ($changed.Count -eq 0) { Write-Host "catalog is up to date"; exit 0 }
+            & .\rv.exe repo sign repo/main --key $keyPath
+            if ($LASTEXITCODE -ne 0) { throw "catalog signing failed" }
+            "changed=$($changed.Count)" >> $env:GITHUB_OUTPUT
+            $changed | Set-Content -Path changed-packages.txt -Encoding utf8
+          } finally {
+            Remove-Item -LiteralPath $keyPath -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Smoke install changed packages
+        if: steps.update.outputs.changed != ''
+        shell: pwsh
+        run: |
+          $changed = Get-Content changed-packages.txt | ForEach-Object {
+            $text = Get-Content $_ -Raw
+            [regex]::Match($text, '(?m)^name\s*=\s*"([^"]+)"').Groups[1].Value
+          } | Sort-Object -Unique
+          $root = Join-Path $env:RUNNER_TEMP "rivet-catalog-smoke"
+          if (Test-Path $root) { Remove-Item $root -Recurse -Force }
+          $env:RIVET_ROOT = $root
+          $env:RIVET_MAIN_INDEX = (Resolve-Path "repo/main/index.json").Path
+          & .\rv.exe update
+          if ($LASTEXITCODE -ne 0) { throw "smoke update failed" }
+          & .\rv.exe install @changed
+          if ($LASTEXITCODE -ne 0) { throw "smoke install failed" }
+          & .\rv.exe verify
+          if ($LASTEXITCODE -ne 0) { throw "smoke verify failed" }
+
+      - name: Commit and push
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add repo/main/packages repo/main/index.json repo/main/index.json.sig
+          if (git diff --cached --quiet) { Write-Host "no changes"; exit 0 }
+          $message = "Update catalog"
+          if (Test-Path changed-packages.txt) {
+            $names = Get-Content changed-packages.txt | ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) }
+            $message = "Update catalog: " + ($names -join ", ")
+          }
+          git commit -m $message
+          git pull --rebase origin master
+          git push origin master

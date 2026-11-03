@@ -137,7 +137,7 @@ rivet repo update repo\main
 rivet repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
 ~~~
 
-`repo add` downloads the latest release, picks the Windows x64 asset, infers the executable and archive layout, computes SHA-256, writes the manifest, and rebuilds the index. `repo update` does the same version bump for every GitHub-hosted package. Set `GITHUB_TOKEN` or `GH_TOKEN` to avoid the unauthenticated GitHub API rate limit. Signing stays offline and explicit; it is never automated.
+`repo add` downloads the latest release, picks the Windows x64 asset, infers the executable and archive layout, computes SHA-256, writes the manifest, and rebuilds the index. `repo update` does the same version bump for every GitHub-hosted package. Set `GITHUB_TOKEN` or `GH_TOKEN` to avoid the unauthenticated GitHub API rate limit. The daily catalog workflow runs `repo update`, signs with the `RIVET_SIGNING_KEY_B64` Actions secret, smoke-installs changed packages, and pushes the result.
 
 See [docs/MANIFEST.md](docs/MANIFEST.md) for every field, [docs/SECURITY.md](docs/SECURITY.md) for the trust model, and [repo/main/README.md](repo/main/README.md) for the catalog workflow.
 
@@ -162,7 +162,7 @@ If the tap has no index.json, `rivet update` builds one locally from its manifes
 
 ## Signing the index
 
-The client verifies an Ed25519 signature over the exact index.json bytes before parsing them. Maintainers generate a key pair, sign the index, and publish index.json.sig next to index.json:
+The client verifies an Ed25519 signature over the exact index.json bytes before parsing them. The main catalog is signed by the daily catalog workflow using the `RIVET_SIGNING_KEY_B64` GitHub Actions secret. Local signing remains available:
 
 ~~~powershell
 rivet repo keygen --out C:\secure\rivet-keys
@@ -170,7 +170,7 @@ rivet repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
 rivet repo public-key --key C:\secure\rivet-keys\rivet-signing.key
 ~~~
 
-`rivet repo keygen` writes rivet-signing.key (private) and rivet-signing.pub (public, hex). It prints only the public key. Never commit the private key.
+`rivet repo keygen` writes rivet-signing.key (private) and rivet-signing.pub (public, hex). It prints only the public key. Never commit the private key. The CI secret is base64-encoded PKCS#8 bytes and is decoded only inside the workflow.
 
 Clients trust a key explicitly:
 

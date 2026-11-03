@@ -54,7 +54,7 @@ artifacts/<file>
 index.json
 ~~~
 
-`rivet repo build` reads every TOML manifest, validates it, sorts packages, and writes a single `index.json`. The client downloads that file with an HTTP client and loads it into SQLite. Maintainers use `rivet repo add owner/repo` to generate a manifest from the latest GitHub release and `rivet repo update` to bump every GitHub-hosted package; signing remains an explicit offline step.
+`rivet repo build` reads every TOML manifest, validates it, sorts packages, and writes a single `index.json`. The client downloads that file with an HTTP client and loads it into SQLite. Maintainers use `rivet repo add owner/repo` to generate a manifest from the latest GitHub release and `rivet repo update` to bump every GitHub-hosted package. The daily catalog workflow signs the result with the encrypted `RIVET_SIGNING_KEY_B64` Actions secret; local signing remains available.
 
 The index is deliberately a single file. For a personal repository with tens to hundreds of packages, this keeps implementation and publishing simple. If the repository grows past a few thousand packages, split the catalog and package manifests into a two-level index.
 

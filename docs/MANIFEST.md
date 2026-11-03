@@ -108,4 +108,4 @@ rivet repo keygen --out C:\keys\rivet
 rivet repo sign repo\main --key C:\keys\rivet\rivet-signing.key
 ~~~
 
-Sign after every build; the signature covers the exact index.json bytes. Keep the private key outside the repository.
+Sign after every build; the signature covers the exact index.json bytes. The main catalog is signed by the daily catalog workflow using the `RIVET_SIGNING_KEY_B64` GitHub Actions secret. Keep the private key outside the repository and do not commit it.

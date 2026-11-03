@@ -22,7 +22,9 @@ Rivet trusts two things explicitly: the signing key the user configures, and the
 - No command prints the private key. `rv repo public-key` prints only the public half.
 - The private key must never be committed. Keep the key directory outside the repository; `.gitignore` also ignores `*.key`.
 - `rv repo sign <repo> --key <private key>` writes `<index>.sig` next to the index. Sign after `rv repo build`, because the signature covers the generated file.
-- Key rotation: generate a new pair, sign the index with it, publish the new public key, and have clients run `rv config set trusted_key <hex>`. Remove stale keys from `config.toml`.
+- The main catalog workflow stores the PKCS#8 key as the encrypted GitHub Actions secret `RIVET_SIGNING_KEY_B64`. The workflow decodes it into a temporary file, signs, and deletes the file. It is never written to the repository or workflow logs.
+- The secret is only as strong as repository write access. Protect `master` and require review for workflow changes; anyone who can change a workflow can read the secret.
+- Key rotation: generate a new pair, replace the Actions secret, sign the index with it, publish the new public key, and have clients run `rv config set trusted_key <hex>`. Remove stale keys from `config.toml`.
 
 ## Artifacts
 

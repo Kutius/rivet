@@ -44,7 +44,7 @@ rivet repo update repo\main
 
 `--check` prints current and available versions without writing. `repo update` downloads each new asset, verifies that the existing bin paths still exist, updates version/URL/SHA-256, and rebuilds the index. `--package <name>` limits the run.
 
-The [Catalog check workflow](../../.github/workflows/catalog-check.yml) runs daily and opens or updates an issue when any GitHub-hosted package has a newer release. It never signs or publishes anything; the offline key is still required for the final build and sign.
+The [Catalog update workflow](../../.github/workflows/catalog-update.yml) runs daily. It updates GitHub-hosted packages, signs `index.json` with the encrypted `RIVET_SIGNING_KEY_B64` Actions secret, smoke-installs the changed packages, and pushes the result to `master`.
 
 Set a GitHub token to avoid the unauthenticated API limit of 60 requests per hour:
 
@@ -52,11 +52,11 @@ Set a GitHub token to avoid the unauthenticated API limit of 60 requests per hou
 $env:GITHUB_TOKEN = gh auth token
 ~~~
 
-Signing stays offline and explicit:
+CI signing uses the `RIVET_SIGNING_KEY_B64` secret. The same command still works locally with the key file:
 
 ~~~powershell
 rivet repo build repo\main
-rivet repo sign repo\main --key <offline-key-path>
+rivet repo sign repo\main --key <key-path>
 ~~~
 
 Commit the manifests, `index.json`, and `index.json.sig`, then push to master. The Pages workflow publishes the catalog.
@@ -68,4 +68,4 @@ Commit the manifests, `index.json`, and `index.json.sig`, then push to master. T
 - Packages with an installer instead of a portable archive; Rivet does not run arbitrary install hooks.
 - New package discovery and quality decisions. The main catalog stays curated; third-party collections belong in taps.
 
-The private key is never committed and must remain offline. The public key is embedded in the client as the default trusted catalog key.
+The private key is never committed. It is stored as an encrypted GitHub Actions secret for the main catalog; protect `master` and workflow changes accordingly. The public key is embedded in the client as the default trusted catalog key.
