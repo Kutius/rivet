@@ -40,7 +40,7 @@ jobs:
           }
 
       - name: Open or update issue
-        if: steps.check.outputs.updates == "true"
+        if: steps.check.outputs.updates == 'true'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
