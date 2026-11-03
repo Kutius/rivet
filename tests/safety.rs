@@ -14,6 +14,10 @@ fn rv_bin() -> PathBuf {
     PathBuf::from(env!("CARGO_BIN_EXE_rv"))
 }
 
+fn repo_bin() -> PathBuf {
+    PathBuf::from(env!("CARGO_BIN_EXE_rv-repo"))
+}
+
 fn run_rv(root: &Path, index: &Path, args: &[&str]) -> Output {
     Command::new(rv_bin())
         .args(args)
@@ -91,8 +95,8 @@ fn prepare_repo(with_app: bool) -> Result<(TempDir, PathBuf)> {
             "depends = [\"lib\"]\n",
         )?;
     }
-    let output = Command::new(rv_bin())
-        .args(["repo", "build"])
+    let output = Command::new(repo_bin())
+        .args(["build"])
         .arg(&repo)
         .env("RIVET_ROOT", dir.path())
         .output()?;

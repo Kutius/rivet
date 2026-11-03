@@ -42,7 +42,7 @@ main repo (Git) --CI--> index.json / artifacts --> GitHub Pages or Release
 | `rivet self-update` | Fetch, verify, and stage the latest binaries; replace them after the current process exits. |
 | `rivet self-uninstall --yes` | Remove packages, the PATH entry, and the Rivet root after the current process exits. |
 | `rivet cleanup --dry-run` | List removable store versions and cache entries without deleting them. |
-| `rivet repo add` / `rivet repo update` | Generate or refresh GitHub-release manifests and rebuild the index. |
+| `.\scripts\repo.ps1 add` / `.\scripts\repo.ps1 update` | Generate or refresh GitHub-release manifests and rebuild the index. |
 
 ## Repository and index
 
@@ -54,7 +54,7 @@ artifacts/<file>
 index.json
 ~~~
 
-`rivet repo build` reads every TOML manifest, validates it, sorts packages, and writes a single `index.json`. The client downloads that file with an HTTP client and loads it into SQLite. Maintainers use `rivet repo add owner/repo` to generate a manifest from the latest GitHub release and `rivet repo update` to bump every GitHub-hosted package. The daily catalog workflow signs the result with the encrypted `RIVET_SIGNING_KEY_B64` Actions secret; local signing remains available.
+`.\scripts\repo.ps1 build` reads every TOML manifest, validates it, sorts packages, and writes a single `index.json`. The client downloads that file with an HTTP client and loads it into SQLite. Maintainers use `.\scripts\repo.ps1 add owner/repo` to generate a manifest from the latest GitHub release and `.\scripts\repo.ps1 update` to bump every GitHub-hosted package. The daily catalog workflow signs the result with the encrypted `RIVET_SIGNING_KEY_B64` Actions secret; local signing remains available.
 
 The index is deliberately a single file. For a personal repository with tens to hundreds of packages, this keeps implementation and publishing simple. If the repository grows past a few thousand packages, split the catalog and package manifests into a two-level index.
 

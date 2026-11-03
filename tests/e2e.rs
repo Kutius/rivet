@@ -13,6 +13,10 @@ fn rv_bin() -> PathBuf {
     PathBuf::from(env!("CARGO_BIN_EXE_rv"))
 }
 
+fn repo_bin() -> PathBuf {
+    PathBuf::from(env!("CARGO_BIN_EXE_rv-repo"))
+}
+
 fn run_rv(root: &Path, index: &Path, args: &[&str]) -> std::process::Output {
     Command::new(rv_bin())
         .args(args)
@@ -94,8 +98,8 @@ fn prepare_main_repo() -> Result<(TempDir, PathBuf)> {
             },
         )?;
     }
-    let output = Command::new(rv_bin())
-        .args(["repo", "build"])
+    let output = Command::new(repo_bin())
+        .args(["build"])
         .arg(&repo)
         .env("RIVET_ROOT", dir.path())
         .output()?;
@@ -195,8 +199,8 @@ fn third_party_tap_install() -> Result<()> {
     )?;
     let hash = sha256_file(&zip_path)?;
     write_manifest(&tap, "hello", "2.0.0", "hello-2.0.0.zip", &hash, "hello")?;
-    let output = Command::new(rv_bin())
-        .args(["repo", "build"])
+    let output = Command::new(repo_bin())
+        .args(["build"])
         .arg(&tap)
         .env("RIVET_ROOT", tap_root.path())
         .output()?;
@@ -269,8 +273,8 @@ fn raw_artifact_and_missing_bin() -> Result<()> {
         broken_manifest,
     )?;
 
-    let output = Command::new(rv_bin())
-        .args(["repo", "build"])
+    let output = Command::new(repo_bin())
+        .args(["build"])
         .arg(&repo)
         .env("RIVET_ROOT", dir.path())
         .output()?;
@@ -317,8 +321,8 @@ fn dependency_version_is_respected() -> Result<()> {
         text.push_str("depends = [\"lib@1.0.0\"]\n");
         fs::write(&manifest_path, text)?;
     }
-    let output = Command::new(rv_bin())
-        .args(["repo", "build"])
+    let output = Command::new(repo_bin())
+        .args(["build"])
         .arg(&repo)
         .env("RIVET_ROOT", dir.path())
         .output()?;

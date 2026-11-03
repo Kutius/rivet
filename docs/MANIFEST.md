@@ -1,6 +1,6 @@
 # Manifest reference
 
-A package is one TOML file under packages/. `rivet repo build` validates every manifest and writes a single index.json.
+A package is one TOML file under packages/. `.\scripts\repo.ps1 build` validates every manifest and writes a single index.json.
 
 ## Example
 
@@ -80,22 +80,22 @@ On first install, files shipped inside the package at these paths are moved into
 Generate a manifest from the latest GitHub release and rebuild the index:
 
 ~~~powershell
-rivet repo add BurntSushi/ripgrep --path repo\main
+.\scripts\repo.ps1 add BurntSushi/ripgrep --path repo\main
 ~~~
 
 Override auto-detection when needed:
 
 ~~~powershell
-rivet repo add owner/repo --path repo\main --name package-name
-rivet repo add owner/repo --path repo\main --asset windows-x64.zip
-rivet repo add owner/repo --path repo\main --bin bin\tool.exe
+.\scripts\repo.ps1 add owner/repo --path repo\main --name package-name
+.\scripts\repo.ps1 add owner/repo --path repo\main --asset windows-x64.zip
+.\scripts\repo.ps1 add owner/repo --path repo\main --bin bin\tool.exe
 ~~~
 
 Refresh all GitHub-hosted packages:
 
 ~~~powershell
-rivet repo update repo\main --check
-rivet repo update repo\main
+.\scripts\repo.ps1 update repo\main --check
+.\scripts\repo.ps1 update repo\main
 ~~~
 
 Set `GITHUB_TOKEN` or `GH_TOKEN` to raise the GitHub API rate limit. Packages with non-GitHub URLs or an installer instead of a portable archive still need a hand-written manifest.
@@ -103,9 +103,9 @@ Set `GITHUB_TOKEN` or `GH_TOKEN` to raise the GitHub API rate limit. Packages wi
 ## Build and sign
 
 ~~~powershell
-rivet repo build repo\main
-rivet repo keygen --out C:\keys\rivet
-rivet repo sign repo\main --key C:\keys\rivet\rivet-signing.key
+.\scripts\repo.ps1 build repo\main
+.\scripts\repo.ps1 keygen --out C:\keys\rivet
+.\scripts\repo.ps1 sign repo\main --key C:\keys\rivet\rivet-signing.key
 ~~~
 
 Sign after every build; the signature covers the exact index.json bytes. The main catalog is signed by the daily catalog workflow using the `RIVET_SIGNING_KEY_B64` GitHub Actions secret. Keep the private key outside the repository and do not commit it.

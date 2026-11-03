@@ -89,11 +89,6 @@ pub enum Commands {
         #[command(subcommand)]
         command: TapCommands,
     },
-    /// Maintainer tooling for package repositories
-    Repo {
-        #[command(subcommand)]
-        command: RepoCommands,
-    },
     /// Inspect or edit configuration
     Config {
         #[command(subcommand)]
@@ -124,65 +119,6 @@ pub enum TapCommands {
     List,
     /// Remove a tap
     Remove { name: String },
-}
-
-#[derive(Subcommand, Debug, Clone)]
-pub enum RepoCommands {
-    /// Build index.json from packages/*.toml
-    Build {
-        path: String,
-        #[arg(long)]
-        output: Option<String>,
-    },
-    /// Add a package from the latest GitHub release
-    Add {
-        /// GitHub repository in owner/repo form
-        repository: String,
-        /// Repository root containing packages/ (defaults to repo/main)
-        #[arg(long, default_value = "repo/main")]
-        path: String,
-        /// Package name (defaults to the repository name)
-        #[arg(long)]
-        name: Option<String>,
-        /// Release asset name or substring; auto-detected when omitted
-        #[arg(long)]
-        asset: Option<String>,
-        /// Executable path inside the extracted archive
-        #[arg(long)]
-        bin: Option<String>,
-    },
-    /// Update GitHub-hosted packages to their latest release
-    Update {
-        /// Repository root containing packages/ (defaults to repo/main)
-        #[arg(default_value = "repo/main")]
-        path: String,
-        /// Show available updates without changing files
-        #[arg(long)]
-        check: bool,
-        /// Limit the update to one package
-        #[arg(long)]
-        package: Option<String>,
-    },
-    /// Generate an Ed25519 signing key pair
-    Keygen {
-        /// Directory for rivet-signing.key and rivet-signing.pub
-        #[arg(long)]
-        out: Option<String>,
-    },
-    /// Sign index.json with an Ed25519 private key
-    Sign {
-        /// Repository directory or index.json path
-        path: String,
-        /// Private key produced by 'rivet repo keygen'
-        #[arg(long)]
-        key: String,
-    },
-    /// Print the public key for a private key
-    PublicKey {
-        /// Private key produced by 'rivet repo keygen'
-        #[arg(long)]
-        key: String,
-    },
 }
 
 #[derive(Subcommand, Debug, Clone)]

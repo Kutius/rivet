@@ -1,10 +1,8 @@
 use crate::archive;
-use crate::catalog::{self, AddOptions};
-use crate::cli::{Cli, Commands, ConfigCommands, RepoCommands, TapCommands};
+use crate::cli::{Cli, Commands, ConfigCommands, TapCommands};
 use crate::config::{Config, Paths};
 use crate::db::{Db, InstalledRecord, PackageRecord, ShimRecord};
 use crate::download;
-use crate::index;
 use crate::lock;
 use crate::model::{BinSpec, PackageManifest, compare_manifests};
 use crate::repo;
@@ -24,9 +22,6 @@ pub fn run(cli: Cli) -> Result<()> {
     let paths = Paths::discover()?;
     if let Commands::SelfUpdate { force } = &cli.command {
         return crate::selfmanage::update(&paths, *force);
-    }
-    if let Commands::Repo { command } = &cli.command {
-        return cmd_repo(command.clone());
     }
     if let Commands::Config {
         command: ConfigCommands::Path,
@@ -78,7 +73,6 @@ pub fn run(cli: Cli) -> Result<()> {
         Commands::Cleanup { dry_run } => cmd_cleanup(&db, &paths, &config, dry_run),
         Commands::Doctor { fix } => cmd_doctor(&db, &paths, fix),
         Commands::Tap { command } => cmd_tap(&db, &paths, command, &config.trust()),
-        Commands::Repo { command } => cmd_repo(command),
         Commands::Config { command } => cmd_config(&paths, command),
         Commands::Init { no_path } => cmd_init(&paths, no_path),
         Commands::SelfUpdate { .. } => unreachable!("self-update is handled before database open"),
@@ -1165,92 +1159,6 @@ fn cmd_tap(db: &Db, paths: &Paths, command: TapCommands, trust: &trust::Trust) -
             Ok(())
         }
         TapCommands::Remove { name } => repo::remove_tap(db, paths, &name),
-    }
-}
-
-fn cmd_repo(command: RepoCommands) -> Result<()> {
-    match command {
-        RepoCommands::Build { path, output } => {
-            let path = std::path::PathBuf::from(path);
-            let output = output.map(std::path::PathBuf::from);
-            let index = index::build_index(&path, output.as_deref())?;
-            println!("built index with {} package versions", index.packages.len());
-            Ok(())
-        }
-        RepoCommands::Add {
-            repository,
-            path,
-            name,
-            asset,
-            bin,
-        } => {
-            let manifest = catalog::add_github_package(
-                Path::new(&path),
-                &repository,
-                &AddOptions { name, asset, bin },
-            )?;
-            println!("wrote {}", manifest.display());
-            println!("index rebuilt; sign it before publishing");
-            Ok(())
-        }
-        RepoCommands::Update {
-            path,
-            check,
-            package,
-        } => {
-            let changes =
-                catalog::update_github_packages(Path::new(&path), check, package.as_deref())?;
-            if changes.is_empty() {
-                println!("all GitHub-hosted packages are up to date");
-            } else if check {
-                println!("{} update(s) available", changes.len());
-            } else {
-                println!("updated {} package(s); index rebuilt", changes.len());
-            }
-            Ok(())
-        }
-        RepoCommands::Keygen { out } => {
-            let directory = out
-                .map(std::path::PathBuf::from)
-                .unwrap_or_else(|| std::path::PathBuf::from("keys"));
-            let (private, public) = trust::keygen(&directory)?;
-            let key_hex = fs::read_to_string(&public)?.trim().to_string();
-            println!("private key: {}", private.display());
-            println!("public key:  {}", public.display());
-            println!("public key hex: {key_hex}");
-            println!("trust this key with: rv config set trusted_key {key_hex}");
-            Ok(())
-        }
-        RepoCommands::Sign { path, key } => {
-            let path = std::path::PathBuf::from(path);
-            let index_path = if path.is_dir() {
-                path.join("index.json")
-            } else {
-                path
-            };
-            if !index_path.exists() {
-                bail!("index file not found: {}", index_path.display());
-            }
-            let pair = trust::load_private_key(Path::new(&key))?;
-            let data = fs::read(&index_path)?;
-            let signature = trust::sign(&pair, &data);
-            let signature_path = trust::signature_path(&index_path);
-            fs::write(
-                &signature_path,
-                format!("{}\n", serde_json::to_string_pretty(&signature)?),
-            )?;
-            println!(
-                "signed {} (key {})",
-                index_path.display(),
-                signature.public_key
-            );
-            Ok(())
-        }
-        RepoCommands::PublicKey { key } => {
-            let pair = trust::load_private_key(Path::new(&key))?;
-            println!("{}", trust::public_key_hex(&pair));
-            Ok(())
-        }
     }
 }
 

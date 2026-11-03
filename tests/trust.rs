@@ -16,6 +16,10 @@ fn rv_bin() -> PathBuf {
     PathBuf::from(env!("CARGO_BIN_EXE_rv"))
 }
 
+fn repo_bin() -> PathBuf {
+    PathBuf::from(env!("CARGO_BIN_EXE_rv-repo"))
+}
+
 fn run_rv(root: &Path, index: Option<&str>, trusted: Option<&str>, args: &[&str]) -> Output {
     let mut command = Command::new(rv_bin());
     command.args(args).env("RIVET_ROOT", root);
@@ -71,8 +75,8 @@ fn prepare_repo() -> Result<(TempDir, PathBuf)> {
             "name = \"hello\"\nversion = \"1.0.0\"\ndescription = \"signed package\"\nhomepage = \"https://example.invalid\"\nlicense = \"MIT\"\nurl = \"artifacts/hello-1.0.0.zip\"\nsha256 = \"{hash}\"\nextract = \"zip\"\nbin = [{{ path = \"hello.cmd\", name = \"hello\" }}]\n"
         ),
     )?;
-    let output = Command::new(rv_bin())
-        .args(["repo", "build"])
+    let output = Command::new(repo_bin())
+        .args(["build"])
         .arg(&repo)
         .env("RIVET_ROOT", dir.path())
         .output()?;
@@ -81,8 +85,8 @@ fn prepare_repo() -> Result<(TempDir, PathBuf)> {
 }
 
 fn keygen(dir: &Path) -> Result<(PathBuf, String)> {
-    let output = Command::new(rv_bin())
-        .args(["repo", "keygen", "--out"])
+    let output = Command::new(repo_bin())
+        .args(["keygen", "--out"])
         .arg(dir)
         .output()?;
     assert_success(&output);
@@ -93,8 +97,8 @@ fn keygen(dir: &Path) -> Result<(PathBuf, String)> {
 }
 
 fn sign_repo(repo: &Path, private: &Path) -> Output {
-    Command::new(rv_bin())
-        .args(["repo", "sign"])
+    Command::new(repo_bin())
+        .args(["sign"])
         .arg(repo)
         .arg("--key")
         .arg(private)
@@ -255,8 +259,8 @@ fn bad_checksum_is_rejected_before_extraction() -> Result<()> {
             "0".repeat(64)
         ),
     )?;
-    let output = Command::new(rv_bin())
-        .args(["repo", "build"])
+    let output = Command::new(repo_bin())
+        .args(["build"])
         .arg(&repo)
         .env("RIVET_ROOT", dir.path())
         .output()?;
@@ -282,8 +286,8 @@ fn bad_checksum_is_rejected_before_extraction() -> Result<()> {
 #[test]
 fn keygen_never_prints_the_private_key() -> Result<()> {
     let keys = TempDir::new()?;
-    let output = Command::new(rv_bin())
-        .args(["repo", "keygen", "--out"])
+    let output = Command::new(repo_bin())
+        .args(["keygen", "--out"])
         .arg(keys.path())
         .output()?;
     assert_success(&output);
@@ -295,8 +299,8 @@ fn keygen_never_prints_the_private_key() -> Result<()> {
     );
     assert!(!printed.contains("BEGIN PRIVATE KEY"), "keygen printed PEM");
 
-    let output = Command::new(rv_bin())
-        .args(["repo", "public-key", "--key"])
+    let output = Command::new(repo_bin())
+        .args(["public-key", "--key"])
         .arg(keys.path().join("rivet-signing.key"))
         .output()?;
     assert_success(&output);

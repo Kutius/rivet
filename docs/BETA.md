@@ -1,6 +1,6 @@
 # Rivet Public Beta Gate
 
-> This gate was closed for 0.1.0-beta.1. 0.1.0-beta.2 added the hosted signed catalog and one-command installer; 0.1.0-beta.3 added symlink-first command links, a smaller shim, and release automation; 0.1.0-beta.4 added self-update, self-uninstall, and cleanup --dry-run; 0.1.0-beta.5 added the `rivet.exe` alias and automated catalog import/update. See CHANGELOG.md. The historical evidence below is left as recorded.
+> This gate was closed for 0.1.0-beta.1. 0.1.0-beta.2 added the hosted signed catalog and one-command installer; 0.1.0-beta.3 added symlink-first command links, a smaller shim, and release automation; 0.1.0-beta.4 added self-update, self-uninstall, and cleanup --dry-run; 0.1.0-beta.5 added the `rivet.exe` alias and automated catalog import/update; 0.1.0-beta.6 moves maintainer repo tooling out of the client into `rv-repo`. See CHANGELOG.md. The historical evidence below is left as recorded.
 
 Definition: Rivet is public-beta ready when a Windows user can download a signed release, install it without admin rights, install and manage packages from a signed catalog and a third-party tap, recover from the common broken states, and understand exactly what is supported — with no known P0/P1 defect.
 

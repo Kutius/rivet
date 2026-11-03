@@ -30,9 +30,9 @@ A remote index without a valid signature is refused by design.
 The index bytes changed after signing, the wrong key is trusted, or the .sig file is missing. Rebuild, re-sign, and confirm the public key:
 
 ~~~powershell
-rivet repo build repo\main
-rivet repo sign repo\main --key C:\keys\rivet\rivet-signing.key
-rivet repo public-key --key C:\keys\rivet\rivet-signing.key
+.\scripts\repo.ps1 build repo\main
+.\scripts\repo.ps1 sign repo\main --key C:\keys\rivet\rivet-signing.key
+.\scripts\repo.ps1 public-key --key C:\keys\rivet\rivet-signing.key
 rivet config set trusted_key <the 64-hex key>
 rivet update
 ~~~

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0-beta.6 — maintainer tooling split
+
+### Changed
+
+- Removed the `repo` command family from the client. Package-repository maintenance now lives in the separate `rv-repo` binary, built from source with `.\scripts\repo.ps1`; the release archive still contains only `rv.exe` and `rv-shim.exe`.
+- The daily catalog workflow now builds `rv-repo`, updates GitHub-hosted packages, signs the index with the `RIVET_SIGNING_KEY_B64` Actions secret, smoke-installs changed packages, and pushes the result.
+
+### Catalog
+
+- Added hyperfine, dust, bottom, just, starship, xh, sd, procs, eza, lsd, watchexec, and typst to the main catalog.
+
+### Tests
+
+- 38 tests, including the maintainer/client split and the existing install, trust, safety, and shim coverage.
+
 ## 0.1.0-beta.5 — PowerShell alias and catalog maintenance
 
 ### Added
@@ -100,7 +115,4 @@ Rivet is a portable-first Windows package manager built as one native Rust binar
 
 ## Unreleased
 
-### Catalog
-
-- Added hyperfine, dust, bottom, just, starship, xh, sd, procs, eza, lsd, watchexec, and typst to the main catalog.
-- The daily catalog workflow now updates, signs, smoke-installs changed packages, and pushes the result automatically.
+- Nothing yet.

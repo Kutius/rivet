@@ -14,6 +14,10 @@ fn rv_bin() -> PathBuf {
     PathBuf::from(env!("CARGO_BIN_EXE_rv"))
 }
 
+fn repo_bin() -> PathBuf {
+    PathBuf::from(env!("CARGO_BIN_EXE_rv-repo"))
+}
+
 fn run_rv(root: &Path, index: &Path, args: &[&str]) -> Output {
     Command::new(rv_bin())
         .args(args)
@@ -71,8 +75,8 @@ fn prepare_repo() -> Result<(TempDir, PathBuf)> {
     make_zip(&zip, "@echo off\r\necho hello\r\n")?;
     let hash = sha256_file(&zip)?;
     write_manifest(&repo, "hello", "1.0.0", "hello-1.0.0.zip", &hash)?;
-    let output = Command::new(rv_bin())
-        .args(["repo", "build"])
+    let output = Command::new(repo_bin())
+        .args(["build"])
         .arg(&repo)
         .env("RIVET_ROOT", dir.path())
         .output()?;
@@ -150,8 +154,8 @@ fn missing_artifact_reports_a_download_error() -> Result<()> {
         "missing-1.0.0.zip",
         &"0".repeat(64),
     )?;
-    let output = Command::new(rv_bin())
-        .args(["repo", "build"])
+    let output = Command::new(repo_bin())
+        .args(["build"])
         .arg(&repo_path)
         .env("RIVET_ROOT", repo.path())
         .output()?;
@@ -196,8 +200,8 @@ fn unknown_package_and_bad_archive_fail_with_actionable_errors() -> Result<()> {
     fs::write(&bad, b"this is not a zip")?;
     let hash = sha256_file(&bad)?;
     write_manifest(&repo_path, "bad", "1.0.0", "bad-1.0.0.zip", &hash)?;
-    let output = Command::new(rv_bin())
-        .args(["repo", "build"])
+    let output = Command::new(repo_bin())
+        .args(["build"])
         .arg(&repo_path)
         .env("RIVET_ROOT", repo.path())
         .output()?;

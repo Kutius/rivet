@@ -22,6 +22,10 @@ jobs:
           ref: master
           fetch-depth: 0
 
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --locked --release --bin rv-repo
+
       - name: Download latest rv.exe
         shell: pwsh
         run: |
@@ -42,11 +46,11 @@ jobs:
           $keyPath = Join-Path $env:RUNNER_TEMP "rivet-signing.key"
           [IO.File]::WriteAllBytes($keyPath, [Convert]::FromBase64String($env:RIVET_SIGNING_KEY_B64))
           try {
-            & .\rv.exe repo update repo/main
+            & .\target\release\rv-repo.exe update repo/main
             if ($LASTEXITCODE -ne 0) { throw "catalog update failed" }
             $changed = @(git diff --name-only -- repo/main/packages)
             if ($changed.Count -eq 0) { Write-Host "catalog is up to date"; exit 0 }
-            & .\rv.exe repo sign repo/main --key $keyPath
+            & .\target\release\rv-repo.exe sign repo/main --key $keyPath
             if ($LASTEXITCODE -ne 0) { throw "catalog signing failed" }
             "changed=$($changed.Count)" >> $env:GITHUB_OUTPUT
             $changed | Set-Content -Path changed-packages.txt -Encoding utf8

@@ -2,7 +2,7 @@
 
 Rivet is a fast, portable-first package manager for Windows, built as a native Rust CLI plus a tiny launcher shim. It keeps the useful parts of Scoop's model without the PowerShell startup, bucket scans, and implicit metadata refreshes.
 
-Current release: 0.1.0-beta.5.
+Current release: 0.1.0-beta.6.
 
 Rivet is not Scoop-compatible. Scoop manifests, buckets, and PowerShell hooks are intentionally out of scope.
 
@@ -99,7 +99,7 @@ The demo package installs a native shim at %RIVET_ROOT%\bin\hello.exe.
 | rivet doctor [--fix] | Diagnose the installation; --fix repairs broken links and missing shims, and restores the `rivet.exe` alias. |
 | rivet cleanup [--dry-run] | Remove old store versions and stale cache entries; --dry-run only lists them. |
 | rivet tap add/list/remove | Manage third-party Git taps. |
-| rivet repo add/update/build/sign/keygen/public-key | Maintainer tooling for catalog packages, indexes, and keys. |
+| .\scripts\repo.ps1 add/update/build/sign | Maintainer tooling for catalog packages, indexes, and keys; not part of the installed client. |
 | rivet config path/get/set | Inspect or edit config. |
 | rivet init [--no-path] | Install the binaries, configure the catalog, and optionally update the user PATH. |
 | rivet self-update [--force] | Replace the installed binaries with the latest release. |
@@ -118,7 +118,7 @@ rivet --json info hello
 
 ## Main repository
 
-The main repository is a normal Git repository of package manifests. Clients do not clone it. The official catalog is served at https://kutius.github.io/rivet/index.json with its signature next to it; the source lives in repo/main. A CI job or maintainer command builds index.json:
+The main repository is a normal Git repository of package manifests. Clients do not clone it. The official catalog is served at https://kutius.github.io/rivet/index.json with its signature next to it; the source lives in repo/main. The daily catalog workflow builds and signs index.json:
 
 ~~~text
 repo/main/
@@ -131,13 +131,13 @@ repo/main/
 Maintainers add GitHub-hosted tools without hand-writing metadata:
 
 ~~~powershell
-rivet repo add BurntSushi/ripgrep --path repo\main
-rivet repo update repo\main --check
-rivet repo update repo\main
-rivet repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
+.\scripts\repo.ps1 add BurntSushi/ripgrep --path repo\main
+.\scripts\repo.ps1 update repo\main --check
+.\scripts\repo.ps1 update repo\main
+.\scripts\repo.ps1 sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
 ~~~
 
-`repo add` downloads the latest release, picks the Windows x64 asset, infers the executable and archive layout, computes SHA-256, writes the manifest, and rebuilds the index. `repo update` does the same version bump for every GitHub-hosted package. Set `GITHUB_TOKEN` or `GH_TOKEN` to avoid the unauthenticated GitHub API rate limit. The daily catalog workflow runs `repo update`, signs with the `RIVET_SIGNING_KEY_B64` Actions secret, smoke-installs changed packages, and pushes the result.
+The maintainer script builds the separate `rv-repo` tool. `add` downloads the latest release, picks the Windows x64 asset, infers the executable and archive layout, computes SHA-256, writes the manifest, and rebuilds the index. `update` does the same version bump for every GitHub-hosted package. Set `GITHUB_TOKEN` or `GH_TOKEN` to avoid the unauthenticated GitHub API rate limit. The daily catalog workflow runs `rv-repo update`, signs with the `RIVET_SIGNING_KEY_B64` Actions secret, smoke-installs changed packages, and pushes the result.
 
 See [docs/MANIFEST.md](docs/MANIFEST.md) for every field, [docs/SECURITY.md](docs/SECURITY.md) for the trust model, and [repo/main/README.md](repo/main/README.md) for the catalog workflow.
 
@@ -165,12 +165,12 @@ If the tap has no index.json, `rivet update` builds one locally from its manifes
 The client verifies an Ed25519 signature over the exact index.json bytes before parsing them. The main catalog is signed by the daily catalog workflow using the `RIVET_SIGNING_KEY_B64` GitHub Actions secret. Local signing remains available:
 
 ~~~powershell
-rivet repo keygen --out C:\secure\rivet-keys
-rivet repo sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
-rivet repo public-key --key C:\secure\rivet-keys\rivet-signing.key
+.\scripts\repo.ps1 keygen --out C:\secure\rivet-keys
+.\scripts\repo.ps1 sign repo\main --key C:\secure\rivet-keys\rivet-signing.key
+.\scripts\repo.ps1 public-key --key C:\secure\rivet-keys\rivet-signing.key
 ~~~
 
-`rivet repo keygen` writes rivet-signing.key (private) and rivet-signing.pub (public, hex). It prints only the public key. Never commit the private key. The CI secret is base64-encoded PKCS#8 bytes and is decoded only inside the workflow.
+`.\scripts\repo.ps1 keygen` writes rivet-signing.key (private) and rivet-signing.pub (public, hex). It prints only the public key. Never commit the private key. The CI secret is base64-encoded PKCS#8 bytes and is decoded only inside the workflow.
 
 Clients trust a key explicitly:
 
@@ -227,7 +227,7 @@ Release packaging:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\release.ps1
 ~~~
 
-This builds dist\rivet-v0.1.0-beta.5-windows-x64.zip, the binaries, install.ps1, and SHA256SUMS. It does not publish.
+This builds dist\rivet-v0.1.0-beta.6-windows-x64.zip, the binaries, install.ps1, and SHA256SUMS. It does not publish.
 
 ## Supported
 
@@ -244,7 +244,7 @@ This builds dist\rivet-v0.1.0-beta.5-windows-x64.zip, the binaries, install.ps1,
 - No full dependency solver; dependencies are recursive and latest-version by default, with explicit name@version respected.
 - No shell completions yet.
 - No central verified-tap registry; taps are trusted because the user adds them.
-- `repo add` and `repo update` automate GitHub releases; packages distributed outside GitHub still need a manifest written or imported manually.
+- The maintainer `rv-repo` tool automates GitHub releases; packages distributed outside GitHub still need a manifest written or imported manually.
 
 The next work is artifact mirroring and a proper dependency solver only if real packages need one; code signing is deferred.
 

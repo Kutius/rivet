@@ -1,6 +1,6 @@
 [package]
 name = "rivet"
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 edition = "2024"
 description = "Rivet: a fast, portable-first Windows package manager"
 license = "MIT"
@@ -16,6 +16,10 @@ path = "src/main.rs"
 [[bin]]
 name = "rv-shim"
 path = "src/bin/rv-shim.rs"
+
+[[bin]]
+name = "rv-repo"
+path = "src/bin/rv-repo.rs"
 
 [dependencies]
 anyhow = "1"
