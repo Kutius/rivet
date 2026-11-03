@@ -76,15 +76,20 @@ jobs:
       - name: Commit and push
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add repo/main/packages repo/main/index.json repo/main/index.json.sig
-          if (git diff --cached --quiet) { Write-Host "no changes"; exit 0 }
+          $staged = @(git diff --cached --name-only)
+          if ($staged.Count -eq 0) { Write-Host "no changes"; exit 0 }
           $message = "Update catalog"
           if (Test-Path changed-packages.txt) {
             $names = Get-Content changed-packages.txt | ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) }
             $message = "Update catalog: " + ($names -join ", ")
           }
           git commit -m $message
+          if ($LASTEXITCODE -ne 0) { throw "git commit failed" }
           git pull --rebase origin master
+          if ($LASTEXITCODE -ne 0) { throw "git pull failed" }
           git push origin master
+          if ($LASTEXITCODE -ne 0) { throw "git push failed" }
