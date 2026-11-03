@@ -44,6 +44,8 @@ rivet repo update repo\main
 
 `--check` prints current and available versions without writing. `repo update` downloads each new asset, verifies that the existing bin paths still exist, updates version/URL/SHA-256, and rebuilds the index. `--package <name>` limits the run.
 
+The [Catalog check workflow](../../.github/workflows/catalog-check.yml) runs daily and opens or updates an issue when any GitHub-hosted package has a newer release. It never signs or publishes anything; the offline key is still required for the final build and sign.
+
 Set a GitHub token to avoid the unauthenticated API limit of 60 requests per hour:
 
 ~~~powershell
