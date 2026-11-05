@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-03T09:13:57.904777600+00:00",
+  "generated_at": "2026-11-05T10:29:46.875925600+00:00",
   "packages": [
     {
       "name": "air",
@@ -52,14 +52,14 @@
     },
     {
       "name": "biome",
-      "version": "2.6.4",
+      "version": "2.6.5",
       "description": "A toolchain for web projects, aimed to provide functionalities to maintain them. Biome offers formatter and linter, usable via CLI and LSP.",
       "homepage": "https://biomejs.dev",
       "license": "Apache-2.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.6.4/biome-win32-x64.exe",
-      "sha256": "ed7aa62b0f22ac4258d3d8668e0af8d53085168d421a8d4ec708040c5e275c0c",
+      "url": "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.6.5/biome-win32-x64.exe",
+      "sha256": "e5d5afe715de1ea71768f0954448fbb9c11a0d8f5167fe9fd6cac336fa5667a1",
       "extract": "none",
       "strip_components": null,
       "bin": [
@@ -332,7 +332,7 @@
     },
     {
       "name": "fd",
-      "version": "10.5.0",
+      "version": "10.5.1",
       "description": "Fast, user-friendly alternative to find",
       "homepage": "https://github.com/sharkdp/fd",
       "license": "MIT OR Apache-2.0",
@@ -342,8 +342,8 @@
         "cli"
       ],
       "arch": "x64",
-      "url": "https://github.com/sharkdp/fd/releases/download/v10.5.0/fd-v10.5.0-x86_64-pc-windows-msvc.zip",
-      "sha256": "a227701b8551c35a9931d9f6da75503cf86d88e182d71fb849a70864c5d57cd7",
+      "url": "https://github.com/sharkdp/fd/releases/download/v10.5.1/fd-v10.5.1-x86_64-pc-windows-msvc.zip",
+      "sha256": "e52306a600e60b7ba92019c81dc753e6ea6665379d005867d38215ffd14cf5c2",
       "extract": "zip",
       "strip_components": 1,
       "bin": [
