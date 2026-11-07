@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-07T06:12:28.430291900+00:00",
+  "generated_at": "2026-11-07T06:26:04.150561600+00:00",
   "packages": [
     {
       "name": "air",
@@ -1265,6 +1265,30 @@
     }
   ],
   "fonts": [
+    {
+      "name": "fira-code",
+      "version": "6.2.0",
+      "description": "Monospaced font with programming ligatures",
+      "homepage": "https://github.com/tonsky/FiraCode",
+      "license": "OFL-1.1",
+      "tags": [
+        "font",
+        "monospace",
+        "ligatures"
+      ],
+      "arch": null,
+      "asset": "Fira_Code",
+      "url": "https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip",
+      "sha256": "0949915ba8eb24d89fd93d10a7ff623f42830d7c5ffc3ecbf960e4ecad3e3e79",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [],
+      "fonts": [
+        "ttf"
+      ],
+      "depends": [],
+      "persist": []
+    },
     {
       "name": "jetbrains-mono",
       "version": "2.304.0",
