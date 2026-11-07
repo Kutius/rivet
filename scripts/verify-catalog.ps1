@@ -29,10 +29,16 @@ if (Test-Path (Join-Path $Root "artifacts")) {
     Copy-Item (Join-Path $Root "artifacts") (Join-Path $catalog "artifacts") -Recurse
 }
 
+$fontDir = Join-Path $temp "fonts"
+$fontRegistry = "Software\Rivet\Verify\" + [guid]::NewGuid().ToString("N")
 $oldRoot = $env:RIVET_ROOT
 $oldIndex = $env:RIVET_MAIN_INDEX
+$oldFontDir = $env:RIVET_FONT_DIR
+$oldFontRegistry = $env:RIVET_FONT_REGISTRY
 $env:RIVET_ROOT = $rivetRoot
 $env:RIVET_MAIN_INDEX = Join-Path $catalog "index.json"
+$env:RIVET_FONT_DIR = $fontDir
+$env:RIVET_FONT_REGISTRY = $fontRegistry
 
 try {
     & $Rv update
@@ -40,6 +46,7 @@ try {
 
     $index = Get-Content $env:RIVET_MAIN_INDEX -Raw | ConvertFrom-Json
     $packages = @($index.packages)
+    $packages += @($index.fonts | Where-Object { $_ })
     $names = @($packages | ForEach-Object name | Sort-Object -Unique)
     $failed = @()
     foreach ($name in $names) {
@@ -115,6 +122,9 @@ try {
 } finally {
     $env:RIVET_ROOT = $oldRoot
     $env:RIVET_MAIN_INDEX = $oldIndex
+    $env:RIVET_FONT_DIR = $oldFontDir
+    $env:RIVET_FONT_REGISTRY = $oldFontRegistry
+    Remove-Item -LiteralPath ("HKCU:\" + $fontRegistry) -Recurse -Force -ErrorAction SilentlyContinue
     if (-not $Keep) {
         Remove-Item $temp -Recurse -Force -ErrorAction SilentlyContinue
     } else {

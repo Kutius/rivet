@@ -45,6 +45,18 @@ The downloaded artifact does not match the manifest. This is a hard failure; the
 
 The archive does not contain a path declared in bin. The install fails before the current version is switched. Fix the manifest or the archive; the existing installed version is untouched.
 
+## font install fails
+
+`font file ... already exists and is not managed by Rivet` means another tool or a manual install already placed a font with that file name in %LOCALAPPDATA%\Microsoft\Windows\Fonts. Remove the existing file or choose a package that does not collide; Rivet will not overwrite it.
+
+Font packages must be archives. A single raw .ttf download is rejected.
+
+## font remove fails
+
+Windows refuses to delete a font that an application is using. Close editors, terminals, and other applications that loaded the font, then run `rivet remove <package>` again. The package remains installed until the font files can be removed.
+
+Fonts may not appear in an already-running application until it is restarted; Rivet broadcasts WM_FONTCHANGE, but applications are not required to handle it.
+
 ## missing rv-shim.exe
 
 `rivet doctor` reports this. Run `rivet init` from a release zip that contains rv.exe, rivet.exe, and rv-shim.exe. A source build must run cargo build --release --bins.

@@ -194,6 +194,52 @@ pub fn update_github_packages(
             continue;
         }
 
+        if manifest.bin.is_empty() {
+            let info = match download_archive(asset) {
+                Ok(value) => value,
+                Err(error) => {
+                    errors.push(format!("{}: {error:#}", manifest.name));
+                    continue;
+                }
+            };
+            let missing: Vec<&String> = manifest
+                .fonts
+                .iter()
+                .filter(|entry| !font_entry_present(&info.files, entry))
+                .collect();
+            if !missing.is_empty() {
+                errors.push(format!(
+                    "{}: new asset no longer contains font path(s) {}; update the manifest manually",
+                    manifest.name,
+                    missing
+                        .iter()
+                        .map(|entry| entry.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ));
+                continue;
+            }
+            manifest.version = version.to_string();
+            manifest.url = asset.browser_download_url.clone();
+            manifest.sha256 = info.sha256;
+            manifest.extract = Some(info.extract);
+            manifest.strip_components =
+                (info.strip_components > 0).then_some(info.strip_components);
+            let text = toml::to_string_pretty(&manifest)?;
+            fs::write(&path, format!("{text}\n"))
+                .with_context(|| format!("writing {}", path.display()))?;
+            println!(
+                "{}: {} -> {} ({})",
+                manifest.name, current, version, asset.name
+            );
+            changed.push((
+                manifest.name.clone(),
+                current.to_string(),
+                version.to_string(),
+            ));
+            continue;
+        }
+
         let guessed = match download_and_inspect(asset, &manifest.name, &repo, None) {
             Ok(value) => value,
             Err(error) => {
@@ -442,6 +488,7 @@ fn write_manifest_from_asset(
         extract: Some(guessed.extract),
         strip_components: (guessed.strip_components > 0).then_some(guessed.strip_components),
         bin: vec![guessed.bin],
+        fonts: Vec::new(),
         depends: Vec::new(),
         persist: Vec::new(),
     };
@@ -470,19 +517,21 @@ fn write_manifest_from_asset(
     Ok(path)
 }
 
-fn download_and_inspect(
-    asset: &Asset,
-    package_name: &str,
-    repo_name: &str,
-    explicit_bin: Option<&str>,
-) -> Result<Inspected> {
+struct ArchiveInfo {
+    sha256: String,
+    extract: String,
+    strip_components: usize,
+    files: Vec<String>,
+}
+
+fn download_archive(asset: &Asset) -> Result<ArchiveInfo> {
     let temp = std::env::temp_dir().join(format!(
         "rivet-repo-{}-{}",
         std::process::id(),
         sanitize_file_name(&asset.name)
     ));
     let _ = fs::remove_file(&temp);
-    let result = (|| -> Result<Inspected> {
+    let result = (|| -> Result<ArchiveInfo> {
         download::download_to(&asset.browser_download_url, &temp)?;
         let sha256 = download::sha256_file(&temp)?;
         let kind = archive_kind(&asset.name)?;
@@ -493,31 +542,45 @@ fn download_and_inspect(
         };
         let stripped = strip_root(&files);
         let strip_components = if stripped.0 { 1 } else { 0 };
-        let files = stripped.1;
-        let bin = if kind == "none" {
-            let path = match explicit_bin {
-                Some(value) => normalize_bin(value)?,
-                None => format!("{package_name}.exe"),
-            };
-            let command = command_name(&path, package_name);
-            BinSpec::Detailed {
-                path,
-                name: Some(command),
-                args: Vec::new(),
-            }
-        } else {
-            choose_bin(&files, package_name, repo_name, explicit_bin)?
-        };
-        Ok(Inspected {
+        Ok(ArchiveInfo {
             sha256,
             extract: kind,
             strip_components,
-            bin,
-            files,
+            files: stripped.1,
         })
     })();
     let _ = fs::remove_file(&temp);
     result
+}
+
+fn download_and_inspect(
+    asset: &Asset,
+    package_name: &str,
+    repo_name: &str,
+    explicit_bin: Option<&str>,
+) -> Result<Inspected> {
+    let info = download_archive(asset)?;
+    let bin = if info.extract == "none" {
+        let path = match explicit_bin {
+            Some(value) => normalize_bin(value)?,
+            None => format!("{package_name}.exe"),
+        };
+        let command = command_name(&path, package_name);
+        BinSpec::Detailed {
+            path,
+            name: Some(command),
+            args: Vec::new(),
+        }
+    } else {
+        choose_bin(&info.files, package_name, repo_name, explicit_bin)?
+    };
+    Ok(Inspected {
+        sha256: info.sha256,
+        extract: info.extract,
+        strip_components: info.strip_components,
+        bin,
+        files: info.files,
+    })
 }
 
 fn choose_bin(
@@ -827,6 +890,34 @@ fn strip_root(files: &[String]) -> (bool, Vec<String>) {
     )
 }
 
+fn font_entry_present(files: &[String], entry: &str) -> bool {
+    let entry = entry.replace('\\', "/");
+    let entry = entry.strip_prefix("./").unwrap_or(&entry);
+    let entry = entry.trim_matches('/');
+    if entry.is_empty() || entry == "." {
+        return files.iter().any(|file| is_font_file_name(file));
+    }
+    if is_font_file_name(entry) {
+        return files.iter().any(|file| file == entry);
+    }
+    let prefix = format!("{entry}/");
+    files
+        .iter()
+        .any(|file| file.starts_with(&prefix) && is_font_file_name(file))
+}
+
+fn is_font_file_name(value: &str) -> bool {
+    std::path::Path::new(value)
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| {
+            matches!(
+                extension.to_ascii_lowercase().as_str(),
+                "ttf" | "otf" | "ttc" | "otc"
+            )
+        })
+}
+
 fn command_name(path: &str, package_name: &str) -> String {
     let stem = std::path::Path::new(path)
         .file_stem()
@@ -975,7 +1066,10 @@ fn manifest_files(root: &Path) -> Result<Vec<PathBuf>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{asset_score, command_name, parse_repository, read_sources, release_version};
+    use super::{
+        asset_score, command_name, font_entry_present, parse_repository, read_sources,
+        release_version,
+    };
 
     #[test]
     fn parses_github_repository_forms() {
@@ -1018,6 +1112,19 @@ mod tests {
         let baseline = asset_score("bun-windows-x64-baseline.zip", "bun", "bun").unwrap();
         assert!(bun > baseline);
         assert!(asset_score("bun-darwin-x64.zip", "bun", "bun").is_none());
+    }
+
+    #[test]
+    fn checks_font_paths_in_release_archives() {
+        let files = vec![
+            "fonts/ttf/Demo-Regular.ttf".to_string(),
+            "README.txt".to_string(),
+        ];
+        assert!(font_entry_present(&files, "fonts/ttf"));
+        assert!(font_entry_present(&files, "fonts/ttf/Demo-Regular.ttf"));
+        assert!(font_entry_present(&files, "."));
+        assert!(!font_entry_present(&files, "fonts/otf"));
+        assert!(!font_entry_present(&files, "Missing.ttf"));
     }
 
     #[test]

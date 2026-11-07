@@ -15,7 +15,7 @@ pub fn build_index(directory: &Path, output: Option<&Path>) -> Result<IndexFile>
         bail!("packages directory not found: {}", packages_dir.display());
     }
 
-    let mut packages = Vec::new();
+    let mut all = Vec::new();
     for entry in WalkDir::new(&packages_dir).min_depth(1).max_depth(2) {
         let entry = entry?;
         if !entry.file_type().is_file() {
@@ -32,27 +32,31 @@ pub fn build_index(directory: &Path, output: Option<&Path>) -> Result<IndexFile>
         manifest
             .validate()
             .with_context(|| format!("validating {}", path.display()))?;
-        packages.push(manifest);
+        all.push(manifest);
     }
-    if packages.is_empty() {
+    if all.is_empty() {
         bail!("no packages found in {}", packages_dir.display());
     }
-    packages.sort_by(|a, b| {
+    all.sort_by(|a, b| {
         a.name
             .cmp(&b.name)
             .then_with(|| crate::model::compare_manifests(a, b))
     });
 
-    for pair in packages.windows(2) {
+    for pair in all.windows(2) {
         if pair[0].name == pair[1].name && pair[0].version == pair[1].version {
-            bail!("duplicate package {}@{}", pair[0].name, pair[0].version);
+            bail!("duplicate package {}@{}", pair[0].name, pair[1].version);
         }
     }
 
+    let (fonts, packages): (Vec<PackageManifest>, Vec<PackageManifest>) = all
+        .into_iter()
+        .partition(|manifest| manifest.bin.is_empty());
     let index = IndexFile {
         schema: INDEX_SCHEMA,
         generated_at: chrono::Utc::now().to_rfc3339(),
         packages,
+        fonts,
     };
     let output = output
         .map(Path::to_path_buf)
@@ -69,7 +73,7 @@ pub fn parse_index(text: &str, source: &str) -> Result<IndexFile> {
     if index.schema != INDEX_SCHEMA {
         bail!("unsupported index schema {} in {source}", index.schema);
     }
-    for package in &index.packages {
+    for package in index.packages.iter().chain(index.fonts.iter()) {
         package.validate().with_context(|| {
             format!(
                 "validating {}/{} from {source}",

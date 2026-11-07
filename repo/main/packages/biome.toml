@@ -1,13 +1,14 @@
 name = "biome"
-version = "2.6.5"
+version = "2.6.6"
 description = "A toolchain for web projects, aimed to provide functionalities to maintain them. Biome offers formatter and linter, usable via CLI and LSP."
 homepage = "https://biomejs.dev"
 license = "Apache-2.0"
 tags = []
 arch = "x64"
-url = "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.6.5/biome-win32-x64.exe"
-sha256 = "e5d5afe715de1ea71768f0954448fbb9c11a0d8f5167fe9fd6cac336fa5667a1"
+url = "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.6.6/biome-win32-x64.exe"
+sha256 = "d3aac0b55e1b52ce586892b7c64de6bd2fc3774fe5b71129426af92c8a3c0571"
 extract = "none"
+fonts = []
 depends = []
 persist = []
 

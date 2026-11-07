@@ -1,14 +1,15 @@
 name = "rclone"
-version = "1.75.2"
+version = "1.76.0"
 description = '"rsync for cloud storage" - Google Drive, S3, Dropbox, Backblaze B2, One Drive, Swift, Hubic, Wasabi, Google Cloud Storage, Azure Blob, Azure Files, Yandex Files'
 homepage = "https://rclone.org"
 license = "MIT"
 tags = []
 arch = "x64"
-url = "https://github.com/rclone/rclone/releases/download/v1.75.2/rclone-v1.75.2-windows-amd64.zip"
-sha256 = "8a9db2bad1dc79a65b3348fd857069598e2aab7cf4d118b77b1df23055aff818"
+url = "https://github.com/rclone/rclone/releases/download/v1.76.0/rclone-v1.76.0-windows-amd64.zip"
+sha256 = "8b4fd2737ade4e70c057ef4a49deb7cffe94b0fb9d7587c189d149823f21a1dc"
 extract = "zip"
 strip_components = 1
+fonts = []
 depends = []
 persist = []
 

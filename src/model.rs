@@ -11,6 +11,16 @@ pub struct IndexFile {
     pub generated_at: String,
     #[serde(default)]
     pub packages: Vec<PackageManifest>,
+    /// Font-only packages. Older clients ignore this field; clients with font
+    /// support merge it with packages when loading the index.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fonts: Vec<PackageManifest>,
+}
+
+impl IndexFile {
+    pub fn package_count(&self) -> usize {
+        self.packages.len() + self.fonts.len()
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -37,6 +47,8 @@ pub struct PackageManifest {
     pub strip_components: Option<usize>,
     #[serde(default)]
     pub bin: Vec<BinSpec>,
+    #[serde(default)]
+    pub fonts: Vec<String>,
     #[serde(default)]
     pub depends: Vec<String>,
     #[serde(default)]
@@ -145,8 +157,8 @@ impl PackageManifest {
         if self.sha256.len() != 64 || !self.sha256.chars().all(|c| c.is_ascii_hexdigit()) {
             bail!("package '{}' has an invalid sha256", self.name);
         }
-        if self.bin.is_empty() {
-            bail!("package '{}' has no bin entries", self.name);
+        if self.bin.is_empty() && self.fonts.is_empty() {
+            bail!("package '{}' has no bin or font entries", self.name);
         }
         for bin in &self.bin {
             let bin_path = std::path::Path::new(bin.path());
@@ -170,6 +182,33 @@ impl PackageManifest {
                     "package '{}' has an invalid bin name '{}'",
                     self.name,
                     command
+                );
+            }
+        }
+        for font in &self.fonts {
+            if font.trim().is_empty()
+                || font.contains("..")
+                || std::path::Path::new(font).is_absolute()
+                || std::path::Path::new(font).components().any(|component| {
+                    matches!(
+                        component,
+                        std::path::Component::ParentDir
+                            | std::path::Component::RootDir
+                            | std::path::Component::Prefix(_)
+                    )
+                })
+            {
+                bail!(
+                    "package '{}' has an invalid font path '{}'",
+                    self.name,
+                    font
+                );
+            }
+            if font.contains(['*', '?']) {
+                bail!(
+                    "package '{}' has a wildcard font path '{}'; use a directory or an exact file",
+                    self.name,
+                    font
                 );
             }
         }

@@ -108,7 +108,10 @@ fn run() -> Result<()> {
             let path = PathBuf::from(path);
             let output = output.map(PathBuf::from);
             let index = index::build_index(&path, output.as_deref())?;
-            println!("built index with {} package versions", index.packages.len());
+            println!(
+                "built index with {} package versions",
+                index.package_count()
+            );
             Ok(())
         }
         Commands::Add {

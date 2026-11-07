@@ -40,6 +40,14 @@ pub struct ShimRecord {
     pub sidecar: String,
 }
 
+#[derive(Clone, Debug)]
+pub struct FontRecord {
+    pub path: String,
+    pub package: String,
+    pub registry_name: String,
+    pub source: String,
+}
+
 pub struct Db {
     pub conn: Connection,
 }
@@ -115,8 +123,16 @@ impl Db {
                 sidecar TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS fonts (
+                path TEXT PRIMARY KEY,
+                package TEXT NOT NULL,
+                registry_name TEXT NOT NULL,
+                source TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_packages_name ON packages(name);
             CREATE INDEX IF NOT EXISTS idx_packages_repo ON packages(repo);
+            CREATE INDEX IF NOT EXISTS idx_fonts_package ON fonts(package);
             "#,
         )?;
         Ok(())
@@ -209,7 +225,7 @@ impl Db {
                 "INSERT INTO packages(repo, name, version, description, homepage, license, tags, binaries, manifest_json)
                  VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             )?;
-            for package in &index.packages {
+            for package in index.packages.iter().chain(index.fonts.iter()) {
                 let binaries = package.binary_names().join(" ");
                 let tags = package.tags.join(" ");
                 let manifest_json = serde_json::to_string(package)?;
@@ -470,8 +486,13 @@ impl Db {
         Ok(())
     }
 
-    /// Persist the installed row and the package's shim rows in one transaction.
-    pub fn save_install_state(&self, record: &InstalledRecord, shims: &[ShimRecord]) -> Result<()> {
+    /// Persist the installed row, shim rows, and font rows in one transaction.
+    pub fn save_install_state(
+        &self,
+        record: &InstalledRecord,
+        shims: &[ShimRecord],
+        fonts: &[FontRecord],
+    ) -> Result<()> {
         let tx = self.conn.unchecked_transaction()?;
         tx.execute(
             "INSERT INTO installed(name, repo, version, previous_version, store_path, installed_at, pinned)
@@ -502,6 +523,15 @@ impl Db {
                 params![shim.command, shim.package, shim.target, shim.sidecar],
             )?;
         }
+        tx.execute("DELETE FROM fonts WHERE package = ?1", params![record.name])?;
+        for font in fonts {
+            tx.execute(
+                "INSERT INTO fonts(path, package, registry_name, source) VALUES(?1, ?2, ?3, ?4)
+                 ON CONFLICT(path) DO UPDATE SET
+                    package=excluded.package, registry_name=excluded.registry_name, source=excluded.source",
+                params![font.path, font.package, font.registry_name, font.source],
+            )?;
+        }
         tx.commit()?;
         Ok(())
     }
@@ -519,6 +549,8 @@ impl Db {
             .execute("DELETE FROM installed WHERE name = ?1", params![name])?;
         self.conn
             .execute("DELETE FROM shims WHERE package = ?1", params![name])?;
+        self.conn
+            .execute("DELETE FROM fonts WHERE package = ?1", params![name])?;
         Ok(())
     }
 
@@ -532,6 +564,44 @@ impl Db {
                 package: row.get(1)?,
                 target: row.get(2)?,
                 sidecar: row.get(3)?,
+            })
+        })?;
+        let mut result = Vec::new();
+        for row in rows {
+            result.push(row?);
+        }
+        Ok(result)
+    }
+
+    pub fn fonts_for_package(&self, package: &str) -> Result<Vec<FontRecord>> {
+        let mut statement = self.conn.prepare(
+            "SELECT path, package, registry_name, source FROM fonts WHERE package = ?1 ORDER BY path",
+        )?;
+        let rows = statement.query_map(params![package], |row| {
+            Ok(FontRecord {
+                path: row.get(0)?,
+                package: row.get(1)?,
+                registry_name: row.get(2)?,
+                source: row.get(3)?,
+            })
+        })?;
+        let mut result = Vec::new();
+        for row in rows {
+            result.push(row?);
+        }
+        Ok(result)
+    }
+
+    pub fn all_fonts(&self) -> Result<Vec<FontRecord>> {
+        let mut statement = self
+            .conn
+            .prepare("SELECT path, package, registry_name, source FROM fonts ORDER BY path")?;
+        let rows = statement.query_map([], |row| {
+            Ok(FontRecord {
+                path: row.get(0)?,
+                package: row.get(1)?,
+                registry_name: row.get(2)?,
+                source: row.get(3)?,
             })
         })?;
         let mut result = Vec::new();
@@ -597,6 +667,7 @@ mod tests {
             extract: None,
             strip_components: None,
             bin: vec![crate::model::BinSpec::Simple("tool.exe".to_string())],
+            fonts: Vec::new(),
             depends: Vec::new(),
             persist: Vec::new(),
         }
@@ -607,6 +678,7 @@ mod tests {
             schema: INDEX_SCHEMA,
             generated_at: String::new(),
             packages,
+            fonts: Vec::new(),
         }
     }
 

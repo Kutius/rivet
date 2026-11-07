@@ -1,8 +1,9 @@
 use crate::archive;
 use crate::cli::{Cli, Commands, ConfigCommands, TapCommands};
 use crate::config::{Config, Paths};
-use crate::db::{Db, InstalledRecord, PackageRecord, ShimRecord};
+use crate::db::{Db, FontRecord, InstalledRecord, PackageRecord, ShimRecord};
 use crate::download;
+use crate::font;
 use crate::lock;
 use crate::model::{BinSpec, PackageManifest, compare_manifests};
 use crate::repo;
@@ -12,7 +13,7 @@ use anyhow::{Context, Result, bail};
 use semver::Version;
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub fn run(cli: Cli) -> Result<()> {
@@ -282,6 +283,7 @@ fn cmd_info(db: &Db, spec: &str, json: bool) -> Result<()> {
             "url": record.manifest.url,
             "sha256": record.manifest.sha256,
             "tags": record.manifest.tags,
+            "fonts": record.manifest.fonts,
             "depends": record.manifest.depends,
             "persist": record.manifest.persist,
             "versions": version_list,
@@ -299,6 +301,9 @@ fn cmd_info(db: &Db, spec: &str, json: bool) -> Result<()> {
     println!("sha256:      {}", record.manifest.sha256);
     if !record.manifest.depends.is_empty() {
         println!("depends:     {}", record.manifest.depends.join(", "));
+    }
+    if !record.manifest.fonts.is_empty() {
+        println!("fonts:       {}", record.manifest.fonts.join(", "));
     }
     if !record.manifest.persist.is_empty() {
         println!("persist:     {}", record.manifest.persist.join(", "));
@@ -425,6 +430,7 @@ fn install_one(
     }
     fs::create_dir_all(&staging)?;
 
+    let mut font_relatives: Vec<PathBuf> = Vec::new();
     let result = (|| -> Result<()> {
         let url = download::resolve_artifact_url(&record.location, &manifest.url)?;
         println!(
@@ -438,6 +444,9 @@ fn install_one(
             .clone()
             .or_else(|| archive_kind_from_url(&manifest.url));
         if matches!(kind.as_deref(), Some("none") | Some("raw")) {
+            if !manifest.fonts.is_empty() {
+                bail!("font packages must use an archive (zip or tar.gz)");
+            }
             let raw_name = manifest
                 .bin
                 .first()
@@ -466,6 +475,17 @@ fn install_one(
                     manifest.name,
                     bin.path()
                 );
+            }
+        }
+        if !manifest.fonts.is_empty() {
+            let staging_root = staging
+                .canonicalize()
+                .with_context(|| format!("resolving package root {}", staging.display()))?;
+            for path in font::resolve(&staging, &manifest.fonts)? {
+                let relative = path
+                    .strip_prefix(&staging_root)
+                    .with_context(|| format!("resolving font path {}", path.display()))?;
+                font_relatives.push(relative.to_path_buf());
             }
         }
         fs::write(
@@ -503,6 +523,11 @@ fn install_one(
     fs::rename(&staging, &version_dir)
         .with_context(|| format!("activating {}", version_dir.display()))?;
 
+    let font_sources: Vec<PathBuf> = font_relatives
+        .iter()
+        .map(|relative| version_dir.join(relative))
+        .collect();
+
     for persist in &manifest.persist {
         store::ensure_persist_junction(paths, &manifest.name, &manifest.version, persist)?;
     }
@@ -510,6 +535,7 @@ fn install_one(
     store::switch_current(paths, &manifest.name, &manifest.version)?;
 
     let shims = reconcile_shims(db, paths, &manifest.name, manifest)?;
+    let fonts = reconcile_fonts(db, &manifest.name, &font_sources)?;
 
     let previous = existing.as_ref().and_then(|item| {
         if item.version != manifest.version {
@@ -529,13 +555,28 @@ fn install_one(
             pinned: existing.as_ref().is_some_and(|item| item.pinned),
         },
         &shims,
+        &fonts,
     )?;
+    let mut parts = Vec::new();
+    if !manifest.bin.is_empty() {
+        parts.push(format!(
+            "{} command{}",
+            manifest.bin.len(),
+            if manifest.bin.len() == 1 { "" } else { "s" }
+        ));
+    }
+    if !font_sources.is_empty() {
+        parts.push(format!(
+            "{} font{}",
+            font_sources.len(),
+            if font_sources.len() == 1 { "" } else { "s" }
+        ));
+    }
     println!(
-        "installed {} {} ({} command{})",
+        "installed {} {} ({})",
         manifest.name,
         manifest.version,
-        manifest.bin.len(),
-        if manifest.bin.len() == 1 { "" } else { "s" }
+        parts.join(", ")
     );
     Ok(())
 }
@@ -574,6 +615,26 @@ fn reconcile_shims(
     Ok(records)
 }
 
+fn reconcile_fonts(db: &Db, package: &str, sources: &[PathBuf]) -> Result<Vec<FontRecord>> {
+    let old = db.fonts_for_package(package)?;
+    let font_dir = font::font_dir()?;
+    let registry_key = font::registry_key();
+    if sources.is_empty() {
+        font::remove(&old, &font_dir, &registry_key)?;
+        return Ok(Vec::new());
+    }
+    let all = db.all_fonts()?;
+    font::replace(package, sources, &old, &all, &font_dir, &registry_key)
+}
+
+fn manifest_font_sources(root: &Path, manifest: &PackageManifest) -> Result<Vec<PathBuf>> {
+    if manifest.fonts.is_empty() {
+        Ok(Vec::new())
+    } else {
+        font::resolve(root, &manifest.fonts)
+    }
+}
+
 fn cmd_remove(db: &Db, paths: &Paths, specs: &[String], purge: bool, force: bool) -> Result<()> {
     if specs.is_empty() {
         bail!("specify at least one package");
@@ -603,6 +664,14 @@ fn cmd_remove(db: &Db, paths: &Paths, specs: &[String], purge: bool, force: bool
                     dependents.join(", ")
                 );
             }
+        }
+    }
+    let font_dir = font::font_dir()?;
+    let registry_key = font::registry_key();
+    for name in &names {
+        let fonts = db.fonts_for_package(name)?;
+        if !fonts.is_empty() {
+            font::remove(&fonts, &font_dir, &registry_key)?;
         }
     }
     for name in names {
@@ -776,6 +845,32 @@ fn cmd_verify(db: &Db, paths: &Paths) -> Result<()> {
             );
             problems += 1;
         }
+        let font_sources = match manifest_font_sources(store_path, &manifest) {
+            Ok(sources) => sources,
+            Err(error) => {
+                println!("damage:    {} font source missing: {error:#}", item.name);
+                problems += 1;
+                Vec::new()
+            }
+        };
+        let font_records = db.fonts_for_package(&item.name)?;
+        if !font_sources.is_empty() && font_records.len() != font_sources.len() {
+            println!(
+                "damage:    {} expected {} font file(s), registered {}",
+                item.name,
+                font_sources.len(),
+                font_records.len()
+            );
+            problems += 1;
+        }
+        if font_sources.is_empty() && !font_records.is_empty() {
+            println!("damage:    {} has stale font registrations", item.name);
+            problems += 1;
+        }
+        for problem in font::verify(&font_records, &font::registry_key()) {
+            println!("damage:    {} {problem}", item.name);
+            problems += 1;
+        }
         let link = store::current_link(paths, &item.name);
         let link_ok = match (fs::canonicalize(&link), fs::canonicalize(store_path)) {
             (Ok(link_target), Ok(store_target)) => link_target == store_target,
@@ -894,6 +989,8 @@ fn cmd_rollback(db: &Db, paths: &Paths, specs: &[String]) -> Result<()> {
             .with_context(|| format!("reading {}", manifest_path.display()))?;
         let manifest: PackageManifest = serde_json::from_str(&manifest_text)?;
         let shims = reconcile_shims(db, paths, &item.name, &manifest)?;
+        let font_sources = manifest_font_sources(&previous_dir, &manifest)?;
+        let fonts = reconcile_fonts(db, &item.name, &font_sources)?;
         db.save_install_state(
             &InstalledRecord {
                 name: item.name.clone(),
@@ -905,6 +1002,7 @@ fn cmd_rollback(db: &Db, paths: &Paths, specs: &[String]) -> Result<()> {
                 pinned: item.pinned,
             },
             &shims,
+            &fonts,
         )?;
         println!("rolled back {} {} -> {}", item.name, item.version, previous);
     }
@@ -1066,11 +1164,23 @@ fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
                 fs::symlink_metadata(paths.bin.join(format!("{command}.exe"))).is_err()
             })
             .collect();
+        let font_sources = manifest_font_sources(store_path, &manifest);
         if fix {
             // Reconcile every package so doctor --fix also switches between
             // symlink and launcher modes when the environment changes.
             let shims = reconcile_shims(db, paths, &item.name, &manifest)?;
-            db.save_install_state(&item, &shims)?;
+            let fonts = match &font_sources {
+                Ok(sources) => reconcile_fonts(db, &item.name, sources)?,
+                Err(error) => {
+                    println!(
+                        "font:      {} source missing: {error:#} (cannot repair; reinstall it)",
+                        item.name
+                    );
+                    ok = false;
+                    db.fonts_for_package(&item.name)?
+                }
+            };
+            db.save_install_state(&item, &shims, &fonts)?;
             if !missing.is_empty() {
                 println!(
                     "fixed:     shims for {} ({})",
@@ -1078,13 +1188,55 @@ fn cmd_doctor(db: &Db, paths: &Paths, fix: bool) -> Result<()> {
                     missing.join(", ")
                 );
             }
-        } else if !missing.is_empty() {
-            println!(
-                "shim:      missing {} (repairable: rivet doctor --fix)",
-                missing.join(", ")
-            );
-            repairable += 1;
-            ok = false;
+        } else {
+            if let Err(error) = &font_sources {
+                println!(
+                    "font:      {} source missing: {error:#} (cannot repair; reinstall it)",
+                    item.name
+                );
+                ok = false;
+            }
+            let fonts = db.fonts_for_package(&item.name)?;
+            if let Ok(sources) = &font_sources
+                && sources.len() != fonts.len()
+            {
+                println!(
+                    "font:      {} expected {} font file(s), registered {} (repairable: rivet doctor --fix)",
+                    item.name,
+                    sources.len(),
+                    fonts.len()
+                );
+                repairable += 1;
+                ok = false;
+            }
+            if font_sources
+                .as_ref()
+                .is_ok_and(|sources| sources.is_empty())
+                && !fonts.is_empty()
+            {
+                println!(
+                    "font:      {} has stale font registrations (repairable: rivet doctor --fix)",
+                    item.name
+                );
+                repairable += 1;
+                ok = false;
+            }
+            for problem in font::verify(&fonts, &font::registry_key()) {
+                println!(
+                    "font:      {} {problem} (repairable: rivet doctor --fix)",
+                    item.name
+                );
+                repairable += 1;
+                ok = false;
+            }
+            if !missing.is_empty() {
+                println!(
+                    "shim:      missing {} (repairable: rivet doctor --fix)",
+                    missing.join(", ")
+                );
+                repairable += 1;
+                ok = false;
+            }
         }
         for shim in db.shims_for_package(&item.name)? {
             if !Path::new(&shim.target).exists() {

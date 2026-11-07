@@ -1,4 +1,4 @@
-# Rivet 0.1.0-beta.6
+# Rivet 0.1.0-beta.7
 
 ## Install
 
@@ -15,13 +15,14 @@ irm https://kutius.github.io/rivet/install.ps1 -OutFile install.ps1
 
 ## What changed
 
-- The client no longer exposes the maintainer `repo` command family. Maintainer tooling now lives in the separate `rv-repo` binary, built from source with `.\scripts\repo.ps1`.
-- The daily catalog workflow now builds `rv-repo`, updates GitHub-hosted packages, signs the index with the `RIVET_SIGNING_KEY_B64` Actions secret, smoke-installs changed packages, and pushes the result.
-- The main catalog now includes hyperfine, dust, bottom, just, starship, xh, sd, procs, eza, lsd, watchexec, and typst.
+- Per-user font packages: the `fonts` manifest field copies .ttf/.otf/.ttc/.otc files into %LOCALAPPDATA%\Microsoft\Windows\Fonts, registers them under HKCU, and removes them on uninstall. No administrator rights or installer scripts.
+- `rivet verify` and `rivet doctor --fix` now check and repair font files and registry values.
+- `rv-repo sync` imports every missing GitHub repository from `repo/main/sources.toml`; `scripts/verify-catalog.ps1` installs the whole catalog into a temporary root and smoke-tests every command.
+- The main catalog is now 52 package versions, including JetBrains Mono, gh, deno, bun, pandoc, duckdb, rclone, restic, lazygit, and the earlier CLI set.
 
 ## Release artifacts
 
-- rivet-v0.1.0-beta.6-windows-x64.zip: portable release with rv.exe, rv-shim.exe, docs, LICENSE, and an internal SHA256SUMS. `rivet.exe` is created by `rivet init`.
+- rivet-v0.1.0-beta.7-windows-x64.zip: portable release with rv.exe, rv-shim.exe, docs, LICENSE, and an internal SHA256SUMS. `rivet.exe` is created by `rivet init`.
 - rv.exe: the Rivet CLI.
 - rv-shim.exe: the lightweight launcher used for script commands and systems without symlink permission.
 - install.ps1: the one-command installer.
@@ -31,7 +32,7 @@ Verify before running:
 
 ~~~powershell
 Get-Content .\SHA256SUMS
-(Get-FileHash .\rivet-v0.1.0-beta.6-windows-x64.zip -Algorithm SHA256).Hash.ToLower()
+(Get-FileHash .\rivet-v0.1.0-beta.7-windows-x64.zip -Algorithm SHA256).Hash.ToLower()
 ~~~
 
 No administrator rights are required. See docs/INSTALL.md for the full install, upgrade, and uninstall flow.

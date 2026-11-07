@@ -48,7 +48,7 @@ This still installs to %LOCALAPPDATA%\Rivet\bin. Run rivet by full path, or add 
 To pin a specific version:
 
 ~~~powershell
-.\install.ps1 -Version 0.1.0-beta.6
+.\install.ps1 -Version 0.1.0-beta.7
 ~~~
 
 To skip the catalog refresh:
@@ -59,12 +59,12 @@ To skip the catalog refresh:
 
 ## Manual zip install
 
-1. Download rivet-v0.1.0-beta.6-windows-x64.zip and SHA256SUMS from the release page.
+1. Download rivet-v0.1.0-beta.7-windows-x64.zip and SHA256SUMS from the release page.
 2. Verify the archive before extracting:
 
    ~~~powershell
-   $expected = (Get-Content .\SHA256SUMS | Select-String 'rivet-v0.1.0-beta.6-windows-x64.zip').Line.Split()[0]
-   (Get-FileHash .\rivet-v0.1.0-beta.6-windows-x64.zip -Algorithm SHA256).Hash.ToLower() -eq $expected
+   $expected = (Get-Content .\SHA256SUMS | Select-String 'rivet-v0.1.0-beta.7-windows-x64.zip').Line.Split()[0]
+   (Get-FileHash .\rivet-v0.1.0-beta.7-windows-x64.zip -Algorithm SHA256).Hash.ToLower() -eq $expected
    ~~~
 
 3. Extract the zip anywhere, then run:
@@ -80,7 +80,7 @@ To skip the catalog refresh:
    rivet doctor
    ~~~
 
-The current beta is 0.1.0-beta.6.
+The current beta is 0.1.0-beta.7.
 
 ## Package source
 

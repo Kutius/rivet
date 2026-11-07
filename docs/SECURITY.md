@@ -32,6 +32,13 @@ Rivet trusts two things explicitly: the signing key the user configures, and the
 - Downloads are verified against the manifest digest before extraction. A mismatch deletes the partial file and aborts the install.
 - Cached blobs are re-verified whenever they are reused.
 
+## Fonts
+
+- Font packages are declarative. The manifest lists files or directories inside the hash-verified archive; Rivet never runs a font installer script.
+- Installation writes only to the current user's font directory and HKCU. It does not request administrator rights or modify machine-wide fonts.
+- Rivet refuses to overwrite an existing font file it does not manage. The SQLite font table records the exact destination path and registry value so uninstall removes only what the package installed.
+- Font registration changes system state outside the Rivet root. Removing a package reverses that state; if a font is in use, Windows may refuse deletion and the package remains installed for a retry.
+
 ## Scope
 
 Rivet does not run install scripts, PowerShell hooks, or MSI/EXE system installers, so package installation has no arbitrary code execution step beyond launching the packaged binaries the user chooses to run.

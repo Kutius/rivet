@@ -36,8 +36,8 @@ main repo (Git) --CI--> index.json / artifacts --> GitHub Pages or Release
 | `rivet install` | Install packages and dependencies. Never refreshes metadata implicitly. |
 | `rivet status` | Show installed versions and available updates. `--check` refreshes metadata and falls back to the cached index on failure. |
 | `rivet pin` / `rivet unpin` | Hold or release a package at its current version. |
-| `rivet verify` | Check store paths, current links, shims, and recorded versions. |
-| `rivet doctor --fix` | Repair broken current links and missing shims when the store is intact. |
+| `rivet verify` | Check store paths, current links, shims, fonts, and recorded versions. |
+| `rivet doctor --fix` | Repair broken current links, missing shims, and missing font registrations when the store is intact. |
 | `rivet tap add` | Clone a third-party Git tap and build its local index if needed. |
 | `rivet self-update` | Fetch, verify, and stage the latest binaries; replace them after the current process exits. |
 | `rivet self-uninstall --yes` | Remove packages, the PATH entry, and the Rivet root after the current process exits. |
@@ -57,6 +57,12 @@ index.json
 `.\scripts\repo.ps1 build` reads every TOML manifest, validates it, sorts packages, and writes a single `index.json`. The client downloads that file with an HTTP client and loads it into SQLite. Maintainers use `.\scripts\repo.ps1 add owner/repo` to generate one manifest from the latest GitHub release, `.\scripts\repo.ps1 sync repo\main` to import every missing repository from `repo/main/sources.toml`, and `.\scripts\repo.ps1 update` to bump every GitHub-hosted package. The daily catalog workflow signs the result with the encrypted `RIVET_SIGNING_KEY_B64` Actions secret; local signing remains available.
 
 The index is deliberately a single file. For a personal repository with tens to hundreds of packages, this keeps implementation and publishing simple. If the repository grows past a few thousand packages, split the catalog and package manifests into a two-level index.
+
+## Fonts
+
+Fonts are a declarative side effect of a package, not an installer script. A manifest lists `fonts` entries inside its archive; install copies the matching .ttf/.otf/.ttc/.otc files to %LOCALAPPDATA%\Microsoft\Windows\Fonts, writes HKCU registry values, and broadcasts WM_FONTCHANGE. Uninstall reverses those steps. The SQLite `fonts` table records the destination path, registry value name, and source file so upgrades, rollback, verify, and doctor can reconcile the system state without scanning the whole font directory.
+
+Per-user fonts require Windows 10 1809 or newer and never require elevation. Machine-wide fonts and arbitrary font installer scripts are out of scope.
 
 ## Tap model
 

@@ -13,6 +13,7 @@ url = "https://github.com/sharkdp/fd/releases/download/v10.5.1/fd-v10.5.1-x86_64
 sha256 = "e52306a600e60b7ba92019c81dc753e6ea6665379d005867d38215ffd14cf5c2"
 extract = "zip"
 strip_components = 1
+fonts = []
 depends = []
 persist = []
 

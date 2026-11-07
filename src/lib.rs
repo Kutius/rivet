@@ -5,6 +5,7 @@ pub mod commands;
 pub mod config;
 pub mod db;
 pub mod download;
+pub mod font;
 pub mod index;
 pub mod lock;
 pub mod model;

@@ -64,7 +64,7 @@ pub fn sync_main(db: &Db, paths: &Paths, config: &Config, trust: &Trust) -> Resu
     db.replace_repo_packages("main", &index)?;
     println!(
         "main: {} package versions from {}",
-        index.packages.len(),
+        index.package_count(),
         location
     );
     let _ = paths;
@@ -114,7 +114,7 @@ pub fn sync_taps(db: &Db, paths: &Paths, trust: &Trust) -> Result<()> {
         println!(
             "tap {}: {} package versions",
             repo.name,
-            index.packages.len()
+            index.package_count()
         );
     }
     Ok(())
@@ -162,7 +162,7 @@ pub fn add_tap(db: &Db, paths: &Paths, name: &str, url: Option<&str>, trust: &Tr
     println!(
         "added tap {} ({} package versions)",
         name,
-        index.packages.len()
+        index.package_count()
     );
     Ok(())
 }

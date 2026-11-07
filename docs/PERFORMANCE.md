@@ -1,6 +1,6 @@
 # Performance
 
-Measurements were taken on the development Windows machine with the 0.1.0-beta.3 release build (size-optimized release profile); beta.4 through beta.6 add self-management, catalog tooling, and the maintainer/client split without changing the measured paths:
+Measurements were taken on the development Windows machine with the 0.1.0-beta.3 release build (size-optimized release profile); beta.4 through beta.7 add self-management, catalog tooling, the maintainer/client split, and font registration without changing the measured install/search paths:
 
 ~~~powershell
 cargo build --release --bins
