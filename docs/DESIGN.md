@@ -58,6 +58,8 @@ index.json
 
 The index is deliberately a single file. For a personal repository with tens to hundreds of packages, this keeps implementation and publishing simple. If the repository grows past a few thousand packages, split the catalog and package manifests into a two-level index.
 
+Font-only manifests are emitted in a separate top-level `fonts` array. Older clients ignore that field and keep reading `packages`; clients with font support merge both arrays. This keeps one signed index backward compatible while fonts are introduced.
+
 ## Fonts
 
 Fonts are a declarative side effect of a package, not an installer script. A manifest lists `fonts` entries inside its archive; install copies the matching .ttf/.otf/.ttc/.otc files to %LOCALAPPDATA%\Microsoft\Windows\Fonts, writes HKCU registry values, and broadcasts WM_FONTCHANGE. Uninstall reverses those steps. The SQLite `fonts` table records the destination path, registry value name, and source file so upgrades, rollback, verify, and doctor can reconcile the system state without scanning the whole font directory.
