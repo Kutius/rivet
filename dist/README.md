@@ -18,7 +18,7 @@ irm https://kutius.github.io/rivet/install.ps1 -OutFile install.ps1
 - Per-user font packages: the `fonts` manifest field copies .ttf/.otf/.ttc/.otc files into %LOCALAPPDATA%\Microsoft\Windows\Fonts, registers them under HKCU, and removes them on uninstall. No administrator rights or installer scripts.
 - `rivet verify` and `rivet doctor --fix` now check and repair font files and registry values.
 - `rv-repo sync` imports every missing GitHub repository from `repo/main/sources.toml`; `scripts/verify-catalog.ps1` installs the whole catalog into a temporary root and smoke-tests every command.
-- The main catalog is now 52 package versions, including JetBrains Mono, gh, deno, bun, pandoc, duckdb, rclone, restic, lazygit, and the earlier CLI set.
+- The main catalog is now 53 package versions, including JetBrains Mono, Fira Code, gh, deno, bun, pandoc, duckdb, rclone, restic, lazygit, and the earlier CLI set.
 
 ## Release artifacts
 

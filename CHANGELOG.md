@@ -12,7 +12,7 @@
 
 ### Catalog
 
-- Expanded the main catalog from 22 to 52 package versions (51 packages), including air, biome, bun, cargo-binstall, cargo-deny, dasel, deno, dprint, duckdb, fq, gh, git-lfs, gofumpt, gojq, golangci-lint, hexyl, jetbrains-mono, lazydocker, lazygit, mdbook, miller, pandoc, pnpm, rclone, restic, ruff, shfmt, task, uv, and xsv.
+- Expanded the main catalog from 22 to 53 package versions (52 packages), including air, biome, bun, cargo-binstall, cargo-deny, dasel, deno, dprint, duckdb, fira-code, fq, gh, git-lfs, gofumpt, gojq, golangci-lint, hexyl, jetbrains-mono, lazydocker, lazygit, mdbook, miller, pandoc, pnpm, rclone, restic, ruff, shfmt, task, uv, and xsv.
 - Added `repo/main/sources.toml` as the curated source list for future batch imports.
 
 ## 0.1.0-beta.6 — maintainer tooling split
