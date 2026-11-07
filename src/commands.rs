@@ -668,13 +668,11 @@ fn cmd_remove(db: &Db, paths: &Paths, specs: &[String], purge: bool, force: bool
     }
     let font_dir = font::font_dir()?;
     let registry_key = font::registry_key();
-    for name in &names {
-        let fonts = db.fonts_for_package(name)?;
+    for name in names {
+        let fonts = db.fonts_for_package(&name)?;
         if !fonts.is_empty() {
             font::remove(&fonts, &font_dir, &registry_key)?;
         }
-    }
-    for name in names {
         for shim in db.shims_for_package(&name)? {
             store::remove_shim_files(paths, &shim.command)?;
         }
