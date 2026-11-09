@@ -1,11 +1,23 @@
 name = "fzf"
-version = "0.74.5"
+version = "0.75.0"
 description = "General-purpose command-line fuzzy finder"
 homepage = "https://github.com/junegunn/fzf"
 license = "MIT"
-tags = ["fuzzy", "search", "cli"]
+tags = [
+    "fuzzy",
+    "search",
+    "cli",
+]
 arch = "x64"
-url = "https://github.com/junegunn/fzf/releases/download/v0.74.5/fzf-0.74.5-windows_amd64.zip"
-sha256 = "01f854ec8b9b47c99a7d78023638f7d2056cfb0af56b72dabd112032eed3993e"
+url = "https://github.com/junegunn/fzf/releases/download/v0.75.0/fzf-0.75.0-windows_amd64.zip"
+sha256 = "e3fb809d48094bea7f9f4df03b2fea33ae6e28a6cd32fdad9970cd79e1103901"
 extract = "zip"
-bin = [{ path = "fzf.exe", name = "fzf" }]
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "fzf.exe"
+name = "fzf"
+args = []
+

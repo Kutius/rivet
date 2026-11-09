@@ -1,13 +1,14 @@
 name = "lazygit"
-version = "0.66.2"
+version = "0.66.3"
 description = "simple terminal UI for git commands"
 homepage = "https://github.com/jesseduffield/lazygit"
 license = "MIT"
 tags = []
 arch = "x64"
-url = "https://github.com/jesseduffield/lazygit/releases/download/v0.66.2/lazygit_0.66.2_windows_x86_64.zip"
-sha256 = "8b1e2194c2d8ac660f0a132cb4384e9d2fe1405217a144e280df16383c18d45c"
+url = "https://github.com/jesseduffield/lazygit/releases/download/v0.66.3/lazygit_0.66.3_windows_x86_64.zip"
+sha256 = "a76fe17339fd387c20addc09060f07c240e4b20a9f55fee4ad7c86a251c0741e"
 extract = "zip"
+fonts = []
 depends = []
 persist = []
 

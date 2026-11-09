@@ -1,5 +1,5 @@
 name = "yq"
-version = "4.54.2"
+version = "4.54.3"
 description = "Command-line YAML, JSON, and XML processor"
 homepage = "https://github.com/mikefarah/yq"
 license = "MIT"
@@ -11,8 +11,8 @@ tags = [
 ]
 arch = "x64"
 asset = "yq_windows_amd64.exe"
-url = "https://github.com/mikefarah/yq/releases/download/v4.54.2/yq_windows_amd64.exe"
-sha256 = "d14bfc4c0daf75336e07f534980b0dd560775cbffbedef29d91aa733c9fefb52"
+url = "https://github.com/mikefarah/yq/releases/download/v4.54.3/yq_windows_amd64.exe"
+sha256 = "066ea0a09a282e47588ec1e1867280ff5ede458f7183617a2d99012e4e34f18a"
 extract = "none"
 fonts = []
 depends = []

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-07T06:26:04.150561600+00:00",
+  "generated_at": "2026-11-09T11:03:22.577835+00:00",
   "packages": [
     {
       "name": "air",
@@ -346,7 +346,7 @@
     },
     {
       "name": "fd",
-      "version": "10.5.1",
+      "version": "10.5.2",
       "description": "Fast, user-friendly alternative to find",
       "homepage": "https://github.com/sharkdp/fd",
       "license": "MIT OR Apache-2.0",
@@ -356,8 +356,8 @@
         "cli"
       ],
       "arch": "x64",
-      "url": "https://github.com/sharkdp/fd/releases/download/v10.5.1/fd-v10.5.1-x86_64-pc-windows-msvc.zip",
-      "sha256": "e52306a600e60b7ba92019c81dc753e6ea6665379d005867d38215ffd14cf5c2",
+      "url": "https://github.com/sharkdp/fd/releases/download/v10.5.2/fd-v10.5.2-x86_64-pc-windows-msvc.zip",
+      "sha256": "7edac75ef96b7e9a01ebb251a21ee86ea365a09adcfb865f1ec3346a906153b6",
       "extract": "zip",
       "strip_components": 1,
       "bin": [
@@ -396,7 +396,7 @@
     },
     {
       "name": "fzf",
-      "version": "0.74.5",
+      "version": "0.75.0",
       "description": "General-purpose command-line fuzzy finder",
       "homepage": "https://github.com/junegunn/fzf",
       "license": "MIT",
@@ -406,8 +406,8 @@
         "cli"
       ],
       "arch": "x64",
-      "url": "https://github.com/junegunn/fzf/releases/download/v0.74.5/fzf-0.74.5-windows_amd64.zip",
-      "sha256": "01f854ec8b9b47c99a7d78023638f7d2056cfb0af56b72dabd112032eed3993e",
+      "url": "https://github.com/junegunn/fzf/releases/download/v0.75.0/fzf-0.75.0-windows_amd64.zip",
+      "sha256": "e3fb809d48094bea7f9f4df03b2fea33ae6e28a6cd32fdad9970cd79e1103901",
       "extract": "zip",
       "strip_components": null,
       "bin": [
@@ -717,14 +717,14 @@
     },
     {
       "name": "lazygit",
-      "version": "0.66.2",
+      "version": "0.66.3",
       "description": "simple terminal UI for git commands",
       "homepage": "https://github.com/jesseduffield/lazygit",
       "license": "MIT",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.66.2/lazygit_0.66.2_windows_x86_64.zip",
-      "sha256": "8b1e2194c2d8ac660f0a132cb4384e9d2fe1405217a144e280df16383c18d45c",
+      "url": "https://github.com/jesseduffield/lazygit/releases/download/v0.66.3/lazygit_0.66.3_windows_x86_64.zip",
+      "sha256": "a76fe17339fd387c20addc09060f07c240e4b20a9f55fee4ad7c86a251c0741e",
       "extract": "zip",
       "strip_components": null,
       "bin": [
@@ -1209,7 +1209,7 @@
     },
     {
       "name": "yq",
-      "version": "4.54.2",
+      "version": "4.54.3",
       "description": "Command-line YAML, JSON, and XML processor",
       "homepage": "https://github.com/mikefarah/yq",
       "license": "MIT",
@@ -1221,8 +1221,8 @@
       ],
       "arch": "x64",
       "asset": "yq_windows_amd64.exe",
-      "url": "https://github.com/mikefarah/yq/releases/download/v4.54.2/yq_windows_amd64.exe",
-      "sha256": "d14bfc4c0daf75336e07f534980b0dd560775cbffbedef29d91aa733c9fefb52",
+      "url": "https://github.com/mikefarah/yq/releases/download/v4.54.3/yq_windows_amd64.exe",
+      "sha256": "066ea0a09a282e47588ec1e1867280ff5ede458f7183617a2d99012e4e34f18a",
       "extract": "none",
       "strip_components": null,
       "bin": [
