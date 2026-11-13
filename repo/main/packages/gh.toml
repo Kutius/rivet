@@ -1,13 +1,14 @@
 name = "gh"
-version = "2.103.3"
+version = "2.104.0"
 description = "GitHub’s official command line tool"
 homepage = "https://cli.github.com"
 license = "MIT"
 tags = []
 arch = "x64"
-url = "https://github.com/cli/cli/releases/download/v2.103.3/gh_2.103.3_windows_amd64.zip"
-sha256 = "98d0cfa794721665d7973dd728c78aff7bd836d58f10f6d7a03568eccb0a22e0"
+url = "https://github.com/cli/cli/releases/download/v2.104.0/gh_2.104.0_windows_amd64.zip"
+sha256 = "08c06d10482f12c478018cd259f64acbd5f625712cadf331aad19ba973c879e5"
 extract = "zip"
+fonts = []
 depends = []
 persist = []
 
