@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-13T10:42:47.973861600+00:00",
+  "generated_at": "2026-11-16T10:46:49.077468300+00:00",
   "packages": [
     {
       "name": "air",
@@ -54,14 +54,14 @@
     },
     {
       "name": "biome",
-      "version": "2.6.7",
+      "version": "2.6.8",
       "description": "A toolchain for web projects, aimed to provide functionalities to maintain them. Biome offers formatter and linter, usable via CLI and LSP.",
       "homepage": "https://biomejs.dev",
       "license": "Apache-2.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.6.7/biome-win32-x64.exe",
-      "sha256": "36725369c94245889e9b40ee12e7740563dd2e98fd9b95a62cd986deb9ec132e",
+      "url": "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.6.8/biome-win32-x64.exe",
+      "sha256": "4328e7468693a259474b8d6810899fafa4af3ef7ceec446d1b98553c8f7b3ace",
       "extract": "none",
       "strip_components": null,
       "bin": [
@@ -836,14 +836,14 @@
     },
     {
       "name": "pnpm",
-      "version": "12.18.0",
+      "version": "12.21.0",
       "description": "Fast, disk space efficient package manager",
       "homepage": "https://pnpm.io",
       "license": "MIT",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/pnpm/pnpm/releases/download/v12.18.0/pnpm-win32-x64.zip",
-      "sha256": "dfe2123affd2ed4be280ba7ab4678c0fae130b4936fabefa9b1675b60514ef7c",
+      "url": "https://github.com/pnpm/pnpm/releases/download/v12.21.0/pnpm-win32-x64.zip",
+      "sha256": "4fb64bb37e46c788309e0fd4ea93beb512546fdc7348121194fb704fbb72c09c",
       "extract": "zip",
       "strip_components": null,
       "bin": [
