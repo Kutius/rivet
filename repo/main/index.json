@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-16T10:46:49.077468300+00:00",
+  "generated_at": "2026-11-17T11:35:18.179823100+00:00",
   "packages": [
     {
       "name": "air",
@@ -150,14 +150,14 @@
     },
     {
       "name": "cargo-deny",
-      "version": "0.20.2",
+      "version": "0.21.0",
       "description": "❌ Cargo plugin for linting your dependencies 🦀",
       "homepage": "http://embark.rs",
       "license": "Apache-2.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-pc-windows-msvc.tar.gz",
-      "sha256": "975a22143262fd27476d19ee00c7af67978426e40e1dee94eed6bbade1cf87dc",
+      "url": "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.21.0/cargo-deny-0.21.0-x86_64-pc-windows-msvc.tar.gz",
+      "sha256": "8c445ef95217269d3cee234b18e2f543f8f1653f4a9801d9439df24bfcef4824",
       "extract": "tar.gz",
       "strip_components": 1,
       "bin": [
@@ -246,14 +246,14 @@
     },
     {
       "name": "dprint",
-      "version": "0.64.3",
+      "version": "0.65.0",
       "description": "Pluggable and configurable code formatting platform that unifies all your formatters.",
       "homepage": "https://dprint.dev",
       "license": "MIT",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/dprint/dprint/releases/download/0.64.3/dprint-x86_64-pc-windows-msvc.zip",
-      "sha256": "3beb87a2582f1e43a301efd0840565518484e53f8c7b0ad27b857eee08e0745f",
+      "url": "https://github.com/dprint/dprint/releases/download/0.65.0/dprint-x86_64-pc-windows-msvc.zip",
+      "sha256": "83bc6c5df42d6001062a71ac475ceb5be119472af6afb3fce52ff13ed042db77",
       "extract": "zip",
       "strip_components": null,
       "bin": [
@@ -1109,14 +1109,14 @@
     },
     {
       "name": "uv",
-      "version": "0.13.8",
+      "version": "0.13.9",
       "description": "An extremely fast Python package and project manager, written in Rust.",
       "homepage": "https://docs.astral.sh/uv",
       "license": "Apache-2.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/astral-sh/uv/releases/download/0.13.8/uv-x86_64-pc-windows-msvc.zip",
-      "sha256": "529e78a9cec6cd7e3e014f7ecd8bda0c113969d4ed0f2efeedb85c30943325b8",
+      "url": "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-pc-windows-msvc.zip",
+      "sha256": "edd61f7f5728a56cc62455386661860bdfc7bab65872f39b0c25bdcc1d8e1beb",
       "extract": "zip",
       "strip_components": null,
       "bin": [
