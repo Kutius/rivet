@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.1.0-beta.8 — architecture cleanup, concurrent downloads, and scalable catalog
+
+### Added
+
+- Concurrent artifact prefetching during `rivet install` and `rivet upgrade` honoring `config.concurrency`, with process-wide HTTP connection pooling.
+- `--verbose` diagnostic logging to `stderr` for lock acquisition, index sync, artifact URLs, and concurrent prefetching.
+- `rv-repo update --concurrency`, `--allow-failures`, and `--failures-out`, plus `{version}` asset templates and automatic versioned-binary path reconciliation (fixing `restic` and similar releases).
+- `rv-repo import-scoop`: strict, portable-only importer for Scoop JSON manifests (rejects PowerShell hooks, installer scripts, multi-URLs, and non-SHA256 hashes).
+- `test_args` manifest field and 4-shard parallel `Catalog verify` workflow; `Catalog update` now auto-syncs `sources.toml` and manages a `Catalog update failures` GitHub Issue on partial failures.
+
+### Changed
+
+- Unified `index.json` into a single `packages` array (removed the legacy `fonts` top-level compatibility split).
+- Replaced `reg.exe` subprocess calls for user `PATH` management with native Win32 Registry APIs shared in `src/winreg.rs` (Unicode-safe and supports arbitrary `PATH` lengths).
+- Hardened tar extraction to skip symlinks/hardlinks/special entries and write only validated regular files and directories.
+- Modularized `src/commands/` (`mod`, `query`, `lifecycle`, `health`, `admin`) and consolidated self-lifecycle/PATH management in `src/selfmanage.rs` (hard-linking `rivet.exe` to `rv.exe`).
+- Fixed `rivet status --check` mutation locking, transactional `remove_installed`, batch removal of dependent+dependency together, preflight font/shim conflict checks before activation, `rivet doctor --fix` for `rv-shim.exe`, and `rivet config set` validation.
+- Untracked generated release binaries under `dist/`.
+
+### Catalog
+
+- Expanded the main catalog from 53 to 81 manifests, adding actionlint, age, ast-grep, buf, caddy, cloudflared, dbmate, difftastic, dive, dotenvx, duf, git-cliff, gitleaks, glow, grpcurl, gum, hadolint, k9s, micro, mise, nushell, scc, sops, sqlc, tealdeer, tree-sitter, typos, and yt-dlp.
+
+### Tests
+
+- 51 tests covering versioned binary reconciliation, tar symlink rejection, concurrent blob prefetching, Scoop manifest conversion/filtering, batch dependent removal, config validation, and `status --check` locking.
+
 ## 0.1.0-beta.7 — fonts and bulk catalog
 
 ### Added
