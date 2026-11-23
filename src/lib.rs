@@ -15,6 +15,7 @@ pub mod selfmanage;
 pub mod shim;
 pub mod store;
 pub mod trust;
+pub mod ui;
 pub mod winreg;
 
 pub use commands::run;

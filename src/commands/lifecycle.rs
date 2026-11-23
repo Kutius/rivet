@@ -8,6 +8,7 @@ use crate::download;
 use crate::font;
 use crate::model::{BinSpec, PackageManifest};
 use crate::store;
+use crate::ui;
 use anyhow::{Context, Result, bail};
 use semver::Version;
 use std::collections::HashSet;
@@ -144,12 +145,29 @@ fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<()> 
     let result = (|| -> Result<()> {
         let url = download::resolve_artifact_url(&record.location, &manifest.url)?;
         rt.log(format!("resolved artifact url: {url}"));
-        println!(
-            "Installing {} {} from {}",
-            manifest.name, manifest.version, record.repo
-        );
-        let blob = download::cache_blob(&paths.cache, &url, &manifest.sha256)
-            .with_context(|| format!("downloading {}", url))?;
+        if !ui::stderr_is_tty() {
+            println!(
+                "Installing {} {} from {}",
+                manifest.name, manifest.version, record.repo
+            );
+        }
+        let mut download_bar = ui::ProgressBar::new(format!(
+            "Downloading {} {}",
+            manifest.name, manifest.version
+        ));
+        let blob = download::cache_blob_with_progress(
+            &paths.cache,
+            &url,
+            &manifest.sha256,
+            &mut |current, total| download_bar.update(current, total),
+        )
+        .with_context(|| format!("downloading {}", url))?;
+        download_bar.clear();
+
+        let extract_spinner = ui::Spinner::start(format!(
+            "Extracting {} {}...",
+            manifest.name, manifest.version
+        ));
         let kind = manifest
             .extract
             .clone()
@@ -178,6 +196,7 @@ fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<()> 
             )
             .with_context(|| format!("extracting {}", manifest.url))?;
         }
+        extract_spinner.clear();
         for bin in &manifest.bin {
             let bin_path = staging.join(bin.path());
             if !bin_path.is_file() {
@@ -254,6 +273,10 @@ fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<()> 
     }
     store::preflight_shims(paths, &manifest.name, &manifest.bin)?;
 
+    let activate_spinner = ui::Spinner::start(format!(
+        "Activating {} {}...",
+        manifest.name, manifest.version
+    ));
     for persist in &manifest.persist {
         store::ensure_persist_junction(paths, &manifest.name, &manifest.version, persist)?;
     }
@@ -283,6 +306,7 @@ fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<()> 
         &shims,
         &fonts,
     )?;
+    activate_spinner.clear();
     let mut parts = Vec::new();
     if !manifest.bin.is_empty() {
         parts.push(format!(
@@ -298,12 +322,12 @@ fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<()> 
             if font_sources.len() == 1 { "" } else { "s" }
         ));
     }
-    println!(
+    ui::print_success(&format!(
         "installed {} {} ({})",
         manifest.name,
         manifest.version,
         parts.join(", ")
-    );
+    ));
     Ok(())
 }
 
@@ -346,6 +370,7 @@ pub(super) fn cmd_remove(rt: &Runtime, specs: &[String], purge: bool, force: boo
     let font_dir = font::font_dir()?;
     let registry_key = font::registry_key();
     for name in names {
+        let remove_spinner = ui::Spinner::start(format!("Removing {name}..."));
         let fonts = rt.db.fonts_for_package(&name)?;
         if !fonts.is_empty() {
             font::remove(&fonts, &font_dir, &registry_key)?;
@@ -367,14 +392,15 @@ pub(super) fn cmd_remove(rt: &Runtime, specs: &[String], purge: bool, force: boo
                     .with_context(|| format!("removing {}", persist.display()))?;
             }
         }
-        println!(
+        remove_spinner.clear();
+        ui::print_success(&format!(
             "removed {name}{}",
             if purge {
                 " (including persist data)"
             } else {
                 ""
             }
-        );
+        ));
     }
     Ok(())
 }
