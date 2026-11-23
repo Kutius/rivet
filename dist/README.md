@@ -1,4 +1,4 @@
-# Rivet 0.1.0-beta.8
+# Rivet 0.1.0-beta.9
 
 ## Install
 
@@ -15,14 +15,12 @@ irm https://kutius.github.io/rivet/install.ps1 -OutFile install.ps1
 
 ## What changed
 
-- Concurrent artifact prefetching in `rivet install` and `rivet upgrade` (`config.concurrency`) plus process-wide HTTP connection pooling and `--verbose` diagnostics.
-- Native Win32 Registry API for `PATH` management (replacing `reg.exe`), hardened tar extraction (ignoring symlinks/hardlinks), unified `index.json` schema, and stricter install/config/lock safety checks.
-- Scalable catalog automation: concurrent `rv-repo update` with partial-success Issue reporting, 4-shard parallel `Catalog verify`, `rv-repo import-scoop`, and automatic `sources.toml` sync.
-- The main catalog now contains 81 manifests (80 packages), adding actionlint, age, ast-grep, buf, caddy, cloudflared, dbmate, difftastic, dive, dotenvx, duf, git-cliff, gitleaks, glow, grpcurl, gum, hadolint, k9s, micro, mise, nushell, scc, sops, sqlc, tealdeer, tree-sitter, typos, and yt-dlp.
+- Modern, zero-dependency interactive terminal UI: smooth horizontal download progress bars (`━━━───`) with live speed, Braille spinners for extraction/activation/removal/rollback/catalog refresh, elapsed duration & cache indicators, `→ ready to run` command hints, preserved persist-data notices on uninstall, and multi-package summaries. Automatically degrades to clean plain text when piped or with `NO_COLOR`.
+- `Catalog update` now automatically triggers GitHub Pages deployment whenever the signed catalog is updated.
 
 ## Release artifacts
 
-- `rivet-v0.1.0-beta.8-windows-x64.zip`: portable release with `rv.exe`, `rv-shim.exe`, docs, LICENSE, and an internal `SHA256SUMS`. `rivet.exe` is created by `rivet init`.
+- `rivet-v0.1.0-beta.9-windows-x64.zip`: portable release with `rv.exe`, `rv-shim.exe`, docs, LICENSE, and an internal `SHA256SUMS`. `rivet.exe` is created by `rivet init`.
 - `rv.exe`: the Rivet CLI.
 - `rv-shim.exe`: the lightweight launcher used for script commands and systems without symlink permission.
 - `install.ps1`: the one-command installer.
@@ -32,7 +30,7 @@ Verify before running:
 
 ~~~powershell
 Get-Content .\SHA256SUMS
-(Get-FileHash .\rivet-v0.1.0-beta.8-windows-x64.zip -Algorithm SHA256).Hash.ToLower()
+(Get-FileHash .\rivet-v0.1.0-beta.9-windows-x64.zip -Algorithm SHA256).Hash.ToLower()
 ~~~
 
 No administrator rights are required. See `docs/INSTALL.md` for the full install, upgrade, and uninstall flow.

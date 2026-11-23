@@ -13,6 +13,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 concurrency:
   group: catalog-update
@@ -97,6 +98,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "git pull failed" }
           git push origin master
           if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+          $env:GH_TOKEN = "${{ github.token }}"
+          gh workflow run pages.yml
 
       - name: Report or clear update failures
         if: always()

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-beta.9 — modern terminal UI and automatic Pages deployment
+
+### Added
+
+- Zero-dependency interactive terminal UI (`src/ui.rs`):
+  - Smooth horizontal download progress bars (`━━━───`) with percentage, transferred/total bytes, and live transfer speed for single and concurrent multi-package downloads.
+  - Braille spinners (`⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`) during extraction, activation, removal, rollback, and catalog refresh.
+  - Human-friendly completion lines with green `✓`, elapsed time, `(cached)` indicator, `→ ready to run: <command>` hints, preserved persist-data notices on uninstall, and multi-package batch summaries.
+  - Automatic TTY detection and `NO_COLOR` support so piped/CI output stays clean and deterministic.
+
+### Fixed
+
+- `Catalog update` workflow now triggers `Pages` deployment automatically after pushing updated signed indexes.
+
 ## 0.1.0-beta.8 — architecture cleanup, concurrent downloads, and scalable catalog
 
 ### Added

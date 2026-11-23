@@ -549,6 +549,8 @@ pub(super) fn cmd_rollback(rt: &Runtime, specs: &[String]) -> Result<()> {
             eprintln!("{}: previous version {} is missing", item.name, previous);
             continue;
         }
+        let started = Instant::now();
+        let spinner = ui::Spinner::start(format!("Rolling back {} to {previous}...", item.name));
         store::switch_current(&rt.paths, &item.name, &previous)?;
         let manifest_path = previous_dir.join("rivet-manifest.json");
         let manifest_text = fs::read_to_string(&manifest_path)
@@ -570,7 +572,12 @@ pub(super) fn cmd_rollback(rt: &Runtime, specs: &[String]) -> Result<()> {
             &shims,
             &fonts,
         )?;
-        println!("rolled back {} {} -> {}", item.name, item.version, previous);
+        spinner.clear();
+        let detail = format!("· {}", ui::format_duration(started.elapsed()));
+        ui::print_done(
+            &format!("rolled back {} {} -> {}", item.name, item.version, previous),
+            Some(&detail),
+        );
     }
     Ok(())
 }
