@@ -98,7 +98,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $title = "Catalog update failures"
-          $failures = if (Test-Path failed-packages.txt) { (Get-Content failed-packages.txt -Raw).Trim() } else { "" }
+          $failures = if (Test-Path failed-packages.txt) { ([string](Get-Content failed-packages.txt -Raw)).Trim() } else { "" }
           $existing = gh issue list --state open --search "in:title `"$title`"" --json number,title | ConvertFrom-Json | Where-Object { $_.title -eq $title } | Select-Object -First 1
           if ($failures) {
             $body = "The scheduled catalog update completed with partial failures (successful packages were still published):`n`n$failures`n`nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
