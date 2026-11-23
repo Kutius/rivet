@@ -149,7 +149,12 @@ fn run() -> Result<()> {
             let manifest = catalog::add_github_package(
                 Path::new(&path),
                 &repository,
-                &AddOptions { name, asset, bin },
+                &AddOptions {
+                    name,
+                    asset,
+                    bin,
+                    test_args: Vec::new(),
+                },
             )?;
             println!("wrote {}", manifest.display());
             println!("index rebuilt; sign it before publishing");

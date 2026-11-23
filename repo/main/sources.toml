@@ -69,9 +69,39 @@ repositories = [
   "git-lfs/git-lfs",
   "rclone/rclone",
   "restic/restic",
+
+  # Batch 4: code analysis, git, security, and terminal utilities
+  "boyter/scc",
+  "Wilfred/difftastic",
+  "rhysd/actionlint",
+  "gitleaks/gitleaks",
+  "orhun/git-cliff",
+  "ast-grep/ast-grep",
+  "crate-ci/typos",
+  "charmbracelet/glow",
+  "charmbracelet/gum",
+  "muesli/duf",
+  "tealdeer-rs/tealdeer",
+  "zyedidia/micro",
+  "jdx/mise",
+  "tree-sitter/tree-sitter",
+  "yt-dlp/yt-dlp",
+
+  # Batch 5: cloud, containers, APIs, and databases
+  "derailed/k9s",
+  "getsops/sops",
+  "FiloSottile/age",
+  "caddyserver/caddy",
+  "cloudflare/cloudflared",
+  "hadolint/hadolint",
+  "fullstorydev/grpcurl",
+  "bufbuild/buf",
+  "sqlc-dev/sqlc",
+  "amacneil/dbmate",
+  "wagoodman/dive",
 ]
 
-# The repository name is not the command name.
+# Per-package overrides (name, asset, bin, or smoke-test args).
 [[source]]
 repository = "cli/cli"
 name = "gh"
@@ -79,3 +109,39 @@ name = "gh"
 [[source]]
 repository = "mvdan/sh"
 name = "shfmt"
+
+[[source]]
+repository = "nushell/nushell"
+bin = "nu.exe"
+
+[[source]]
+repository = "atuinsh/atuin"
+asset = "atuin-x86_64-pc-windows-msvc.zip"
+
+[[source]]
+repository = "dotenvx/dotenvx"
+asset = "dotenvx-windows-amd64.zip"
+
+[[source]]
+repository = "rhysd/actionlint"
+test_args = ["-version"]
+
+[[source]]
+repository = "gitleaks/gitleaks"
+test_args = ["version"]
+
+[[source]]
+repository = "derailed/k9s"
+test_args = ["version", "--short"]
+
+[[source]]
+repository = "caddyserver/caddy"
+test_args = ["version"]
+
+[[source]]
+repository = "sqlc-dev/sqlc"
+test_args = ["version"]
+
+[[source]]
+repository = "fullstorydev/grpcurl"
+test_args = ["-version"]

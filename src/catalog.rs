@@ -45,6 +45,7 @@ pub struct AddOptions {
     pub name: Option<String>,
     pub asset: Option<String>,
     pub bin: Option<String>,
+    pub test_args: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -56,6 +57,8 @@ pub struct SourceEntry {
     pub asset: Option<String>,
     #[serde(default)]
     pub bin: Option<String>,
+    #[serde(default)]
+    pub test_args: Vec<String>,
 }
 
 #[derive(Debug, Default)]
@@ -142,6 +145,7 @@ fn add_github_package_inner(
             .filter(|value| value != "NOASSERTION")
             .unwrap_or_default(),
         asset: options.asset.clone(),
+        test_args: options.test_args.clone(),
     };
     write_manifest_from_asset(root, &draft, asset, &repo, options.bin.as_deref())
 }
@@ -450,6 +454,7 @@ pub fn sync_github_packages(
             name: entry.name,
             asset: entry.asset,
             bin: entry.bin,
+            test_args: entry.test_args,
         };
         match add_github_package_inner(root, &label, &options) {
             Ok(path) => {
@@ -509,6 +514,7 @@ fn read_sources(path: &Path) -> Result<Vec<SourceEntry>> {
             name: None,
             asset: None,
             bin: None,
+            test_args: Vec::new(),
         })
         .collect();
     for entry in file.source {
@@ -579,6 +585,7 @@ struct ManifestDraft {
     homepage: String,
     license: String,
     asset: Option<String>,
+    test_args: Vec<String>,
 }
 
 fn write_manifest_from_asset(
@@ -606,7 +613,7 @@ fn write_manifest_from_asset(
         fonts: Vec::new(),
         depends: Vec::new(),
         persist: Vec::new(),
-        test_args: Vec::new(),
+        test_args: draft.test_args.clone(),
     };
     manifest
         .validate()

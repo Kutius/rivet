@@ -3,6 +3,11 @@ name: Catalog update
 on:
   schedule:
     - cron: "0 3 * * *"
+  push:
+    branches:
+      - master
+    paths:
+      - "repo/main/sources.toml"
   workflow_dispatch:
 
 permissions:
@@ -37,9 +42,11 @@ jobs:
           $keyPath = Join-Path $env:RUNNER_TEMP "rivet-signing.key"
           [IO.File]::WriteAllBytes($keyPath, [Convert]::FromBase64String($env:RIVET_SIGNING_KEY_B64))
           try {
+            & .\target\release\rv-repo.exe sync repo/main --allow-failures
+            if ($LASTEXITCODE -ne 0) { throw "catalog sync failed" }
             & .\target\release\rv-repo.exe update repo/main --concurrency 8 --allow-failures --failures-out failed-packages.txt
             if ($LASTEXITCODE -ne 0) { throw "catalog update failed" }
-            $changed = @(git diff --name-only -- repo/main/packages)
+            $changed = @(git ls-files --others --modified --exclude-standard -- repo/main/packages)
             if ($changed.Count -eq 0) { Write-Host "catalog is up to date"; exit 0 }
             & .\target\release\rv-repo.exe sign repo/main --key $keyPath
             if ($LASTEXITCODE -ne 0) { throw "catalog signing failed" }
