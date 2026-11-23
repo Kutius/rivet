@@ -1,7 +1,8 @@
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
-use rivet::catalog::{self, AddOptions};
+use rivet::catalog::{self, AddOptions, UpdateOptions};
 use rivet::index;
+use rivet::scoop;
 use rivet::trust;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -53,6 +54,29 @@ enum Commands {
         /// Limit the update to one package
         #[arg(long)]
         package: Option<String>,
+        /// Number of concurrent workers when checking/downloading updates
+        #[arg(long, default_value_t = 8)]
+        concurrency: usize,
+        /// Exit successfully even when some packages fail to update
+        #[arg(long)]
+        allow_failures: bool,
+        /// Write failed package summaries to this file (empty when none failed)
+        #[arg(long)]
+        failures_out: Option<String>,
+    },
+    /// Import portable-only manifests from a Scoop bucket directory or JSON file
+    ImportScoop {
+        /// Path to a Scoop bucket directory or single .json manifest
+        source: String,
+        /// Repository root containing packages/ (defaults to repo/main)
+        #[arg(long, default_value = "repo/main")]
+        path: String,
+        /// Show what would be imported without writing files
+        #[arg(long)]
+        dry_run: bool,
+        /// Import at most N packages
+        #[arg(long)]
+        limit: Option<usize>,
     },
     /// Add every missing package listed in sources.toml
     Sync {
@@ -135,16 +159,62 @@ fn run() -> Result<()> {
             path,
             check,
             package,
+            concurrency,
+            allow_failures,
+            failures_out,
         } => {
-            let changes =
-                catalog::update_github_packages(Path::new(&path), check, package.as_deref())?;
-            if changes.is_empty() {
+            let report = catalog::update_github_packages(
+                Path::new(&path),
+                &UpdateOptions {
+                    check,
+                    only: package,
+                    concurrency,
+                    allow_failures,
+                },
+            )?;
+            if let Some(out) = failures_out {
+                let content = report
+                    .failed
+                    .iter()
+                    .map(|(name, err)| format!("- `{name}`: {err}"))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                let content = if content.is_empty() {
+                    String::new()
+                } else {
+                    format!("{content}\n")
+                };
+                fs::write(&out, content).with_context(|| format!("writing {out}"))?;
+            }
+            if report.changed.is_empty() {
                 println!("all GitHub-hosted packages are up to date");
             } else if check {
-                println!("{} update(s) available", changes.len());
+                println!("{} update(s) available", report.changed.len());
             } else {
-                println!("updated {} package(s); index rebuilt", changes.len());
+                println!("updated {} package(s); index rebuilt", report.changed.len());
             }
+            if !report.failed.is_empty() {
+                eprintln!(
+                    "warning: {} package(s) failed to update",
+                    report.failed.len()
+                );
+            }
+            Ok(())
+        }
+        Commands::ImportScoop {
+            source,
+            path,
+            dry_run,
+            limit,
+        } => {
+            let report =
+                scoop::import_from_path(Path::new(&path), Path::new(&source), dry_run, limit)?;
+            let verb = if dry_run { "would import" } else { "imported" };
+            println!(
+                "{verb} {} package(s), {} skipped",
+                report.imported.len(),
+                report.skipped.len()
+            );
             Ok(())
         }
         Commands::Sync {

@@ -4,9 +4,15 @@ param(
     [string]$Rv = "",
     [string]$Repo = "",
     [int]$TimeoutSeconds = 30,
+    [int]$ShardIndex = 0,
+    [int]$ShardCount = 1,
     [switch]$SkipSmoke,
     [switch]$Keep
 )
+
+if ($ShardCount -lt 1 -or $ShardIndex -lt 0 -or $ShardIndex -ge $ShardCount) {
+    throw "invalid shard configuration: ShardIndex=$ShardIndex ShardCount=$ShardCount"
+}
 
 $ErrorActionPreference = "Stop"
 $project = Split-Path $PSScriptRoot -Parent
@@ -46,8 +52,18 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "rivet update failed" }
 
     $index = Get-Content $env:RIVET_MAIN_INDEX -Raw | ConvertFrom-Json
-    $packages = @($index.packages)
-    $names = @($packages | ForEach-Object name | Sort-Object -Unique)
+    $allPackages = @($index.packages)
+    $allNames = @($allPackages | ForEach-Object name | Sort-Object -Unique)
+    $names = @()
+    for ($i = 0; $i -lt $allNames.Count; $i++) {
+        if (($i % $ShardCount) -eq $ShardIndex) {
+            $names += $allNames[$i]
+        }
+    }
+    $nameSet = @{}
+    foreach ($n in $names) { $nameSet[$n] = $true }
+    $packages = @($allPackages | Where-Object { $nameSet.ContainsKey($_.name) })
+    Write-Host "verifying shard $ShardIndex/$ShardCount ($($names.Count) of $($allNames.Count) packages)"
     $failed = @()
     foreach ($name in $names) {
         $ok = $false
@@ -67,6 +83,7 @@ try {
 
     if (-not $SkipSmoke) {
         $commands = @{}
+        $manifestTestArgs = @{}
         foreach ($package in $packages) {
             foreach ($bin in $package.bin) {
                 $command = if ($bin -is [string]) {
@@ -77,6 +94,9 @@ try {
                     [IO.Path]::GetFileNameWithoutExtension($bin.path)
                 }
                 $commands[$command] = $true
+                if ($package.PSObject.Properties["test_args"] -and $package.test_args.Count -gt 0) {
+                    $manifestTestArgs[$command] = @($package.test_args)
+                }
             }
         }
         $versionArgs = @{
@@ -92,7 +112,13 @@ try {
             if (-not (Test-Path $exe)) { $smokeFailed += "$command missing"; continue }
             $psi = [Diagnostics.ProcessStartInfo]::new()
             $psi.FileName = $exe
-            $versionArguments = if ($versionArgs.ContainsKey($command)) { $versionArgs[$command] } else { @("--version") }
+            $versionArguments = if ($manifestTestArgs.ContainsKey($command)) {
+                $manifestTestArgs[$command]
+            } elseif ($versionArgs.ContainsKey($command)) {
+                $versionArgs[$command]
+            } else {
+                @("--version")
+            }
             foreach ($argument in $versionArguments) { $psi.ArgumentList.Add($argument) }
             $psi.UseShellExecute = $false
             $psi.RedirectStandardOutput = $true

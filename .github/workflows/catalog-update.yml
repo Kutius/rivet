@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: catalog-update
@@ -36,7 +37,7 @@ jobs:
           $keyPath = Join-Path $env:RUNNER_TEMP "rivet-signing.key"
           [IO.File]::WriteAllBytes($keyPath, [Convert]::FromBase64String($env:RIVET_SIGNING_KEY_B64))
           try {
-            & .\target\release\rv-repo.exe update repo/main
+            & .\target\release\rv-repo.exe update repo/main --concurrency 8 --allow-failures --failures-out failed-packages.txt
             if ($LASTEXITCODE -ne 0) { throw "catalog update failed" }
             $changed = @(git diff --name-only -- repo/main/packages)
             if ($changed.Count -eq 0) { Write-Host "catalog is up to date"; exit 0 }
@@ -89,3 +90,23 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "git pull failed" }
           git push origin master
           if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+
+      - name: Report or clear update failures
+        if: always()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $title = "Catalog update failures"
+          $failures = if (Test-Path failed-packages.txt) { (Get-Content failed-packages.txt -Raw).Trim() } else { "" }
+          $existing = gh issue list --state open --search "in:title `"$title`"" --json number,title | ConvertFrom-Json | Where-Object { $_.title -eq $title } | Select-Object -First 1
+          if ($failures) {
+            $body = "The scheduled catalog update completed with partial failures (successful packages were still published):`n`n$failures`n`nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            if ($existing) {
+              gh issue edit $existing.number --body $body
+            } else {
+              gh issue create --title $title --body $body
+            }
+          } elseif ($existing) {
+            gh issue close $existing.number --comment "All catalog packages updated cleanly in run ${{ github.run_id }}."
+          }

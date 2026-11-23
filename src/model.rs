@@ -49,6 +49,9 @@ pub struct PackageManifest {
     pub depends: Vec<String>,
     #[serde(default)]
     pub persist: Vec<String>,
+    /// Optional arguments used by catalog verification smoke tests (defaults to `--version`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub test_args: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

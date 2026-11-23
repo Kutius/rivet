@@ -8,8 +8,37 @@ use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use url::Url;
 use walkdir::WalkDir;
+
+static TEMP_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug, Clone)]
+pub struct UpdateOptions {
+    pub check: bool,
+    pub only: Option<String>,
+    pub concurrency: usize,
+    pub allow_failures: bool,
+}
+
+impl Default for UpdateOptions {
+    fn default() -> Self {
+        Self {
+            check: false,
+            only: None,
+            concurrency: 8,
+            allow_failures: false,
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct UpdateReport {
+    pub changed: Vec<(String, String, String)>,
+    pub failed: Vec<(String, String)>,
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct AddOptions {
@@ -117,186 +146,239 @@ fn add_github_package_inner(
     write_manifest_from_asset(root, &draft, asset, &repo, options.bin.as_deref())
 }
 
-pub fn update_github_packages(
-    root: &Path,
-    check: bool,
-    only: Option<&str>,
-) -> Result<Vec<(String, String, String)>> {
+pub fn update_github_packages(root: &Path, options: &UpdateOptions) -> Result<UpdateReport> {
     let client = download::http_client()?;
-    let mut changed = Vec::new();
-    let mut errors = Vec::new();
-
+    let mut work = Vec::new();
     for path in manifest_files(root)? {
         let text =
             fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-        let mut manifest: PackageManifest =
+        let manifest: PackageManifest =
             toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
-        if only.is_some_and(|name| manifest.name != name) {
+        if options
+            .only
+            .as_deref()
+            .is_some_and(|name| manifest.name != name)
+        {
             continue;
         }
         let Some((owner, repo)) = github_release_source(&manifest.url) else {
             continue;
         };
-        let release: Release = match github_json(
-            &client,
-            &format!("https://api.github.com/repos/{owner}/{repo}/releases/latest"),
-        ) {
-            Ok(release) => release,
-            Err(error) => {
-                errors.push(format!("{}: {error:#}", manifest.name));
-                continue;
-            }
-        };
-        let version = match release_version(&release.tag_name) {
-            Ok(version) => version,
-            Err(error) => {
-                errors.push(format!("{}: {error:#}", manifest.name));
-                continue;
-            }
-        };
-        let current = match Version::parse(&manifest.version) {
-            Ok(version) => version,
-            Err(error) => {
-                errors.push(format!(
-                    "{}: invalid current version: {error}",
-                    manifest.name
-                ));
-                continue;
-            }
-        };
-        if version <= current {
-            println!("{} {}: up to date", manifest.name, manifest.version);
-            continue;
-        }
+        work.push((path, manifest, owner, repo));
+    }
 
-        let asset = match choose_asset(
-            &release.assets,
-            manifest.asset.as_deref(),
-            &manifest.name,
-            &repo,
-        ) {
-            Ok(asset) => asset,
-            Err(error) => {
-                errors.push(format!("{}: {error:#}", manifest.name));
-                continue;
+    enum Outcome {
+        UpToDate(String),
+        Changed {
+            message: String,
+            entry: (String, String, String),
+        },
+        Failed {
+            name: String,
+            error: String,
+        },
+    }
+
+    let workers = options.concurrency.max(1).min(work.len().max(1));
+    let next = AtomicUsize::new(0);
+    let results: Mutex<Vec<(usize, Outcome)>> = Mutex::new(Vec::with_capacity(work.len()));
+
+    std::thread::scope(|scope| {
+        for _ in 0..workers {
+            scope.spawn(|| {
+                loop {
+                    let index = next.fetch_add(1, Ordering::Relaxed);
+                    let Some((path, manifest, owner, repo)) = work.get(index) else {
+                        break;
+                    };
+                    let outcome = match update_single_package(
+                        &client,
+                        path,
+                        manifest,
+                        owner,
+                        repo,
+                        options.check,
+                    ) {
+                        Ok(SingleUpdate::UpToDate(msg)) => Outcome::UpToDate(msg),
+                        Ok(SingleUpdate::Changed(message, entry)) => {
+                            Outcome::Changed { message, entry }
+                        }
+                        Err(error) => Outcome::Failed {
+                            name: manifest.name.clone(),
+                            error: format!("{error:#}"),
+                        },
+                    };
+                    results.lock().unwrap().push((index, outcome));
+                }
+            });
+        }
+    });
+
+    let mut ordered = results.into_inner().unwrap();
+    ordered.sort_by_key(|(index, _)| *index);
+
+    let mut report = UpdateReport::default();
+    for (_, outcome) in ordered {
+        match outcome {
+            Outcome::UpToDate(message) => println!("{message}"),
+            Outcome::Changed { message, entry } => {
+                println!("{message}");
+                report.changed.push(entry);
             }
-        };
-        if check {
-            println!(
+            Outcome::Failed { name, error } => {
+                eprintln!("failed {name}: {error}");
+                report.failed.push((name, error));
+            }
+        }
+    }
+
+    if !options.check && !report.changed.is_empty() {
+        index::build_index(root, None)?;
+    }
+    if !report.failed.is_empty() && !options.allow_failures {
+        let details = report
+            .failed
+            .iter()
+            .map(|(name, error)| format!("{name}: {error}"))
+            .collect::<Vec<_>>()
+            .join("\n  ");
+        bail!(
+            "catalog update failed for {} package(s):\n  {details}",
+            report.failed.len()
+        );
+    }
+    Ok(report)
+}
+
+enum SingleUpdate {
+    UpToDate(String),
+    Changed(String, (String, String, String)),
+}
+
+fn update_single_package(
+    client: &reqwest::blocking::Client,
+    path: &Path,
+    manifest: &PackageManifest,
+    owner: &str,
+    repo: &str,
+    check: bool,
+) -> Result<SingleUpdate> {
+    let mut manifest = manifest.clone();
+    let release: Release = github_json(
+        client,
+        &format!("https://api.github.com/repos/{owner}/{repo}/releases/latest"),
+    )?;
+    let version = release_version(&release.tag_name)?;
+    let current = Version::parse(&manifest.version)
+        .map_err(|error| anyhow::anyhow!("invalid current version: {error}"))?;
+    if version <= current {
+        return Ok(SingleUpdate::UpToDate(format!(
+            "{} {}: up to date",
+            manifest.name, manifest.version
+        )));
+    }
+
+    let requested_asset = manifest
+        .asset
+        .as_deref()
+        .map(|pattern| pattern.replace("{version}", &version.to_string()));
+    let asset = choose_asset(
+        &release.assets,
+        requested_asset.as_deref(),
+        &manifest.name,
+        repo,
+    )?;
+    if check {
+        return Ok(SingleUpdate::Changed(
+            format!(
                 "{}: {} -> {} ({})",
                 manifest.name, manifest.version, version, asset.name
-            );
-            changed.push((
+            ),
+            (
                 manifest.name.clone(),
                 manifest.version.clone(),
                 version.to_string(),
-            ));
-            continue;
-        }
-
-        if manifest.bin.is_empty() {
-            let info = match download_archive(asset) {
-                Ok(value) => value,
-                Err(error) => {
-                    errors.push(format!("{}: {error:#}", manifest.name));
-                    continue;
-                }
-            };
-            let missing: Vec<&String> = manifest
-                .fonts
-                .iter()
-                .filter(|entry| !font_entry_present(&info.files, entry))
-                .collect();
-            if !missing.is_empty() {
-                errors.push(format!(
-                    "{}: new asset no longer contains font path(s) {}; update the manifest manually",
-                    manifest.name,
-                    missing
-                        .iter()
-                        .map(|entry| entry.as_str())
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                ));
-                continue;
-            }
-            manifest.version = version.to_string();
-            manifest.url = asset.browser_download_url.clone();
-            manifest.sha256 = info.sha256;
-            manifest.extract = Some(info.extract);
-            manifest.strip_components =
-                (info.strip_components > 0).then_some(info.strip_components);
-            let text = toml::to_string_pretty(&manifest)?;
-            fs::write(&path, format!("{text}\n"))
-                .with_context(|| format!("writing {}", path.display()))?;
-            println!(
-                "{}: {} -> {} ({})",
-                manifest.name, current, version, asset.name
-            );
-            changed.push((
-                manifest.name.clone(),
-                current.to_string(),
-                version.to_string(),
-            ));
-            continue;
-        }
-
-        let guessed = match download_and_inspect(asset, &manifest.name, &repo, None) {
-            Ok(value) => value,
-            Err(error) => {
-                errors.push(format!("{}: {error:#}", manifest.name));
-                continue;
-            }
-        };
-        if guessed.extract != "none" {
-            match reconcile_updated_bins(
-                &manifest.bin,
-                &manifest.version,
-                &version.to_string(),
-                &guessed.files,
-            ) {
-                Ok(updated_bins) => manifest.bin = updated_bins,
-                Err(missing) => {
-                    for path in missing {
-                        errors.push(format!(
-                            "{}: new asset no longer contains '{path}'; update the manifest manually",
-                            manifest.name
-                        ));
-                    }
-                    continue;
-                }
-            }
-        }
-        manifest.version = version.to_string();
-        manifest.url = asset.browser_download_url.clone();
-        manifest.sha256 = guessed.sha256.clone();
-        manifest.extract = Some(guessed.extract.clone());
-        manifest.strip_components =
-            (guessed.strip_components > 0).then_some(guessed.strip_components);
-        let text = toml::to_string_pretty(&manifest)?;
-        fs::write(&path, format!("{text}\n"))
-            .with_context(|| format!("writing {}", path.display()))?;
-        println!(
-            "{}: {} -> {} ({})",
-            manifest.name, current, version, asset.name
-        );
-        changed.push((
-            manifest.name.clone(),
-            current.to_string(),
-            version.to_string(),
+            ),
         ));
     }
 
-    if !check && !changed.is_empty() {
-        index::build_index(root, None)?;
+    if manifest.bin.is_empty() {
+        let info = download_archive(asset)?;
+        let missing: Vec<&String> = manifest
+            .fonts
+            .iter()
+            .filter(|entry| !font_entry_present(&info.files, entry))
+            .collect();
+        if !missing.is_empty() {
+            bail!(
+                "new asset no longer contains font path(s) {}; update the manifest manually",
+                missing
+                    .iter()
+                    .map(|entry| entry.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+        manifest.version = version.to_string();
+        manifest.url = asset.browser_download_url.clone();
+        manifest.sha256 = info.sha256;
+        manifest.extract = Some(info.extract);
+        manifest.strip_components = (info.strip_components > 0).then_some(info.strip_components);
+        let text = toml::to_string_pretty(&manifest)?;
+        fs::write(path, format!("{text}\n"))
+            .with_context(|| format!("writing {}", path.display()))?;
+        return Ok(SingleUpdate::Changed(
+            format!(
+                "{}: {} -> {} ({})",
+                manifest.name, current, version, asset.name
+            ),
+            (
+                manifest.name.clone(),
+                current.to_string(),
+                version.to_string(),
+            ),
+        ));
     }
-    if !errors.is_empty() {
-        bail!(
-            "catalog update failed for {} package(s):\n  {}",
-            errors.len(),
-            errors.join("\n  ")
-        );
+
+    let guessed = download_and_inspect(asset, &manifest.name, repo, None)?;
+    if guessed.extract != "none" {
+        match reconcile_updated_bins(
+            &manifest.bin,
+            &manifest.version,
+            &version.to_string(),
+            &guessed.files,
+        ) {
+            Ok(updated_bins) => manifest.bin = updated_bins,
+            Err(missing) => {
+                bail!(
+                    "new asset no longer contains {}; update the manifest manually",
+                    missing
+                        .iter()
+                        .map(|p| format!("'{p}'"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+            }
+        }
     }
-    Ok(changed)
+    manifest.version = version.to_string();
+    manifest.url = asset.browser_download_url.clone();
+    manifest.sha256 = guessed.sha256;
+    manifest.extract = Some(guessed.extract);
+    manifest.strip_components = (guessed.strip_components > 0).then_some(guessed.strip_components);
+    let text = toml::to_string_pretty(&manifest)?;
+    fs::write(path, format!("{text}\n")).with_context(|| format!("writing {}", path.display()))?;
+    Ok(SingleUpdate::Changed(
+        format!(
+            "{}: {} -> {} ({})",
+            manifest.name, current, version, asset.name
+        ),
+        (
+            manifest.name.clone(),
+            current.to_string(),
+            version.to_string(),
+        ),
+    ))
 }
 
 pub fn sync_github_packages(
@@ -524,6 +606,7 @@ fn write_manifest_from_asset(
         fonts: Vec::new(),
         depends: Vec::new(),
         persist: Vec::new(),
+        test_args: Vec::new(),
     };
     manifest
         .validate()
@@ -558,9 +641,11 @@ struct ArchiveInfo {
 }
 
 fn download_archive(asset: &Asset) -> Result<ArchiveInfo> {
+    let seq = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
     let temp = std::env::temp_dir().join(format!(
-        "rivet-repo-{}-{}",
+        "rivet-repo-{}-{}-{}",
         std::process::id(),
+        seq,
         sanitize_file_name(&asset.name)
     ));
     let _ = fs::remove_file(&temp);

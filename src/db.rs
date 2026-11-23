@@ -660,6 +660,7 @@ mod tests {
             fonts: Vec::new(),
             depends: Vec::new(),
             persist: Vec::new(),
+            test_args: Vec::new(),
         }
     }
 
