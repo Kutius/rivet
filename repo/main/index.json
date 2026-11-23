@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-19T11:17:35.125213800+00:00",
+  "generated_at": "2026-11-23T12:27:54.598515500+00:00",
   "packages": [
     {
       "name": "air",
@@ -127,14 +127,14 @@
     },
     {
       "name": "cargo-binstall",
-      "version": "1.27.0",
+      "version": "1.28.0",
       "description": "Binary installation for rust projects",
       "homepage": "https://github.com/cargo-bins/cargo-binstall",
       "license": "GPL-3.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/cargo-bins/cargo-binstall/releases/download/v1.27.0/cargo-binstall-x86_64-pc-windows-msvc.zip",
-      "sha256": "624ae880d18eb0ee8c7934982e52b2aca23998cb87a01b1e59223083b6ee5dae",
+      "url": "https://github.com/cargo-bins/cargo-binstall/releases/download/v1.28.0/cargo-binstall-x86_64-pc-windows-msvc.zip",
+      "sha256": "72b0b451ea85173c6b7d484913051dd53bfa2155f065fce8ee4494ff54d95aa4",
       "extract": "zip",
       "strip_components": null,
       "bin": [
@@ -150,14 +150,14 @@
     },
     {
       "name": "cargo-deny",
-      "version": "0.21.0",
+      "version": "0.22.0",
       "description": "❌ Cargo plugin for linting your dependencies 🦀",
       "homepage": "http://embark.rs",
       "license": "Apache-2.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.21.0/cargo-deny-0.21.0-x86_64-pc-windows-msvc.tar.gz",
-      "sha256": "8c445ef95217269d3cee234b18e2f543f8f1653f4a9801d9439df24bfcef4824",
+      "url": "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.0/cargo-deny-0.22.0-x86_64-pc-windows-msvc.tar.gz",
+      "sha256": "a85b270b4aa28633d2cb2be97fccd4518ccb783014914e99463e75468cb3183c",
       "extract": "tar.gz",
       "strip_components": 1,
       "bin": [
@@ -196,7 +196,7 @@
     },
     {
       "name": "delta",
-      "version": "0.21.1",
+      "version": "0.22.0",
       "description": "Syntax-highlighting pager for git, diff, and grep output",
       "homepage": "https://github.com/dandavison/delta",
       "license": "MIT",
@@ -206,8 +206,8 @@
         "pager"
       ],
       "arch": "x64",
-      "url": "https://github.com/dandavison/delta/releases/download/0.21.1/delta-0.21.1-x86_64-pc-windows-msvc.zip",
-      "sha256": "9645f8a04c700aec5113b946a922ecf8df7568bbbcd7f13b9514f02996035b86",
+      "url": "https://github.com/dandavison/delta/releases/download/0.22.0/delta-0.22.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "c9e1eb86cceaa4713c47bdeb4ce2476b78ac7f1082dac8b9cb66cad508cbdd5c",
       "extract": "zip",
       "strip_components": 1,
       "bin": [
@@ -269,15 +269,15 @@
     },
     {
       "name": "duckdb",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "description": "DuckDB is a high-performance analytical database system",
       "homepage": "http://www.duckdb.org",
       "license": "MIT",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/duckdb/duckdb/releases/download/v2.0.0/duckdb-cli-windows-amd64.tar.gz",
-      "sha256": "91663c2f36c2a334b0e5e639006d8c29c29e013af0c477d80bb931df68870312",
-      "extract": "tar.gz",
+      "url": "https://github.com/duckdb/duckdb/releases/download/v2.0.1/duckdb-cli-windows-amd64.zip",
+      "sha256": "9df372514a06e9edbdca294cc43fdfbfc4e80799c8292d0964239cfcbb8718cf",
+      "extract": "zip",
       "strip_components": null,
       "bin": [
         {
@@ -368,6 +368,30 @@
         }
       ],
       "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "fira-code",
+      "version": "6.2.0",
+      "description": "Monospaced font with programming ligatures",
+      "homepage": "https://github.com/tonsky/FiraCode",
+      "license": "OFL-1.1",
+      "tags": [
+        "font",
+        "monospace",
+        "ligatures"
+      ],
+      "arch": null,
+      "asset": "Fira_Code",
+      "url": "https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip",
+      "sha256": "0949915ba8eb24d89fd93d10a7ff623f42830d7c5ffc3ecbf960e4ecad3e3e79",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [],
+      "fonts": [
+        "ttf"
+      ],
       "depends": [],
       "persist": []
     },
@@ -639,6 +663,29 @@
       "persist": []
     },
     {
+      "name": "jetbrains-mono",
+      "version": "2.304.0",
+      "description": "JetBrains Mono typeface for developers",
+      "homepage": "https://www.jetbrains.com/lp/mono/",
+      "license": "OFL-1.1",
+      "tags": [
+        "font",
+        "monospace"
+      ],
+      "arch": null,
+      "asset": "JetBrainsMono",
+      "url": "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip",
+      "sha256": "6f6376c6ed2960ea8a963cd7387ec9d76e3f629125bc33d1fdcd7eb7012f7bbf",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [],
+      "fonts": [
+        "fonts/ttf"
+      ],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "jq",
       "version": "1.8.2",
       "description": "Command-line JSON processor",
@@ -790,14 +837,14 @@
     },
     {
       "name": "miller",
-      "version": "6.22.0",
+      "version": "6.23.0",
       "description": "Miller is like awk, sed, cut, join, and sort for name-indexed data such as CSV, TSV, and tabular JSON",
       "homepage": "https://miller.readthedocs.io",
       "license": "",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/johnkerl/miller/releases/download/v6.22.0/miller-6.22.0-windows-amd64.zip",
-      "sha256": "a8b7f5fe321528d181c771948f631115b9c17a8ebdf1c5809de835349a9dd304",
+      "url": "https://github.com/johnkerl/miller/releases/download/v6.23.0/miller-6.23.0-windows-amd64.zip",
+      "sha256": "8192fbc5e959637f4112b34dcfdc518c1b59701bc34777ca528dc749ece15a1a",
       "extract": "zip",
       "strip_components": 1,
       "bin": [
@@ -909,19 +956,19 @@
     },
     {
       "name": "restic",
-      "version": "0.19.1",
+      "version": "0.20.0",
       "description": "Fast, secure, efficient backup program",
       "homepage": "https://restic.net",
       "license": "BSD-2-Clause",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/restic/restic/releases/download/v0.19.1/restic_0.19.1_windows_amd64.zip",
-      "sha256": "da948ad707ed690426473aaba2046cd61f8f90f6f0e7dab6be0d5796531de67d",
+      "url": "https://github.com/restic/restic/releases/download/v0.20.0/restic_0.20.0_windows_amd64.zip",
+      "sha256": "bba9061c3dce081701ab353ec8cb73a78be73b71a538aad560f2d1067602b7fe",
       "extract": "zip",
       "strip_components": null,
       "bin": [
         {
-          "path": "restic_0.19.1_windows_amd64.exe",
+          "path": "restic_0.20.0_windows_amd64.exe",
           "name": "restic",
           "args": []
         }
@@ -932,7 +979,7 @@
     },
     {
       "name": "ripgrep",
-      "version": "15.2.0",
+      "version": "16.0.0",
       "description": "Fast recursive search tool that respects .gitignore",
       "homepage": "https://github.com/BurntSushi/ripgrep",
       "license": "MIT OR Unlicense",
@@ -942,8 +989,8 @@
         "cli"
       ],
       "arch": "x64",
-      "url": "https://github.com/BurntSushi/ripgrep/releases/download/15.2.0/ripgrep-15.2.0-x86_64-pc-windows-msvc.zip",
-      "sha256": "71b2fef860abe467217a538ff31de02f5258807c0129f771846f87bd029aafc5",
+      "url": "https://github.com/BurntSushi/ripgrep/releases/download/16.0.0/ripgrep-16.0.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "f418ae83e63046a94a7b5f3a44bf3a169f66e689164856ecee02547131c73931",
       "extract": "zip",
       "strip_components": 1,
       "bin": [
@@ -959,14 +1006,14 @@
     },
     {
       "name": "ruff",
-      "version": "0.17.5",
+      "version": "0.17.6",
       "description": "An extremely fast Python linter and code formatter, written in Rust.",
       "homepage": "https://docs.astral.sh/ruff",
       "license": "MIT",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/astral-sh/ruff/releases/download/0.17.5/ruff-x86_64-pc-windows-msvc.zip",
-      "sha256": "6e1284ce4e2fa0ea7b4a28d0947f59c63e6983aa8b2e5b04402b0e59376405ca",
+      "url": "https://github.com/astral-sh/ruff/releases/download/0.17.6/ruff-x86_64-pc-windows-msvc.zip",
+      "sha256": "00c5d5793d308e8575b16b7303527110dd49bd02d46db0a8668b0eefdca14c2e",
       "extract": "zip",
       "strip_components": null,
       "bin": [
@@ -1260,55 +1307,6 @@
         }
       ],
       "fonts": [],
-      "depends": [],
-      "persist": []
-    }
-  ],
-  "fonts": [
-    {
-      "name": "fira-code",
-      "version": "6.2.0",
-      "description": "Monospaced font with programming ligatures",
-      "homepage": "https://github.com/tonsky/FiraCode",
-      "license": "OFL-1.1",
-      "tags": [
-        "font",
-        "monospace",
-        "ligatures"
-      ],
-      "arch": null,
-      "asset": "Fira_Code",
-      "url": "https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip",
-      "sha256": "0949915ba8eb24d89fd93d10a7ff623f42830d7c5ffc3ecbf960e4ecad3e3e79",
-      "extract": "zip",
-      "strip_components": null,
-      "bin": [],
-      "fonts": [
-        "ttf"
-      ],
-      "depends": [],
-      "persist": []
-    },
-    {
-      "name": "jetbrains-mono",
-      "version": "2.304.0",
-      "description": "JetBrains Mono typeface for developers",
-      "homepage": "https://www.jetbrains.com/lp/mono/",
-      "license": "OFL-1.1",
-      "tags": [
-        "font",
-        "monospace"
-      ],
-      "arch": null,
-      "asset": "JetBrainsMono",
-      "url": "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip",
-      "sha256": "6f6376c6ed2960ea8a963cd7387ec9d76e3f629125bc33d1fdcd7eb7012f7bbf",
-      "extract": "zip",
-      "strip_components": null,
-      "bin": [],
-      "fonts": [
-        "fonts/ttf"
-      ],
       "depends": [],
       "persist": []
     }

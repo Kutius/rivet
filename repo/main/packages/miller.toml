@@ -1,14 +1,15 @@
 name = "miller"
-version = "6.22.0"
+version = "6.23.0"
 description = "Miller is like awk, sed, cut, join, and sort for name-indexed data such as CSV, TSV, and tabular JSON"
 homepage = "https://miller.readthedocs.io"
 license = ""
 tags = []
 arch = "x64"
-url = "https://github.com/johnkerl/miller/releases/download/v6.22.0/miller-6.22.0-windows-amd64.zip"
-sha256 = "a8b7f5fe321528d181c771948f631115b9c17a8ebdf1c5809de835349a9dd304"
+url = "https://github.com/johnkerl/miller/releases/download/v6.23.0/miller-6.23.0-windows-amd64.zip"
+sha256 = "8192fbc5e959637f4112b34dcfdc518c1b59701bc34777ca528dc749ece15a1a"
 extract = "zip"
 strip_components = 1
+fonts = []
 depends = []
 persist = []
 

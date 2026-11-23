@@ -1,13 +1,14 @@
 name = "duckdb"
-version = "2.0.0"
+version = "2.0.1"
 description = "DuckDB is a high-performance analytical database system"
 homepage = "http://www.duckdb.org"
 license = "MIT"
 tags = []
 arch = "x64"
-url = "https://github.com/duckdb/duckdb/releases/download/v2.0.0/duckdb-cli-windows-amd64.tar.gz"
-sha256 = "91663c2f36c2a334b0e5e639006d8c29c29e013af0c477d80bb931df68870312"
-extract = "tar.gz"
+url = "https://github.com/duckdb/duckdb/releases/download/v2.0.1/duckdb-cli-windows-amd64.zip"
+sha256 = "9df372514a06e9edbdca294cc43fdfbfc4e80799c8292d0964239cfcbb8718cf"
+extract = "zip"
+fonts = []
 depends = []
 persist = []
 
