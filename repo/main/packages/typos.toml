@@ -1,0 +1,19 @@
+name = "typos"
+version = "1.52.2"
+description = "Source code spell checker"
+homepage = "https://github.com/crate-ci/typos"
+license = "Apache-2.0"
+tags = []
+arch = "x64"
+url = "https://github.com/crate-ci/typos/releases/download/v1.52.2/typos-v1.52.2-x86_64-pc-windows-msvc.zip"
+sha256 = "ab79036832cea0f2a21aa947731d39512250cc0f7a6a2f6add26262738a8cc11"
+extract = "zip"
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "typos.exe"
+name = "typos"
+args = []
+

@@ -1,0 +1,20 @@
+name = "buf"
+version = "1.75.0"
+description = "The best way of working with Protocol Buffers."
+homepage = "https://buf.build"
+license = "Apache-2.0"
+tags = []
+arch = "x64"
+url = "https://github.com/bufbuild/buf/releases/download/v1.75.0/buf-Windows-x86_64.zip"
+sha256 = "3d580339622823a2ea48ec1f0a401b8c5686144ef51f88d19ce17af7c54588fc"
+extract = "zip"
+strip_components = 1
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "bin/buf.exe"
+name = "buf"
+args = []
+

@@ -1,0 +1,19 @@
+name = "tealdeer"
+version = "1.9.1"
+description = "A very fast implementation of tldr in Rust."
+homepage = "https://docs.tealdeer.org"
+license = "Apache-2.0"
+tags = []
+arch = "x64"
+url = "https://github.com/tealdeer-rs/tealdeer/releases/download/v1.9.1/tealdeer-windows-x86_64-msvc.exe"
+sha256 = "f75a3e4b43e7b03d30bac88eccf928af90b8993cd354fe207aec1c643910736f"
+extract = "none"
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "tealdeer.exe"
+name = "tealdeer"
+args = []
+

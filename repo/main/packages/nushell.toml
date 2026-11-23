@@ -1,0 +1,19 @@
+name = "nushell"
+version = "0.117.0"
+description = "A new type of shell"
+homepage = "https://www.nushell.sh/"
+license = "MIT"
+tags = []
+arch = "x64"
+url = "https://github.com/nushell/nushell/releases/download/0.117.0/nu-0.117.0-x86_64-pc-windows-msvc.zip"
+sha256 = "8a135f25d3f22f1542107eb117e94628af35ce65402cbc098bfb26914227d3b2"
+extract = "zip"
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "nu.exe"
+name = "nu"
+args = []
+

@@ -1,0 +1,19 @@
+name = "tree-sitter"
+version = "0.27.2"
+description = "An incremental parsing system for programming tools"
+homepage = "https://tree-sitter.github.io"
+license = "MIT"
+tags = []
+arch = "x64"
+url = "https://github.com/tree-sitter/tree-sitter/releases/download/v0.27.2/tree-sitter-cli-windows-x64.zip"
+sha256 = "9a6dc00c08ed26e98c05481f08c6f83c5ff05c6756442aec2aff1800732ad3da"
+extract = "zip"
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "tree-sitter.exe"
+name = "tree-sitter"
+args = []
+

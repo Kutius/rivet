@@ -1,0 +1,20 @@
+name = "actionlint"
+version = "1.7.12"
+description = ":octocat: Static checker for GitHub Actions workflow files"
+homepage = "https://rhysd.github.io/actionlint/"
+license = "MIT"
+tags = []
+arch = "x64"
+url = "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_windows_amd64.zip"
+sha256 = "6e7241b51e6817ea6a047693d8e6fed13b31819c9a0dd6c5a726e1592d22f6e9"
+extract = "zip"
+fonts = []
+depends = []
+persist = []
+test_args = ["-version"]
+
+[[bin]]
+path = "actionlint.exe"
+name = "actionlint"
+args = []
+

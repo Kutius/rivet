@@ -1,0 +1,19 @@
+name = "ast-grep"
+version = "0.51.3"
+description = "⚡A CLI tool for code structural search, lint and rewriting. Written in Rust"
+homepage = "https://ast-grep.github.io/"
+license = "MIT"
+tags = []
+arch = "x64"
+url = "https://github.com/ast-grep/ast-grep/releases/download/0.51.3/app-x86_64-pc-windows-msvc.zip"
+sha256 = "1f27ff60ee033bdfe5d7ea781a869e410b2d882d6c84a6afea8280fc4bbf0716"
+extract = "zip"
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "ast-grep.exe"
+name = "ast-grep"
+args = []
+

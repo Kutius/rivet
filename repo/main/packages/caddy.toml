@@ -1,0 +1,20 @@
+name = "caddy"
+version = "2.11.9"
+description = "Fast and extensible multi-platform HTTP/1-2-3 web server with automatic HTTPS"
+homepage = "https://caddyserver.com"
+license = "Apache-2.0"
+tags = []
+arch = "x64"
+url = "https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_windows_amd64.zip"
+sha256 = "ad93112d335ee687100c4c9f11bced16ca590377976b7fe7883882b9e797e472"
+extract = "zip"
+fonts = []
+depends = []
+persist = []
+test_args = ["version"]
+
+[[bin]]
+path = "caddy.exe"
+name = "caddy"
+args = []
+

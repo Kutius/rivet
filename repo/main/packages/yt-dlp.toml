@@ -1,0 +1,19 @@
+name = "yt-dlp"
+version = "2026.10.26"
+description = "A feature-rich command-line audio/video downloader"
+homepage = "https://discord.gg/H5MNcFW63r"
+license = "Unlicense"
+tags = []
+arch = "x64"
+url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp.exe"
+sha256 = "f5389d3698ecde4ef06f4e6b1ce0294fe9ac1396228c8990b8d3416d6d177a7d"
+extract = "none"
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "yt-dlp.exe"
+name = "yt-dlp"
+args = []
+

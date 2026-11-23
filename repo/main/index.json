@@ -1,7 +1,56 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-23T12:27:54.598515500+00:00",
+  "generated_at": "2026-11-23T12:53:31.422256800+00:00",
   "packages": [
+    {
+      "name": "actionlint",
+      "version": "1.7.12",
+      "description": ":octocat: Static checker for GitHub Actions workflow files",
+      "homepage": "https://rhysd.github.io/actionlint/",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_windows_amd64.zip",
+      "sha256": "6e7241b51e6817ea6a047693d8e6fed13b31819c9a0dd6c5a726e1592d22f6e9",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "actionlint.exe",
+          "name": "actionlint",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": [],
+      "test_args": [
+        "-version"
+      ]
+    },
+    {
+      "name": "age",
+      "version": "1.3.2",
+      "description": "A simple, modern and secure encryption tool (and Go library) with small explicit keys, no config options, and UNIX-style composability.",
+      "homepage": "https://age-encryption.org",
+      "license": "BSD-3-Clause",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-windows-amd64.zip",
+      "sha256": "f48d8f8f9ebe903ab5027ed067652f2cc1db94bc206976430133b905dcd8e8c7",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "age.exe",
+          "name": "age",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
     {
       "name": "air",
       "version": "1.67.4",
@@ -18,6 +67,29 @@
         {
           "path": "air.exe",
           "name": "air",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "ast-grep",
+      "version": "0.51.3",
+      "description": "⚡A CLI tool for code structural search, lint and rewriting. Written in Rust",
+      "homepage": "https://ast-grep.github.io/",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/ast-grep/ast-grep/releases/download/0.51.3/app-x86_64-pc-windows-msvc.zip",
+      "sha256": "1f27ff60ee033bdfe5d7ea781a869e410b2d882d6c84a6afea8280fc4bbf0716",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "ast-grep.exe",
+          "name": "ast-grep",
           "args": []
         }
       ],
@@ -103,6 +175,29 @@
       "persist": []
     },
     {
+      "name": "buf",
+      "version": "1.75.0",
+      "description": "The best way of working with Protocol Buffers.",
+      "homepage": "https://buf.build",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/bufbuild/buf/releases/download/v1.75.0/buf-Windows-x86_64.zip",
+      "sha256": "3d580339622823a2ea48ec1f0a401b8c5686144ef51f88d19ce17af7c54588fc",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "bin/buf.exe",
+          "name": "buf",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "bun",
       "version": "1.4.5",
       "description": "Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one",
@@ -124,6 +219,32 @@
       "fonts": [],
       "depends": [],
       "persist": []
+    },
+    {
+      "name": "caddy",
+      "version": "2.11.9",
+      "description": "Fast and extensible multi-platform HTTP/1-2-3 web server with automatic HTTPS",
+      "homepage": "https://caddyserver.com",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_windows_amd64.zip",
+      "sha256": "ad93112d335ee687100c4c9f11bced16ca590377976b7fe7883882b9e797e472",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "caddy.exe",
+          "name": "caddy",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": [],
+      "test_args": [
+        "version"
+      ]
     },
     {
       "name": "cargo-binstall",
@@ -172,6 +293,29 @@
       "persist": []
     },
     {
+      "name": "cloudflared",
+      "version": "2026.11.1",
+      "description": "Cloudflare Tunnel client",
+      "homepage": "https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/cloudflare/cloudflared/releases/download/2026.11.1/cloudflared-windows-amd64.exe",
+      "sha256": "341deda3db5ec498a0482254d6c38c0b7cf01a30c37bb5dd95d2216d08955e35",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "cloudflared.exe",
+          "name": "cloudflared",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "dasel",
       "version": "3.11.2",
       "description": "Unified querying, transformation, and modification of JSON, TOML, YAML, XML, INI, HCL, KDL and CSV.",
@@ -187,6 +331,29 @@
         {
           "path": "dasel.exe",
           "name": "dasel",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "dbmate",
+      "version": "2.38.2",
+      "description": "🚀 A lightweight, framework-agnostic database migration tool.",
+      "homepage": "https://github.com/amacneil/dbmate",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/amacneil/dbmate/releases/download/v2.38.2/dbmate-windows-amd64.exe",
+      "sha256": "d4caa0b63ab6a54a381eb2789f8bb438bab8c1a6f63b1a6572b5a6f324d234d6",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "dbmate.exe",
+          "name": "dbmate",
           "args": []
         }
       ],
@@ -245,6 +412,76 @@
       "persist": []
     },
     {
+      "name": "difftastic",
+      "version": "0.72.0",
+      "description": "a structural diff that understands syntax 🟥🟩",
+      "homepage": "https://difftastic.wilfred.me.uk/",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/Wilfred/difftastic/releases/download/0.72.0/difft-0.72.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "7b6295a9a433ba79978b02ad4b4b27f955423b8eb379927409b9ff4e5156379e",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "difft.exe",
+          "name": "difft",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "dive",
+      "version": "0.13.1",
+      "description": "A tool for exploring each layer in a docker image",
+      "homepage": "https://github.com/wagoodman/dive",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/wagoodman/dive/releases/download/v0.13.1/dive_0.13.1_windows_amd64.zip",
+      "sha256": "3e764ff28c7b89f4da679deac80483249fbbae3a1d512c103d54609eec09086a",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "dive.exe",
+          "name": "dive",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "dotenvx",
+      "version": "2.38.2",
+      "description": "a secure dotenv—from the creator of `dotenv`",
+      "homepage": "https://dotenvx.com/docs",
+      "license": "BSD-3-Clause",
+      "tags": [],
+      "arch": "x64",
+      "asset": "dotenvx-windows-amd64.zip",
+      "url": "https://github.com/dotenvx/dotenvx/releases/download/v2.38.2/dotenvx-windows-amd64.zip",
+      "sha256": "4317710a0776f5943230db4ee01a3c4790681c8b618c011466e29bc508174c35",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "dotenvx.exe",
+          "name": "dotenvx",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "dprint",
       "version": "0.65.0",
       "description": "Pluggable and configurable code formatting platform that unifies all your formatters.",
@@ -283,6 +520,29 @@
         {
           "path": "duckdb.exe",
           "name": "duckdb",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "duf",
+      "version": "0.9.1",
+      "description": "Disk Usage/Free Utility - a better 'df' alternative",
+      "homepage": "https://github.com/muesli/duf",
+      "license": "",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/muesli/duf/releases/download/v0.9.1/duf_0.9.1_windows_x86_64.zip",
+      "sha256": "503934be81f847d9ddb1b739834217480633435ad16515dd199e372c0b2e1afc",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "duf.exe",
+          "name": "duf",
           "args": []
         }
       ],
@@ -469,6 +729,29 @@
       "persist": []
     },
     {
+      "name": "git-cliff",
+      "version": "2.14.2",
+      "description": "A highly customizable Changelog Generator that follows Conventional Commit specifications ⛰️ ",
+      "homepage": "https://git-cliff.org",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/orhun/git-cliff/releases/download/v2.14.2/git-cliff-2.14.2-x86_64-pc-windows-msvc.zip",
+      "sha256": "6ece2112b3f4af462190ecbea4aeb1315fff6af415629b597f84319073c31131",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "git-cliff.exe",
+          "name": "git-cliff",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "git-lfs",
       "version": "3.8.1",
       "description": "Git extension for versioning large files",
@@ -484,6 +767,55 @@
         {
           "path": "git-lfs.exe",
           "name": "git-lfs",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "gitleaks",
+      "version": "8.30.1",
+      "description": "Find secrets with Gitleaks 🔑",
+      "homepage": "https://gitleaks.io",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_windows_x64.zip",
+      "sha256": "d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "gitleaks.exe",
+          "name": "gitleaks",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": [],
+      "test_args": [
+        "version"
+      ]
+    },
+    {
+      "name": "glow",
+      "version": "3.0.0",
+      "description": "Render markdown on the CLI, with pizzazz! 💅🏻",
+      "homepage": "https://github.com/charmbracelet/glow",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/charmbracelet/glow/releases/download/v3.0.0/glow_3.0.0_Windows_x86_64.zip",
+      "sha256": "d8907e07436ecbb6738bc0e3bbf8aa6159e351f95082e9db3c3fc4200086f809",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "glow.exe",
+          "name": "glow",
           "args": []
         }
       ],
@@ -553,6 +885,78 @@
         {
           "path": "golangci-lint.exe",
           "name": "golangci-lint",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "grpcurl",
+      "version": "1.9.4",
+      "description": "Like cURL, but for gRPC: Command-line tool for interacting with gRPC servers",
+      "homepage": "https://www.fullstory.com/resources/content/fullstory-engineering-blog/",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/fullstorydev/grpcurl/releases/download/v1.9.4/grpcurl_1.9.4_windows_x86_64.zip",
+      "sha256": "412dbe98dc6f3fddfbdc15db061768495d3b4c6ee24de998c83c36f79857680d",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "grpcurl.exe",
+          "name": "grpcurl",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": [],
+      "test_args": [
+        "-version"
+      ]
+    },
+    {
+      "name": "gum",
+      "version": "2.0.2",
+      "description": "A tool for glamorous shell scripts 🎀",
+      "homepage": "https://github.com/charmbracelet/gum",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/charmbracelet/gum/releases/download/v2.0.2/gum_2.0.2_Windows_x86_64.zip",
+      "sha256": "0397091dec9b4e8f00e02b90fd3eb07bf45acabbdb61d67437950f18e03a8b79",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "gum.exe",
+          "name": "gum",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "hadolint",
+      "version": "2.15.1",
+      "description": "Dockerfile linter, validate inline bash, written in Haskell",
+      "homepage": "https://github.com/hadolint/hadolint",
+      "license": "GPL-3.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/hadolint/hadolint/releases/download/v2.15.1/hadolint-windows-x86_64.exe",
+      "sha256": "01d927294962b5387f9ead4f18679158452be4f17c765ad0bdffe5264b9c7b0a",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "hadolint.exe",
+          "name": "hadolint",
           "args": []
         }
       ],
@@ -740,6 +1144,33 @@
       "persist": []
     },
     {
+      "name": "k9s",
+      "version": "0.51.0",
+      "description": "🐶 Kubernetes CLI To Manage Your Clusters In Style!",
+      "homepage": "https://k9scli.io",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/derailed/k9s/releases/download/v0.51.0/k9s_Windows_amd64.zip",
+      "sha256": "bba299f1877913979831543a008f2e104995d2ea4ac8f23d7f49c0444857d973",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "k9s.exe",
+          "name": "k9s",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": [],
+      "test_args": [
+        "version",
+        "--short"
+      ]
+    },
+    {
       "name": "lazydocker",
       "version": "0.25.2",
       "description": "The lazier way to manage everything docker",
@@ -836,6 +1267,29 @@
       "persist": []
     },
     {
+      "name": "micro",
+      "version": "2.0.15",
+      "description": "A modern and intuitive terminal-based text editor",
+      "homepage": "https://micro-editor.github.io",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/micro-editor/micro/releases/download/v2.0.15/micro-2.0.15-win64.zip",
+      "sha256": "90635c53c11aa2a0d997f5e3ed43528877740725500207640b29551cef18479b",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "micro.exe",
+          "name": "micro",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "miller",
       "version": "6.23.0",
       "description": "Miller is like awk, sed, cut, join, and sort for name-indexed data such as CSV, TSV, and tabular JSON",
@@ -851,6 +1305,52 @@
         {
           "path": "mlr.exe",
           "name": "mlr",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "mise",
+      "version": "2026.11.12",
+      "description": "dev tools, env vars, task runner",
+      "homepage": "https://mise.jdx.dev",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/jdx/mise/releases/download/v2026.11.12/mise-v2026.11.12-windows-x64.zip",
+      "sha256": "706fecc47fba7e4da63f59dccd3262502c59e4699035548f1113df95fcfca96e",
+      "extract": "zip",
+      "strip_components": 1,
+      "bin": [
+        {
+          "path": "bin/mise.exe",
+          "name": "mise",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "nushell",
+      "version": "0.117.0",
+      "description": "A new type of shell",
+      "homepage": "https://www.nushell.sh/",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/nushell/nushell/releases/download/0.117.0/nu-0.117.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "8a135f25d3f22f1542107eb117e94628af35ce65402cbc098bfb26914227d3b2",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "nu.exe",
+          "name": "nu",
           "args": []
         }
       ],
@@ -1028,6 +1528,29 @@
       "persist": []
     },
     {
+      "name": "scc",
+      "version": "4.1.0",
+      "description": "Sloc, Cloc and Code: scc is a very fast accurate code counter with complexity calculations and COCOMO estimates written in pure Go",
+      "homepage": "https://github.com/boyter/scc",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/boyter/scc/releases/download/v4.1.0/scc_Windows_x86_64.zip",
+      "sha256": "4a433984f45ff29c94eeb3af6db5b511c58f5bf74063dccedafcbf473cb8ff31",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "scc.exe",
+          "name": "scc",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
       "name": "sd",
       "version": "1.1.0",
       "description": "Intuitive find & replace CLI (sed alternative)",
@@ -1078,6 +1601,55 @@
       "persist": []
     },
     {
+      "name": "sops",
+      "version": "3.13.3",
+      "description": "Simple and flexible tool for managing secrets",
+      "homepage": "https://getsops.io",
+      "license": "MPL-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/getsops/sops/releases/download/v3.13.3/sops-v3.13.3.amd64.exe",
+      "sha256": "a4a9a398858fe8b2ef72d9686d930bf7c5cece9be74ad83ac3b53cfdd70e6b1c",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "sops.exe",
+          "name": "sops",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "sqlc",
+      "version": "1.31.1",
+      "description": "Generate type-safe code from SQL",
+      "homepage": "https://sqlc.dev",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_windows_amd64.zip",
+      "sha256": "352711fa7dcb05dcdfefca0ad71b2c9a74fd090f8d7fc609419de4cbc725429f",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "sqlc.exe",
+          "name": "sqlc",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": [],
+      "test_args": [
+        "version"
+      ]
+    },
+    {
       "name": "starship",
       "version": "1.27.0",
       "description": "☄🌌️  The minimal, blazing-fast, and infinitely customizable prompt for any shell!",
@@ -1120,6 +1692,75 @@
         {
           "path": "task.exe",
           "name": "task",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "tealdeer",
+      "version": "1.9.1",
+      "description": "A very fast implementation of tldr in Rust.",
+      "homepage": "https://docs.tealdeer.org",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/tealdeer-rs/tealdeer/releases/download/v1.9.1/tealdeer-windows-x86_64-msvc.exe",
+      "sha256": "f75a3e4b43e7b03d30bac88eccf928af90b8993cd354fe207aec1c643910736f",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "tealdeer.exe",
+          "name": "tealdeer",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "tree-sitter",
+      "version": "0.27.2",
+      "description": "An incremental parsing system for programming tools",
+      "homepage": "https://tree-sitter.github.io",
+      "license": "MIT",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/tree-sitter/tree-sitter/releases/download/v0.27.2/tree-sitter-cli-windows-x64.zip",
+      "sha256": "9a6dc00c08ed26e98c05481f08c6f83c5ff05c6756442aec2aff1800732ad3da",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "tree-sitter.exe",
+          "name": "tree-sitter",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "typos",
+      "version": "1.52.2",
+      "description": "Source code spell checker",
+      "homepage": "https://github.com/crate-ci/typos",
+      "license": "Apache-2.0",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/crate-ci/typos/releases/download/v1.52.2/typos-v1.52.2-x86_64-pc-windows-msvc.zip",
+      "sha256": "ab79036832cea0f2a21aa947731d39512250cc0f7a6a2f6add26262738a8cc11",
+      "extract": "zip",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "typos.exe",
+          "name": "typos",
           "args": []
         }
       ],
@@ -1276,6 +1917,29 @@
         {
           "path": "yq.exe",
           "name": "yq",
+          "args": []
+        }
+      ],
+      "fonts": [],
+      "depends": [],
+      "persist": []
+    },
+    {
+      "name": "yt-dlp",
+      "version": "2026.10.26",
+      "description": "A feature-rich command-line audio/video downloader",
+      "homepage": "https://discord.gg/H5MNcFW63r",
+      "license": "Unlicense",
+      "tags": [],
+      "arch": "x64",
+      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp.exe",
+      "sha256": "f5389d3698ecde4ef06f4e6b1ce0294fe9ac1396228c8990b8d3416d6d177a7d",
+      "extract": "none",
+      "strip_components": null,
+      "bin": [
+        {
+          "path": "yt-dlp.exe",
+          "name": "yt-dlp",
           "args": []
         }
       ],

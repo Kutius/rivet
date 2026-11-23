@@ -1,0 +1,19 @@
+name = "hadolint"
+version = "2.15.1"
+description = "Dockerfile linter, validate inline bash, written in Haskell"
+homepage = "https://github.com/hadolint/hadolint"
+license = "GPL-3.0"
+tags = []
+arch = "x64"
+url = "https://github.com/hadolint/hadolint/releases/download/v2.15.1/hadolint-windows-x86_64.exe"
+sha256 = "01d927294962b5387f9ead4f18679158452be4f17c765ad0bdffe5264b9c7b0a"
+extract = "none"
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "hadolint.exe"
+name = "hadolint"
+args = []
+

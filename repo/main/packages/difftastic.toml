@@ -1,0 +1,19 @@
+name = "difftastic"
+version = "0.72.0"
+description = "a structural diff that understands syntax 🟥🟩"
+homepage = "https://difftastic.wilfred.me.uk/"
+license = "MIT"
+tags = []
+arch = "x64"
+url = "https://github.com/Wilfred/difftastic/releases/download/0.72.0/difft-0.72.0-x86_64-pc-windows-msvc.zip"
+sha256 = "7b6295a9a433ba79978b02ad4b4b27f955423b8eb379927409b9ff4e5156379e"
+extract = "zip"
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "difft.exe"
+name = "difft"
+args = []
+

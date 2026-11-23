@@ -1,0 +1,20 @@
+name = "dotenvx"
+version = "2.38.2"
+description = "a secure dotenv—from the creator of `dotenv`"
+homepage = "https://dotenvx.com/docs"
+license = "BSD-3-Clause"
+tags = []
+arch = "x64"
+asset = "dotenvx-windows-amd64.zip"
+url = "https://github.com/dotenvx/dotenvx/releases/download/v2.38.2/dotenvx-windows-amd64.zip"
+sha256 = "4317710a0776f5943230db4ee01a3c4790681c8b618c011466e29bc508174c35"
+extract = "zip"
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "dotenvx.exe"
+name = "dotenvx"
+args = []
+

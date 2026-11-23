@@ -1,0 +1,19 @@
+name = "duf"
+version = "0.9.1"
+description = "Disk Usage/Free Utility - a better 'df' alternative"
+homepage = "https://github.com/muesli/duf"
+license = ""
+tags = []
+arch = "x64"
+url = "https://github.com/muesli/duf/releases/download/v0.9.1/duf_0.9.1_windows_x86_64.zip"
+sha256 = "503934be81f847d9ddb1b739834217480633435ad16515dd199e372c0b2e1afc"
+extract = "zip"
+fonts = []
+depends = []
+persist = []
+
+[[bin]]
+path = "duf.exe"
+name = "duf"
+args = []
+
