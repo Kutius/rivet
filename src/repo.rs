@@ -52,6 +52,8 @@ pub fn sync_main(db: &Db, paths: &Paths, config: &Config, trust: &Trust) -> Resu
             "main index is not configured. Set RIVET_MAIN_INDEX or run:\n  rv config set main_index C:\\path\\to\\index.json"
         );
     };
+    let started = std::time::Instant::now();
+    let spinner = crate::ui::Spinner::start("Refreshing main catalog...");
     let index = index::load_index(&location, trust)?;
     db.upsert_repo(&RepoRecord {
         name: "main".to_string(),
@@ -62,10 +64,15 @@ pub fn sync_main(db: &Db, paths: &Paths, config: &Config, trust: &Trust) -> Resu
         updated_at: Some(now()),
     })?;
     db.replace_repo_packages("main", &index)?;
-    println!(
-        "main: {} package versions from {}",
-        index.package_count(),
-        location
+    spinner.clear();
+    let detail = format!("· {}", crate::ui::format_duration(started.elapsed()));
+    crate::ui::print_done(
+        &format!(
+            "main: {} package versions from {}",
+            index.package_count(),
+            location
+        ),
+        Some(&detail),
     );
     let _ = paths;
     Ok(())

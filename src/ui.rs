@@ -18,13 +18,65 @@ fn color_enabled() -> bool {
     std::env::var_os("NO_COLOR").is_none()
 }
 
-/// Print a completed action line (`✓ <message>` in green when stdout is a TTY,
-/// plain `<message>` when piped/redirected).
-pub fn print_success(message: &str) {
-    if stdout_is_tty() && color_enabled() {
-        println!("\x1b[32m✓\x1b[0m {message}");
+/// Print a completed action line. In an interactive terminal, renders a green
+/// `✓` prefix and optional dim suffix (e.g., elapsed time or cache status);
+/// when piped/redirected, prints `plain` verbatim.
+pub fn print_done(plain: &str, tty_detail: Option<&str>) {
+    if stdout_is_tty() {
+        if color_enabled() {
+            match tty_detail {
+                Some(detail) if !detail.is_empty() => {
+                    println!("\x1b[32m✓\x1b[0m {plain} \x1b[2m{detail}\x1b[0m");
+                }
+                _ => println!("\x1b[32m✓\x1b[0m {plain}"),
+            }
+        } else {
+            match tty_detail {
+                Some(detail) if !detail.is_empty() => println!("✓ {plain} {detail}"),
+                _ => println!("✓ {plain}"),
+            }
+        }
     } else {
-        println!("{message}");
+        println!("{plain}");
+    }
+}
+
+/// Print a quiet, indented hint line only when `stdout` is an interactive TTY.
+pub fn print_hint(message: &str) {
+    if !stdout_is_tty() {
+        return;
+    }
+    if color_enabled() {
+        println!("  \x1b[2m{message}\x1b[0m");
+    } else {
+        println!("  {message}");
+    }
+}
+
+/// Print a short batch summary line when multiple items were processed in a TTY.
+pub fn print_summary(verb: &str, count: usize, elapsed: Duration) {
+    if !stdout_is_tty() || count <= 1 {
+        return;
+    }
+    let noun = if count == 1 { "package" } else { "packages" };
+    let time = format_duration(elapsed);
+    if color_enabled() {
+        println!("\x1b[2mDone — {count} {noun} {verb} in {time}\x1b[0m");
+    } else {
+        println!("Done — {count} {noun} {verb} in {time}");
+    }
+}
+
+/// Format a duration concisely (`42ms`, `1.2s`, `1m 14s`).
+pub fn format_duration(duration: Duration) -> String {
+    let millis = duration.as_millis();
+    if millis < 1000 {
+        format!("{millis}ms")
+    } else if millis < 60_000 {
+        format!("{:.1}s", duration.as_secs_f64())
+    } else {
+        let secs = duration.as_secs();
+        format!("{}m {}s", secs / 60, secs % 60)
     }
 }
 
@@ -45,7 +97,7 @@ pub fn format_bytes(bytes: u64) -> String {
     }
 }
 
-/// Format a fixed-width Unicode progress bar (`[████████░░░░░░░░░░░░]`).
+/// Format a sleek horizontal progress bar (`━━━━━━━━━━━━────────`).
 pub fn format_bar(current: u64, total: u64, width: usize) -> String {
     if total == 0 || width == 0 {
         return String::new();
@@ -53,7 +105,21 @@ pub fn format_bar(current: u64, total: u64, width: usize) -> String {
     let ratio = (current.min(total) as f64) / (total as f64);
     let filled = ((ratio * width as f64).round() as usize).min(width);
     let empty = width - filled;
-    format!("[{}{}]", "█".repeat(filled), "░".repeat(empty))
+    format!("{}{}", "━".repeat(filled), "─".repeat(empty))
+}
+
+fn format_colored_bar(current: u64, total: u64, width: usize) -> String {
+    if total == 0 || width == 0 {
+        return String::new();
+    }
+    let ratio = (current.min(total) as f64) / (total as f64);
+    let filled = ((ratio * width as f64).round() as usize).min(width);
+    let empty = width - filled;
+    format!(
+        "\x1b[36m{}\x1b[2;37m{}\x1b[0m",
+        "━".repeat(filled),
+        "─".repeat(empty)
+    )
 }
 
 /// A lightweight RAII spinner rendered on `stderr` when attached to a TTY.
@@ -167,19 +233,20 @@ impl ProgressBar {
 
         let line = match total {
             Some(total) if total > 0 => {
-                let bar = format_bar(current, total, 20);
                 let pct = ((current.min(total) as f64 / total as f64) * 100.0).round() as u64;
                 if self.colored {
+                    let bar = format_colored_bar(current, total, 22);
                     format!(
-                        "\r\x1b[2K\x1b[36m{frame}\x1b[0m {} \x1b[36m{bar}\x1b[0m {:>3}% \x1b[2m{} / {} ({speed})\x1b[0m",
+                        "\r\x1b[2K\x1b[36m{frame}\x1b[0m {}  {bar} {:>3}% \x1b[2m{} / {} · {speed}\x1b[0m",
                         self.label,
                         pct,
                         format_bytes(current),
                         format_bytes(total),
                     )
                 } else {
+                    let bar = format_bar(current, total, 22);
                     format!(
-                        "\r\x1b[2K{frame} {} {bar} {:>3}% {} / {} ({speed})",
+                        "\r\x1b[2K{frame} {}  {bar} {:>3}% {} / {} · {speed}",
                         self.label,
                         pct,
                         format_bytes(current),
@@ -190,13 +257,13 @@ impl ProgressBar {
             _ => {
                 if self.colored {
                     format!(
-                        "\r\x1b[2K\x1b[36m{frame}\x1b[0m {} \x1b[2m{} ({speed})\x1b[0m",
+                        "\r\x1b[2K\x1b[36m{frame}\x1b[0m {}  \x1b[2m{} · {speed}\x1b[0m",
                         self.label,
                         format_bytes(current),
                     )
                 } else {
                     format!(
-                        "\r\x1b[2K{frame} {} {} ({speed})",
+                        "\r\x1b[2K{frame} {}  {} · {speed}",
                         self.label,
                         format_bytes(current),
                     )
@@ -229,7 +296,8 @@ impl Drop for ProgressBar {
 
 #[cfg(test)]
 mod tests {
-    use super::{format_bar, format_bytes};
+    use super::{format_bar, format_bytes, format_duration};
+    use std::time::Duration;
 
     #[test]
     fn formats_byte_sizes_cleanly() {
@@ -240,8 +308,15 @@ mod tests {
 
     #[test]
     fn formats_progress_bar_proportionally() {
-        assert_eq!(format_bar(0, 100, 10), "[░░░░░░░░░░]");
-        assert_eq!(format_bar(50, 100, 10), "[█████░░░░░]");
-        assert_eq!(format_bar(100, 100, 10), "[██████████]");
+        assert_eq!(format_bar(0, 100, 10), "──────────");
+        assert_eq!(format_bar(50, 100, 10), "━━━━━─────");
+        assert_eq!(format_bar(100, 100, 10), "━━━━━━━━━━");
+    }
+
+    #[test]
+    fn formats_durations_concisely() {
+        assert_eq!(format_duration(Duration::from_millis(42)), "42ms");
+        assert_eq!(format_duration(Duration::from_millis(1250)), "1.2s");
+        assert_eq!(format_duration(Duration::from_secs(74)), "1m 14s");
     }
 }

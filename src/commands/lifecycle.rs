@@ -14,6 +14,7 @@ use semver::Version;
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 pub(super) fn cmd_install(
     rt: &Runtime,
@@ -24,11 +25,16 @@ pub(super) fn cmd_install(
     if specs.is_empty() {
         bail!("specify at least one package");
     }
+    let started = Instant::now();
     let plan = resolve_install_plan(&rt.db, specs, no_deps)?;
     prefetch_plan(rt, &plan, force)?;
+    let mut installed_count = 0usize;
     for record in &plan {
-        install_one(rt, record, force)?;
+        if install_one(rt, record, force)? {
+            installed_count += 1;
+        }
     }
+    ui::print_summary("installed", installed_count, started.elapsed());
     Ok(())
 }
 
@@ -92,7 +98,8 @@ fn prefetch_plan(rt: &Runtime, plan: &[PackageRecord], force: bool) -> Result<()
     download::prefetch_blobs(&rt.paths.cache, &items, rt.config.concurrency, rt.verbose)
 }
 
-fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<()> {
+fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<bool> {
+    let started = Instant::now();
     let db = &rt.db;
     let paths = &rt.paths;
     let manifest = &record.manifest;
@@ -105,7 +112,7 @@ fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<()> 
             "{} {} is already installed",
             manifest.name, manifest.version
         );
-        return Ok(());
+        return Ok(false);
     }
 
     let mut seen_commands = HashSet::new();
@@ -142,6 +149,7 @@ fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<()> 
     fs::create_dir_all(&staging)?;
 
     let mut font_relatives: Vec<PathBuf> = Vec::new();
+    let mut from_cache = false;
     let result = (|| -> Result<()> {
         let url = download::resolve_artifact_url(&record.location, &manifest.url)?;
         rt.log(format!("resolved artifact url: {url}"));
@@ -151,6 +159,10 @@ fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<()> 
                 manifest.name, manifest.version, record.repo
             );
         }
+        from_cache = paths
+            .cache
+            .join(manifest.sha256.to_ascii_lowercase())
+            .is_file();
         let mut download_bar = ui::ProgressBar::new(format!(
             "Downloading {} {}",
             manifest.name, manifest.version
@@ -322,13 +334,26 @@ fn install_one(rt: &Runtime, record: &PackageRecord, force: bool) -> Result<()> 
             if font_sources.len() == 1 { "" } else { "s" }
         ));
     }
-    ui::print_success(&format!(
-        "installed {} {} ({})",
-        manifest.name,
-        manifest.version,
-        parts.join(", ")
-    ));
-    Ok(())
+    let elapsed = ui::format_duration(started.elapsed());
+    let detail = if from_cache {
+        format!("· {elapsed}, cached")
+    } else {
+        format!("· {elapsed}")
+    };
+    ui::print_done(
+        &format!(
+            "installed {} {} ({})",
+            manifest.name,
+            manifest.version,
+            parts.join(", ")
+        ),
+        Some(&detail),
+    );
+    let commands = manifest.binary_names();
+    if !commands.is_empty() {
+        ui::print_hint(&format!("→ ready to run: {}", commands.join(", ")));
+    }
+    Ok(true)
 }
 
 pub(super) fn cmd_remove(rt: &Runtime, specs: &[String], purge: bool, force: bool) -> Result<()> {
@@ -367,9 +392,12 @@ pub(super) fn cmd_remove(rt: &Runtime, specs: &[String], purge: bool, force: boo
             }
         }
     }
+    let started = Instant::now();
     let font_dir = font::font_dir()?;
     let registry_key = font::registry_key();
+    let removed_count = names.len();
     for name in names {
+        let pkg_started = Instant::now();
         let remove_spinner = ui::Spinner::start(format!("Removing {name}..."));
         let fonts = rt.db.fonts_for_package(&name)?;
         if !fonts.is_empty() {
@@ -385,23 +413,37 @@ pub(super) fn cmd_remove(rt: &Runtime, specs: &[String], purge: bool, force: boo
             fs::remove_dir_all(&app_store)
                 .with_context(|| format!("removing {}", app_store.display()))?;
         }
-        if purge {
-            let persist = rt.paths.persist.join(&name);
+        let persist = rt.paths.persist.join(&name);
+        let kept_persist = if purge {
             if persist.exists() {
                 fs::remove_dir_all(&persist)
                     .with_context(|| format!("removing {}", persist.display()))?;
             }
-        }
+            false
+        } else {
+            persist.exists()
+        };
         remove_spinner.clear();
-        ui::print_success(&format!(
-            "removed {name}{}",
-            if purge {
-                " (including persist data)"
-            } else {
-                ""
-            }
-        ));
+        let detail = format!("· {}", ui::format_duration(pkg_started.elapsed()));
+        ui::print_done(
+            &format!(
+                "removed {name}{}",
+                if purge {
+                    " (including persist data)"
+                } else {
+                    ""
+                }
+            ),
+            Some(&detail),
+        );
+        if kept_persist {
+            ui::print_hint(&format!(
+                "kept your data in {} (pass --purge to remove it too)",
+                persist.display()
+            ));
+        }
     }
+    ui::print_summary("removed", removed_count, started.elapsed());
     Ok(())
 }
 
@@ -452,11 +494,16 @@ pub(super) fn cmd_upgrade(rt: &Runtime, specs: &[String], all: bool, force: bool
     if upgrade_specs.is_empty() {
         return Ok(());
     }
+    let started = Instant::now();
     let plan = resolve_install_plan(&rt.db, &upgrade_specs, false)?;
     prefetch_plan(rt, &plan, false)?;
+    let mut upgraded_count = 0usize;
     for record in &plan {
-        install_one(rt, record, false)?;
+        if install_one(rt, record, false)? {
+            upgraded_count += 1;
+        }
     }
+    ui::print_summary("upgraded", upgraded_count, started.elapsed());
     Ok(())
 }
 
