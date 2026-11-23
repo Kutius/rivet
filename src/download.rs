@@ -1,23 +1,34 @@
 use anyhow::{Context, Result, bail};
 use reqwest::blocking::Client;
 use sha2::{Digest, Sha256};
+use std::collections::HashSet;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 use url::Url;
+
+static HTTP_CLIENT: OnceLock<Client> = OnceLock::new();
+static PART_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 pub fn init_crypto() {
     let _ = rustls::crypto::ring::default_provider().install_default();
 }
 
 pub fn http_client() -> Result<Client> {
+    if let Some(client) = HTTP_CLIENT.get() {
+        return Ok(client.clone());
+    }
     init_crypto();
-    Client::builder()
+    let client = Client::builder()
         .user_agent(concat!("rivet/", env!("CARGO_PKG_VERSION")))
         .timeout(Duration::from_secs(300))
         .build()
-        .context("building HTTP client")
+        .context("building HTTP client")?;
+    let _ = HTTP_CLIENT.set(client.clone());
+    Ok(client)
 }
 
 pub fn is_http(value: &str) -> bool {
@@ -144,10 +155,12 @@ pub fn cache_blob(cache_dir: &Path, url: &str, expected_sha256: &str) -> Result<
             .with_context(|| format!("removing corrupted cached blob {}", destination.display()))?;
     }
 
+    let seq = PART_COUNTER.fetch_add(1, Ordering::Relaxed);
     let part = cache_dir.join(format!(
-        "{}.{}.part",
+        "{}.{}.{}.part",
         expected_sha256.to_ascii_lowercase(),
-        std::process::id()
+        std::process::id(),
+        seq
     ));
     let _ = fs::remove_file(&part);
     download_to(url, &part)?;
@@ -156,6 +169,95 @@ pub fn cache_blob(cache_dir: &Path, url: &str, expected_sha256: &str) -> Result<
         let _ = fs::remove_file(&part);
         bail!("sha256 mismatch: expected {expected_sha256}, got {actual}");
     }
-    fs::rename(&part, &destination)?;
+    if let Err(error) = fs::rename(&part, &destination) {
+        if destination.exists() {
+            let _ = fs::remove_file(&part);
+        } else {
+            return Err(error.into());
+        }
+    }
     Ok(destination)
+}
+
+/// Download and verify multiple blobs into `cache_dir` using up to
+/// `concurrency` worker threads. Deduplicates by SHA-256 and skips blobs that
+/// are already cached and valid.
+pub fn prefetch_blobs(
+    cache_dir: &Path,
+    items: &[(String, String)],
+    concurrency: usize,
+    verbose: bool,
+) -> Result<()> {
+    let mut seen = HashSet::new();
+    let unique: Vec<&(String, String)> = items
+        .iter()
+        .filter(|(_, sha)| seen.insert(sha.to_ascii_lowercase()))
+        .collect();
+    if unique.len() <= 1 || concurrency <= 1 {
+        return Ok(());
+    }
+    let workers = concurrency.min(unique.len());
+    if verbose {
+        eprintln!(
+            "verbose: prefetching {} artifact(s) with concurrency={workers}",
+            unique.len()
+        );
+    }
+    let next = AtomicUsize::new(0);
+    let first_error: Mutex<Option<anyhow::Error>> = Mutex::new(None);
+    std::thread::scope(|scope| {
+        for _ in 0..workers {
+            scope.spawn(|| {
+                loop {
+                    if first_error.lock().unwrap().is_some() {
+                        break;
+                    }
+                    let index = next.fetch_add(1, Ordering::Relaxed);
+                    let Some((url, sha256)) = unique.get(index) else {
+                        break;
+                    };
+                    if let Err(error) = cache_blob(cache_dir, url, sha256)
+                        .with_context(|| format!("downloading {url}"))
+                    {
+                        let mut slot = first_error.lock().unwrap();
+                        if slot.is_none() {
+                            *slot = Some(error);
+                        }
+                        break;
+                    }
+                }
+            });
+        }
+    });
+    if let Some(error) = first_error.into_inner().unwrap() {
+        return Err(error);
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{prefetch_blobs, sha256_file};
+    use std::fs;
+
+    #[test]
+    fn prefetch_blobs_caches_multiple_artifacts_concurrently() {
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("src");
+        let cache = dir.path().join("cache");
+        fs::create_dir_all(&src).unwrap();
+
+        let mut items = Vec::new();
+        for i in 0..4 {
+            let file = src.join(format!("pkg-{i}.bin"));
+            fs::write(&file, format!("payload-{i}")).unwrap();
+            let hash = sha256_file(&file).unwrap();
+            items.push((file.to_string_lossy().to_string(), hash));
+        }
+
+        prefetch_blobs(&cache, &items, 4, false).unwrap();
+        for (_, hash) in &items {
+            assert!(cache.join(hash).is_file(), "cached blob {hash} missing");
+        }
+    }
 }

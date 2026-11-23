@@ -52,6 +52,32 @@ pub struct Db {
     pub conn: Connection,
 }
 
+fn deduplicate_latest<I>(rows: I) -> Result<Vec<PackageRecord>>
+where
+    I: IntoIterator<Item = rusqlite::Result<(String, String, String)>>,
+{
+    let mut by_package: std::collections::BTreeMap<(String, String), PackageRecord> =
+        std::collections::BTreeMap::new();
+    for row in rows {
+        let (repo, location, json) = row?;
+        let record = PackageRecord {
+            repo: repo.clone(),
+            location,
+            manifest: serde_json::from_str(&json)?,
+        };
+        let key = (repo, record.manifest.name.clone());
+        match by_package.get(&key) {
+            Some(existing)
+                if crate::model::compare_manifests(&record.manifest, &existing.manifest)
+                    .is_le() => {}
+            _ => {
+                by_package.insert(key, record);
+            }
+        }
+    }
+    Ok(by_package.into_values().collect())
+}
+
 fn rebuild_fts_tx(conn: &Connection) -> Result<()> {
     conn.execute("DELETE FROM packages_fts", [])?;
     conn.execute(
@@ -225,7 +251,7 @@ impl Db {
                 "INSERT INTO packages(repo, name, version, description, homepage, license, tags, binaries, manifest_json)
                  VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             )?;
-            for package in index.packages.iter().chain(index.fonts.iter()) {
+            for package in &index.packages {
                 let binaries = package.binary_names().join(" ");
                 let tags = package.tags.join(" ");
                 let manifest_json = serde_json::to_string(package)?;
@@ -305,7 +331,7 @@ impl Db {
                 manifest,
             });
         }
-        result.sort_by(|a, b| crate::model::compare_manifests(&b.manifest, &a.manifest));
+        result.sort_by(|a, b| crate::model::compare_manifests(&a.manifest, &b.manifest));
         Ok(result)
     }
 
@@ -323,29 +349,7 @@ impl Db {
                     row.get::<_, String>(2)?,
                 ))
             })?;
-            let mut by_package: std::collections::BTreeMap<(String, String), PackageRecord> =
-                std::collections::BTreeMap::new();
-            for row in rows {
-                let (repo, location, json) = row?;
-                let record = PackageRecord {
-                    repo: repo.clone(),
-                    location,
-                    manifest: serde_json::from_str(&json)?,
-                };
-                let key = (repo, record.manifest.name.clone());
-                match by_package.get(&key) {
-                    Some(existing)
-                        if crate::model::compare_manifests(
-                            &record.manifest,
-                            &existing.manifest,
-                        )
-                        .is_le() => {}
-                    _ => {
-                        by_package.insert(key, record);
-                    }
-                }
-            }
-            let mut result: Vec<PackageRecord> = by_package.into_values().collect();
+            let mut result = deduplicate_latest(rows)?;
             result.sort_by(|a, b| {
                 a.manifest
                     .name
@@ -362,14 +366,14 @@ impl Db {
                    JOIN packages p ON p.id = f.rowid
                    JOIN repos r ON r.name = p.repo
                    WHERE packages_fts MATCH ?1 AND r.enabled = 1
-                   ORDER BY rank LIMIT ?2";
+                   ORDER BY rank";
         let mut statement = match self.conn.prepare(sql) {
             Ok(statement) => statement,
             Err(_) => {
                 return self.search_like(query, limit);
             }
         };
-        let rows = match statement.query_map(params![fts_query, limit as i64], |row| {
+        let rows = match statement.query_map(params![fts_query], |row| {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
@@ -379,15 +383,8 @@ impl Db {
             Ok(rows) => rows,
             Err(_) => return self.search_like(query, limit),
         };
-        let mut result = Vec::new();
-        for row in rows {
-            let (repo, location, json) = row?;
-            result.push(PackageRecord {
-                repo,
-                location,
-                manifest: serde_json::from_str(&json)?,
-            });
-        }
+        let mut result = deduplicate_latest(rows)?;
+        result.truncate(limit);
         Ok(result)
     }
 
@@ -396,25 +393,19 @@ impl Db {
         let mut statement = self.conn.prepare(
             "SELECT p.repo, r.location, p.manifest_json
              FROM packages p JOIN repos r ON r.name = p.repo
-             WHERE r.enabled = 1 AND (p.name LIKE ?1 OR p.description LIKE ?1 OR p.binaries LIKE ?1)
-             ORDER BY p.name LIMIT ?2",
+             WHERE r.enabled = 1
+               AND (p.name LIKE ?1 OR p.description LIKE ?1 OR p.tags LIKE ?1 OR p.binaries LIKE ?1)
+             ORDER BY p.name",
         )?;
-        let rows = statement.query_map(params![pattern, limit as i64], |row| {
+        let rows = statement.query_map(params![pattern], |row| {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
             ))
         })?;
-        let mut result = Vec::new();
-        for row in rows {
-            let (repo, location, json) = row?;
-            result.push(PackageRecord {
-                repo,
-                location,
-                manifest: serde_json::from_str(&json)?,
-            });
-        }
+        let mut result = deduplicate_latest(rows)?;
+        result.truncate(limit);
         Ok(result)
     }
 
@@ -545,12 +536,11 @@ impl Db {
     }
 
     pub fn remove_installed(&self, name: &str) -> Result<()> {
-        self.conn
-            .execute("DELETE FROM installed WHERE name = ?1", params![name])?;
-        self.conn
-            .execute("DELETE FROM shims WHERE package = ?1", params![name])?;
-        self.conn
-            .execute("DELETE FROM fonts WHERE package = ?1", params![name])?;
+        let tx = self.conn.unchecked_transaction()?;
+        tx.execute("DELETE FROM installed WHERE name = ?1", params![name])?;
+        tx.execute("DELETE FROM shims WHERE package = ?1", params![name])?;
+        tx.execute("DELETE FROM fonts WHERE package = ?1", params![name])?;
+        tx.commit()?;
         Ok(())
     }
 
@@ -678,7 +668,6 @@ mod tests {
             schema: INDEX_SCHEMA,
             generated_at: String::new(),
             packages,
-            fonts: Vec::new(),
         }
     }
 

@@ -49,14 +49,10 @@ pub fn build_index(directory: &Path, output: Option<&Path>) -> Result<IndexFile>
         }
     }
 
-    let (fonts, packages): (Vec<PackageManifest>, Vec<PackageManifest>) = all
-        .into_iter()
-        .partition(|manifest| manifest.bin.is_empty());
     let index = IndexFile {
         schema: INDEX_SCHEMA,
         generated_at: chrono::Utc::now().to_rfc3339(),
-        packages,
-        fonts,
+        packages: all,
     };
     let output = output
         .map(Path::to_path_buf)
@@ -73,7 +69,7 @@ pub fn parse_index(text: &str, source: &str) -> Result<IndexFile> {
     if index.schema != INDEX_SCHEMA {
         bail!("unsupported index schema {} in {source}", index.schema);
     }
-    for package in index.packages.iter().chain(index.fonts.iter()) {
+    for package in &index.packages {
         package.validate().with_context(|| {
             format!(
                 "validating {}/{} from {source}",

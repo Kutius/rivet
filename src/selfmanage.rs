@@ -1,11 +1,15 @@
 use crate::archive;
-use crate::config::Paths;
+use crate::config::{Config, Paths};
 use crate::download;
+use crate::winreg;
 use anyhow::{Context, Result, bail};
 use semver::Version;
 use serde::Deserialize;
 use std::fs;
+use std::path::Path;
 use std::process::Command;
+
+const ENV_REGISTRY_KEY: &str = "Environment";
 
 #[derive(Debug, Deserialize)]
 struct Release {
@@ -162,7 +166,206 @@ fn spawn_hidden_powershell(script: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn install_self(paths: &Paths) -> Result<()> {
+    let current = std::env::current_exe().context("locating current executable")?;
+    let rv_destination = paths.bin.join("rv.exe");
+    let same = current
+        .canonicalize()
+        .ok()
+        .zip(rv_destination.canonicalize().ok())
+        .is_some_and(|(left, right)| left == right);
+    if !same {
+        fs::copy(&current, &rv_destination).with_context(|| {
+            format!(
+                "copying {} to {}",
+                current.display(),
+                rv_destination.display()
+            )
+        })?;
+    }
+    install_powershell_alias(&rv_destination, &paths.bin.join("rivet.exe"))?;
+    let shim_source = current
+        .parent()
+        .context("current executable has no parent")?
+        .join("rv-shim.exe");
+    if shim_source.exists() {
+        let shim_destination = paths.bin.join("rv-shim.exe");
+        let same_shim = shim_source
+            .canonicalize()
+            .ok()
+            .zip(shim_destination.canonicalize().ok())
+            .is_some_and(|(left, right)| left == right);
+        if !same_shim {
+            fs::copy(&shim_source, &shim_destination).with_context(|| {
+                format!(
+                    "copying {} to {}",
+                    shim_source.display(),
+                    shim_destination.display()
+                )
+            })?;
+        }
+    }
+    Ok(())
+}
+
+pub fn install_powershell_alias(rv: &Path, rivet: &Path) -> Result<()> {
+    let unchanged = rv
+        .canonicalize()
+        .ok()
+        .zip(rivet.canonicalize().ok())
+        .is_some_and(|(left, right)| left == right)
+        || (rv.exists()
+            && rivet.exists()
+            && download::sha256_file(rv)? == download::sha256_file(rivet)?);
+    if !unchanged {
+        if rivet.exists() {
+            let _ = fs::remove_file(rivet);
+        }
+        if fs::hard_link(rv, rivet).is_err() {
+            fs::copy(rv, rivet)
+                .with_context(|| format!("copying {} to {}", rv.display(), rivet.display()))?;
+        }
+    }
+    Ok(())
+}
+
+pub fn init(paths: &Paths, no_path: bool) -> Result<()> {
+    paths.ensure_layout()?;
+    install_self(paths)?;
+    let config = Config::load(paths)?;
+    if no_path {
+        println!(
+            "installed {}, {}, and {}; PATH not changed (run 'rivet init' to add {})",
+            paths.bin.join("rv.exe").display(),
+            paths.bin.join("rivet.exe").display(),
+            paths.bin.join("rv-shim.exe").display(),
+            paths.bin.display()
+        );
+        print_catalog(&config);
+        return Ok(());
+    }
+    let bin = paths.bin.to_string_lossy().to_string();
+    let current = user_path()?;
+    if path_has_entry(&current, &bin) {
+        println!("{} is already in the user PATH", paths.bin.display());
+        print_catalog(&config);
+        return Ok(());
+    }
+    let new_path = append_path(&current, &bin);
+    set_user_path(&new_path)?;
+    if let Err(error) = winreg::broadcast_setting_change("Environment") {
+        eprintln!("warning: PATH was updated but the environment broadcast failed: {error}");
+    }
+    println!(
+        "added {} to the user PATH; open a new terminal and run 'rivet'",
+        paths.bin.display()
+    );
+    print_catalog(&config);
+    Ok(())
+}
+
+pub fn remove_bin_from_user_path(paths: &Paths) -> Result<()> {
+    let bin = paths.bin.to_string_lossy().to_string();
+    let current = user_path()?;
+    if path_has_entry(&current, &bin) {
+        set_user_path(&remove_path_entry(&current, &bin))?;
+        if let Err(error) = winreg::broadcast_setting_change("Environment") {
+            eprintln!("warning: PATH was updated but the environment broadcast failed: {error}");
+        }
+    }
+    Ok(())
+}
+
+fn print_catalog(config: &Config) {
+    if let Some(location) = config.main_index_location() {
+        println!("catalog: {location}");
+    }
+}
+
+fn path_has_entry(current: &str, bin: &str) -> bool {
+    current.split(';').any(|part| {
+        part.trim()
+            .trim_end_matches('\\')
+            .eq_ignore_ascii_case(bin.trim_end_matches('\\'))
+    })
+}
+
+fn append_path(current: &str, bin: &str) -> String {
+    if current.trim().is_empty() {
+        bin.to_string()
+    } else {
+        format!("{};{}", current.trim_end_matches(';'), bin)
+    }
+}
+
+fn remove_path_entry(current: &str, bin: &str) -> String {
+    current
+        .split(';')
+        .filter(|part| {
+            !part
+                .trim()
+                .trim_end_matches('\\')
+                .eq_ignore_ascii_case(bin.trim_end_matches('\\'))
+        })
+        .collect::<Vec<_>>()
+        .join(";")
+}
+
+fn user_path() -> Result<String> {
+    Ok(winreg::get_hkcu_string(ENV_REGISTRY_KEY, "Path")?.unwrap_or_default())
+}
+
+fn set_user_path(value: &str) -> Result<()> {
+    winreg::set_hkcu_string(ENV_REGISTRY_KEY, "Path", value, true)
+}
+
 #[cfg(not(windows))]
 fn spawn_hidden_powershell(_script: &str) -> Result<()> {
     bail!("self-update and self-uninstall are only supported on Windows")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{append_path, install_powershell_alias, path_has_entry, remove_path_entry};
+    use std::fs;
+
+    #[test]
+    fn rivet_alias_tracks_the_rv_binary() {
+        let directory = tempfile::tempdir().unwrap();
+        let rv = directory.path().join("rv.exe");
+        let rivet = directory.path().join("rivet.exe");
+        fs::write(&rv, b"first").unwrap();
+        install_powershell_alias(&rv, &rivet).unwrap();
+        assert_eq!(fs::read(&rivet).unwrap(), b"first");
+        fs::write(&rv, b"second").unwrap();
+        install_powershell_alias(&rv, &rivet).unwrap();
+        assert_eq!(fs::read(&rivet).unwrap(), b"second");
+    }
+
+    #[test]
+    fn path_entry_matches_case_and_trailing_slashes() {
+        let current = r"C:\Tools;C:\Users\me\AppData\Local\Rivet\bin\";
+        assert!(path_has_entry(
+            current,
+            r"c:\users\me\appdata\local\rivet\bin"
+        ));
+        assert!(!path_has_entry(current, r"C:\Other"));
+    }
+
+    #[test]
+    fn append_path_does_not_add_an_extra_separator() {
+        assert_eq!(append_path("", r"C:\Rivet\bin"), r"C:\Rivet\bin");
+        assert_eq!(
+            append_path(r"C:\Tools;", r"C:\Rivet\bin"),
+            r"C:\Tools;C:\Rivet\bin"
+        );
+    }
+
+    #[test]
+    fn remove_path_entry_matches_case_and_trailing_slashes() {
+        assert_eq!(
+            remove_path_entry(r"C:\Tools;C:\Rivet\bin\;D:\Other", r"c:\rivet\bin"),
+            r"C:\Tools;D:\Other"
+        );
+    }
 }

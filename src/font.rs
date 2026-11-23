@@ -92,16 +92,13 @@ pub fn registry_name(file_name: &str) -> String {
     format!("{stem} ({suffix})")
 }
 
-pub fn replace(
+pub fn validate_replace(
     package: &str,
     sources: &[PathBuf],
     old: &[FontRecord],
     all: &[FontRecord],
     font_dir: &Path,
-    registry_key: &str,
-) -> Result<Vec<FontRecord>> {
-    fs::create_dir_all(font_dir)
-        .with_context(|| format!("creating font directory {}", font_dir.display()))?;
+) -> Result<Vec<(PathBuf, PathBuf, String)>> {
     let mut desired = Vec::new();
     let mut names = HashSet::new();
     for source in sources {
@@ -134,6 +131,20 @@ pub fn replace(
         }
         desired.push((source.clone(), destination, registry_name(file_name)));
     }
+    Ok(desired)
+}
+
+pub fn replace(
+    package: &str,
+    sources: &[PathBuf],
+    old: &[FontRecord],
+    all: &[FontRecord],
+    font_dir: &Path,
+    registry_key: &str,
+) -> Result<Vec<FontRecord>> {
+    fs::create_dir_all(font_dir)
+        .with_context(|| format!("creating font directory {}", font_dir.display()))?;
+    let desired = validate_replace(package, sources, old, all, font_dir)?;
 
     if !old.is_empty()
         && let Err(error) = remove(old, font_dir, registry_key)
@@ -262,186 +273,21 @@ fn broadcast_best_effort() {
     }
 }
 
-#[cfg(windows)]
-fn wide(value: &str) -> Vec<u16> {
-    value.encode_utf16().chain(Some(0)).collect()
-}
-
-#[cfg(windows)]
 fn set_registry_value(key: &str, name: &str, value: &Path) -> Result<()> {
-    use windows_sys::Win32::Foundation::ERROR_SUCCESS;
-    use windows_sys::Win32::System::Registry::{
-        HKEY_CURRENT_USER, KEY_SET_VALUE, REG_SZ, RegCloseKey, RegCreateKeyExW, RegSetValueExW,
-    };
-
-    let key_wide = wide(key);
-    let name_wide = wide(name);
-    let value_wide = wide(&value.to_string_lossy());
-    let mut handle = std::ptr::null_mut();
-    let status = unsafe {
-        RegCreateKeyExW(
-            HKEY_CURRENT_USER,
-            key_wide.as_ptr(),
-            0,
-            std::ptr::null(),
-            0,
-            KEY_SET_VALUE,
-            std::ptr::null(),
-            &mut handle,
-            std::ptr::null_mut(),
-        )
-    };
-    if status != ERROR_SUCCESS {
-        bail!("opening font registry key '{key}' failed with Windows error {status}");
-    }
-    let status = unsafe {
-        RegSetValueExW(
-            handle,
-            name_wide.as_ptr(),
-            0,
-            REG_SZ,
-            value_wide.as_ptr().cast(),
-            (value_wide.len() * 2) as u32,
-        )
-    };
-    unsafe {
-        RegCloseKey(handle);
-    }
-    if status != ERROR_SUCCESS {
-        bail!("writing font registry value '{name}' failed with Windows error {status}");
-    }
-    Ok(())
+    crate::winreg::set_hkcu_string(key, name, &value.to_string_lossy(), false)
 }
 
-#[cfg(windows)]
 fn delete_registry_value(key: &str, name: &str) -> Result<()> {
-    use windows_sys::Win32::Foundation::{ERROR_FILE_NOT_FOUND, ERROR_SUCCESS};
-    use windows_sys::Win32::System::Registry::{
-        HKEY_CURRENT_USER, KEY_SET_VALUE, RegCloseKey, RegDeleteValueW, RegOpenKeyExW,
-    };
-
-    let key_wide = wide(key);
-    let name_wide = wide(name);
-    let mut handle = std::ptr::null_mut();
-    let status = unsafe {
-        RegOpenKeyExW(
-            HKEY_CURRENT_USER,
-            key_wide.as_ptr(),
-            0,
-            KEY_SET_VALUE,
-            &mut handle,
-        )
-    };
-    if status == ERROR_FILE_NOT_FOUND {
-        return Ok(());
-    }
-    if status != ERROR_SUCCESS {
-        bail!("opening font registry key '{key}' failed with Windows error {status}");
-    }
-    let status = unsafe { RegDeleteValueW(handle, name_wide.as_ptr()) };
-    unsafe {
-        RegCloseKey(handle);
-    }
-    if status != ERROR_SUCCESS && status != ERROR_FILE_NOT_FOUND {
-        bail!("deleting font registry value '{name}' failed with Windows error {status}");
-    }
-    Ok(())
+    crate::winreg::delete_hkcu_value(key, name)
 }
 
-#[cfg(windows)]
 fn registry_value_matches(key: &str, name: &str, expected: &Path) -> Result<bool> {
-    use windows_sys::Win32::Foundation::{ERROR_FILE_NOT_FOUND, ERROR_SUCCESS};
-    use windows_sys::Win32::System::Registry::{HKEY_CURRENT_USER, RRF_RT_REG_SZ, RegGetValueW};
-
-    const ERROR_MORE_DATA: u32 = 234;
-    let key_wide = wide(key);
-    let name_wide = wide(name);
-    let mut kind = 0u32;
-    let mut size = 0u32;
-    let status = unsafe {
-        RegGetValueW(
-            HKEY_CURRENT_USER,
-            key_wide.as_ptr(),
-            name_wide.as_ptr(),
-            RRF_RT_REG_SZ,
-            &mut kind,
-            std::ptr::null_mut(),
-            &mut size,
-        )
-    };
-    if status == ERROR_FILE_NOT_FOUND {
-        return Ok(false);
-    }
-    if status != ERROR_SUCCESS && status != ERROR_MORE_DATA {
-        bail!("reading font registry value '{name}' failed with Windows error {status}");
-    }
-    let mut buffer = vec![0u16; (size as usize).div_ceil(2)];
-    let mut actual = size;
-    let status = unsafe {
-        RegGetValueW(
-            HKEY_CURRENT_USER,
-            key_wide.as_ptr(),
-            name_wide.as_ptr(),
-            RRF_RT_REG_SZ,
-            &mut kind,
-            buffer.as_mut_ptr().cast(),
-            &mut actual,
-        )
-    };
-    if status == ERROR_FILE_NOT_FOUND {
-        return Ok(false);
-    }
-    if status != ERROR_SUCCESS {
-        bail!("reading font registry value '{name}' failed with Windows error {status}");
-    }
-    let value = String::from_utf16_lossy(&buffer[..(actual as usize / 2)]);
-    Ok(value
-        .trim_end_matches('\0')
-        .eq_ignore_ascii_case(&expected.to_string_lossy()))
+    Ok(crate::winreg::get_hkcu_string(key, name)?
+        .is_some_and(|value| value.eq_ignore_ascii_case(&expected.to_string_lossy())))
 }
 
-#[cfg(windows)]
 pub fn broadcast_change() -> Result<()> {
-    use windows_sys::Win32::UI::WindowsAndMessaging::{
-        HWND_BROADCAST, SMTO_ABORTIFHUNG, SendMessageTimeoutW, WM_FONTCHANGE,
-    };
-
-    let mut result = 0usize;
-    let ok = unsafe {
-        SendMessageTimeoutW(
-            HWND_BROADCAST,
-            WM_FONTCHANGE,
-            0,
-            0,
-            SMTO_ABORTIFHUNG,
-            5000,
-            &mut result,
-        )
-    };
-    if ok == 0 {
-        bail!("Windows did not acknowledge WM_FONTCHANGE");
-    }
-    Ok(())
-}
-
-#[cfg(not(windows))]
-fn set_registry_value(_key: &str, _name: &str, _value: &Path) -> Result<()> {
-    bail!("font installation is only supported on Windows")
-}
-
-#[cfg(not(windows))]
-fn delete_registry_value(_key: &str, _name: &str) -> Result<()> {
-    Ok(())
-}
-
-#[cfg(not(windows))]
-fn registry_value_matches(_key: &str, _name: &str, _expected: &Path) -> Result<bool> {
-    Ok(true)
-}
-
-#[cfg(not(windows))]
-pub fn broadcast_change() -> Result<()> {
-    Ok(())
+    crate::winreg::broadcast_font_change()
 }
 
 #[cfg(test)]

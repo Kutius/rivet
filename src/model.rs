@@ -11,15 +11,11 @@ pub struct IndexFile {
     pub generated_at: String,
     #[serde(default)]
     pub packages: Vec<PackageManifest>,
-    /// Font-only packages. Older clients ignore this field; clients with font
-    /// support merge it with packages when loading the index.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub fonts: Vec<PackageManifest>,
 }
 
 impl IndexFile {
     pub fn package_count(&self) -> usize {
-        self.packages.len() + self.fonts.len()
+        self.packages.len()
     }
 }
 
@@ -137,6 +133,22 @@ fn is_valid_command_name(name: &str) -> bool {
     )
 }
 
+fn is_safe_relative_path(path: &str) -> bool {
+    if path.trim().is_empty() || path.contains("..") {
+        return false;
+    }
+    let parsed = std::path::Path::new(path);
+    !parsed.is_absolute()
+        && !parsed.components().any(|component| {
+            matches!(
+                component,
+                std::path::Component::ParentDir
+                    | std::path::Component::RootDir
+                    | std::path::Component::Prefix(_)
+            )
+        })
+}
+
 impl PackageManifest {
     pub fn validate(&self) -> Result<()> {
         if self.name.is_empty()
@@ -161,19 +173,7 @@ impl PackageManifest {
             bail!("package '{}' has no bin or font entries", self.name);
         }
         for bin in &self.bin {
-            let bin_path = std::path::Path::new(bin.path());
-            if bin.path().trim().is_empty()
-                || bin.path().contains("..")
-                || bin_path.is_absolute()
-                || bin_path.components().any(|component| {
-                    matches!(
-                        component,
-                        std::path::Component::ParentDir
-                            | std::path::Component::RootDir
-                            | std::path::Component::Prefix(_)
-                    )
-                })
-            {
+            if !is_safe_relative_path(bin.path()) {
                 bail!("package '{}' has an invalid bin path", self.name);
             }
             let command = bin.command_name();
@@ -186,18 +186,7 @@ impl PackageManifest {
             }
         }
         for font in &self.fonts {
-            if font.trim().is_empty()
-                || font.contains("..")
-                || std::path::Path::new(font).is_absolute()
-                || std::path::Path::new(font).components().any(|component| {
-                    matches!(
-                        component,
-                        std::path::Component::ParentDir
-                            | std::path::Component::RootDir
-                            | std::path::Component::Prefix(_)
-                    )
-                })
-            {
+            if !is_safe_relative_path(font) {
                 bail!(
                     "package '{}' has an invalid font path '{}'",
                     self.name,
@@ -213,10 +202,7 @@ impl PackageManifest {
             }
         }
         for persist in &self.persist {
-            if persist.trim().is_empty()
-                || persist.contains("..")
-                || std::path::Path::new(persist).is_absolute()
-            {
+            if !is_safe_relative_path(persist) {
                 bail!(
                     "package '{}' has an invalid persist path '{}'",
                     self.name,

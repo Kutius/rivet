@@ -157,6 +157,41 @@ fn remove_blocks_reverse_dependencies_until_forced() -> Result<()> {
 }
 
 #[test]
+fn remove_allows_removing_dependent_and_dependency_together() -> Result<()> {
+    let (_repo_dir, index) = prepare_repo(true)?;
+    let root = TempDir::new()?;
+    let root_path = root.path();
+    assert_success(&run_rv(root_path, &index, &["update"]));
+    assert_success(&run_rv(root_path, &index, &["install", "app"]));
+
+    let output = run_rv(root_path, &index, &["remove", "lib", "app"]);
+    assert_success(&output);
+    assert!(!root_path.join("bin").join("app.exe").exists());
+    assert!(!root_path.join("bin").join("lib.exe").exists());
+    Ok(())
+}
+
+#[test]
+fn config_set_validates_trusted_key_and_concurrency() -> Result<()> {
+    let (_repo_dir, index) = prepare_repo(false)?;
+    let root = TempDir::new()?;
+    let root_path = root.path();
+
+    let bad_key = run_rv(
+        root_path,
+        &index,
+        &["config", "set", "trusted_key", "not-hex"],
+    );
+    assert!(!bad_key.status.success());
+    assert!(stderr(&bad_key).contains("64 hex characters"));
+
+    let bad_concurrency = run_rv(root_path, &index, &["config", "set", "concurrency", "0"]);
+    assert!(!bad_concurrency.status.success());
+    assert!(stderr(&bad_concurrency).contains("at least 1"));
+    Ok(())
+}
+
+#[test]
 fn doctor_fix_repairs_broken_link_and_missing_shim() -> Result<()> {
     let (_repo_dir, index) = prepare_repo(false)?;
     let root = TempDir::new()?;

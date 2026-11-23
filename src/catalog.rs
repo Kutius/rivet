@@ -247,21 +247,24 @@ pub fn update_github_packages(
                 continue;
             }
         };
-        let mut layout_changed = false;
         if guessed.extract != "none" {
-            for bin in &manifest.bin {
-                if !guessed.files.iter().any(|file| file == bin.path()) {
-                    errors.push(format!(
-                        "{}: new asset no longer contains '{}'; update the manifest manually",
-                        manifest.name,
-                        bin.path()
-                    ));
-                    layout_changed = true;
+            match reconcile_updated_bins(
+                &manifest.bin,
+                &manifest.version,
+                &version.to_string(),
+                &guessed.files,
+            ) {
+                Ok(updated_bins) => manifest.bin = updated_bins,
+                Err(missing) => {
+                    for path in missing {
+                        errors.push(format!(
+                            "{}: new asset no longer contains '{path}'; update the manifest manually",
+                            manifest.name
+                        ));
+                    }
+                    continue;
                 }
             }
-        }
-        if layout_changed {
-            continue;
         }
         manifest.version = version.to_string();
         manifest.url = asset.browser_download_url.clone();
@@ -269,9 +272,6 @@ pub fn update_github_packages(
         manifest.extract = Some(guessed.extract.clone());
         manifest.strip_components =
             (guessed.strip_components > 0).then_some(guessed.strip_components);
-        if manifest.bin.len() == 1 && options_bin_can_change(&manifest.bin[0], &guessed) {
-            manifest.bin = vec![guessed.bin];
-        }
         let text = toml::to_string_pretty(&manifest)?;
         fs::write(&path, format!("{text}\n"))
             .with_context(|| format!("writing {}", path.display()))?;
@@ -445,8 +445,41 @@ fn read_sources(path: &Path) -> Result<Vec<SourceEntry>> {
     Ok(entries)
 }
 
-fn options_bin_can_change(current: &BinSpec, guessed: &Inspected) -> bool {
-    current.path() == guessed.bin.path() && guessed.extract == "none"
+fn reconcile_updated_bins(
+    bins: &[BinSpec],
+    old_version: &str,
+    new_version: &str,
+    files: &[String],
+) -> std::result::Result<Vec<BinSpec>, Vec<String>> {
+    let mut updated = Vec::with_capacity(bins.len());
+    let mut missing = Vec::new();
+    for bin in bins {
+        if files.iter().any(|file| file == bin.path()) {
+            updated.push(bin.clone());
+            continue;
+        }
+        if !old_version.is_empty() && bin.path().contains(old_version) {
+            let candidate = bin.path().replace(old_version, new_version);
+            if files.iter().any(|file| file == &candidate) {
+                let replacement = match bin {
+                    BinSpec::Simple(_) => BinSpec::Simple(candidate),
+                    BinSpec::Detailed { name, args, .. } => BinSpec::Detailed {
+                        path: candidate,
+                        name: name.clone(),
+                        args: args.clone(),
+                    },
+                };
+                updated.push(replacement);
+                continue;
+            }
+        }
+        missing.push(bin.path().to_string());
+    }
+    if missing.is_empty() {
+        Ok(updated)
+    } else {
+        Err(missing)
+    }
 }
 
 struct Inspected {
@@ -508,7 +541,7 @@ fn write_manifest_from_asset(
     let path = packages.join(format!("{}.toml", draft.name));
     if path.exists() {
         bail!(
-            "{} already exists; use 'rivet repo update' or edit it manually",
+            "{} already exists; use 'rv-repo update' or edit it manually",
             path.display()
         );
     }
@@ -1068,8 +1101,9 @@ fn manifest_files(root: &Path) -> Result<Vec<PathBuf>> {
 mod tests {
     use super::{
         asset_score, command_name, font_entry_present, parse_repository, read_sources,
-        release_version,
+        reconcile_updated_bins, release_version,
     };
+    use crate::model::BinSpec;
 
     #[test]
     fn parses_github_repository_forms() {
@@ -1157,5 +1191,24 @@ asset = "jq-windows-amd64.exe"
         assert_eq!(release_version("3.13").unwrap().to_string(), "3.13.0");
         assert!(release_version("latest").is_err());
         assert!(release_version("2026-11-02").is_err());
+    }
+
+    #[test]
+    fn reconciles_versioned_binary_names_on_update() {
+        let bins = vec![BinSpec::Detailed {
+            path: "restic_0.19.1_windows_amd64.exe".to_string(),
+            name: Some("restic".to_string()),
+            args: vec!["--quiet".to_string()],
+        }];
+        let files = vec!["restic_0.19.2_windows_amd64.exe".to_string()];
+        let updated = reconcile_updated_bins(&bins, "0.19.1", "0.19.2", &files).unwrap();
+        assert_eq!(updated.len(), 1);
+        assert_eq!(updated[0].path(), "restic_0.19.2_windows_amd64.exe");
+        assert_eq!(updated[0].command_name(), "restic");
+        assert_eq!(updated[0].args(), vec!["--quiet".to_string()]);
+
+        let unrelated = vec!["other.exe".to_string()];
+        let err = reconcile_updated_bins(&bins, "0.19.1", "0.19.2", &unrelated).unwrap_err();
+        assert_eq!(err, vec!["restic_0.19.1_windows_amd64.exe".to_string()]);
     }
 }

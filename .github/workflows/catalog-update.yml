@@ -24,17 +24,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build --locked --release --bin rv-repo
-
-      - name: Download latest rv.exe
-        shell: pwsh
-        run: |
-          $releases = Invoke-RestMethod -Headers @{ 'User-Agent' = 'rivet-catalog-update' } -Uri "https://api.github.com/repos/Kutius/rivet/releases?per_page=20"
-          $release = $releases | Where-Object { -not $_.draft } | Select-Object -First 1
-          if (-not $release) { throw "No Rivet release found." }
-          $asset = $release.assets | Where-Object { $_.name -eq "rv.exe" } | Select-Object -First 1
-          if (-not $asset) { throw "rv.exe not found in $($release.tag_name)." }
-          Invoke-WebRequest -UseBasicParsing $asset.browser_download_url -OutFile rv.exe
+      - run: cargo build --locked --release --bins
 
       - name: Update and sign catalog
         id: update
@@ -72,11 +62,11 @@ jobs:
           $env:RIVET_MAIN_INDEX = (Resolve-Path "repo/main/index.json").Path
           $env:RIVET_FONT_DIR = Join-Path $root "fonts"
           $env:RIVET_FONT_REGISTRY = "Software\Rivet\CatalogSmoke\" + [guid]::NewGuid().ToString("N")
-          & .\rv.exe update
+          & .\target\release\rv.exe update
           if ($LASTEXITCODE -ne 0) { throw "smoke update failed" }
-          & .\rv.exe install @changed
+          & .\target\release\rv.exe install @changed
           if ($LASTEXITCODE -ne 0) { throw "smoke install failed" }
-          & .\rv.exe verify
+          & .\target\release\rv.exe verify
           if ($LASTEXITCODE -ne 0) { throw "smoke verify failed" }
 
       - name: Commit and push

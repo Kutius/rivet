@@ -106,15 +106,21 @@ fn extract_tar_reader<R: Read>(
     let mut archive = tar::Archive::new(reader);
     for entry in archive.entries()? {
         let mut entry = entry?;
+        let entry_type = entry.header().entry_type();
         let path = entry.path()?.to_path_buf();
         let Some(relative) = safe_relative(&path, strip_components) else {
             continue;
         };
         let target = destination.join(relative);
-        if let Some(parent) = target.parent() {
-            fs::create_dir_all(parent)?;
+        if entry_type.is_dir() {
+            fs::create_dir_all(&target)?;
+        } else if entry_type.is_file() {
+            if let Some(parent) = target.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            let mut output = File::create(&target)?;
+            io::copy(&mut entry, &mut output)?;
         }
-        entry.unpack(&target)?;
     }
     Ok(())
 }
@@ -141,4 +147,45 @@ fn copy_raw(blob: &Path, destination: &Path) -> Result<()> {
         .unwrap_or("artifact.bin");
     fs::copy(blob, destination.join(file_name))?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::extract;
+    use std::fs::{self, File};
+    use tar::{Builder, EntryType, Header};
+
+    #[test]
+    fn tar_extraction_ignores_symlinks_and_extracts_regular_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let archive_path = dir.path().join("sample.tar");
+        {
+            let file = File::create(&archive_path).unwrap();
+            let mut builder = Builder::new(file);
+
+            let mut link = Header::new_gnu();
+            link.set_entry_type(EntryType::Symlink);
+            link.set_size(0);
+            link.set_cksum();
+            builder.append_link(&mut link, "escape", "..").unwrap();
+
+            let data = b"hello";
+            let mut header = Header::new_gnu();
+            header.set_entry_type(EntryType::Regular);
+            header.set_size(data.len() as u64);
+            header.set_cksum();
+            builder
+                .append_data(&mut header, "bin/tool.exe", &data[..])
+                .unwrap();
+            builder.finish().unwrap();
+        }
+
+        let dest = dir.path().join("out");
+        extract(&archive_path, &dest, Some("tar"), 0).unwrap();
+        assert!(!dest.join("escape").exists(), "symlink must not be created");
+        assert_eq!(
+            fs::read(dest.join("bin").join("tool.exe")).unwrap(),
+            b"hello"
+        );
+    }
 }

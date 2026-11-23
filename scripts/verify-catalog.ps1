@@ -12,9 +12,10 @@ $ErrorActionPreference = "Stop"
 $project = Split-Path $PSScriptRoot -Parent
 if (-not $Rv) { $Rv = Join-Path $project "target\release\rv.exe" }
 if (-not $Repo) { $Repo = Join-Path $project "target\release\rv-repo.exe" }
-foreach ($exe in @($Rv, $Repo)) {
+$shim = Join-Path (Split-Path $Rv -Parent) "rv-shim.exe"
+foreach ($exe in @($Rv, $shim, $Repo)) {
     if (-not (Test-Path $exe)) {
-        throw "missing $exe; run: cargo build --release --bin rv --bin rv-repo"
+        throw "missing $exe; run: cargo build --release --bins"
     }
 }
 
@@ -46,7 +47,6 @@ try {
 
     $index = Get-Content $env:RIVET_MAIN_INDEX -Raw | ConvertFrom-Json
     $packages = @($index.packages)
-    $packages += @($index.fonts | Where-Object { $_ })
     $names = @($packages | ForEach-Object name | Sort-Object -Unique)
     $failed = @()
     foreach ($name in $names) {

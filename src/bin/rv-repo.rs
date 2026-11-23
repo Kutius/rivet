@@ -95,6 +95,7 @@ enum Commands {
 }
 
 fn main() {
+    rivet::download::init_crypto();
     if let Err(error) = run() {
         eprintln!("rv-repo: {error:#}");
         std::process::exit(1);

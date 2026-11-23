@@ -140,7 +140,7 @@ pub fn verify_index(
             verify_signature(data, &parsed, trust, location)
         }
         None if remote && !trust.allow_unsigned => bail!(
-            "refusing unsigned remote index {location}: {location}{SIGNATURE_SUFFIX} was not found.\n  Sign the index with 'rivet repo sign' and trust the key with 'rivet config set trusted_key <hex>'.\n  Pass --insecure to override (not recommended)."
+            "refusing unsigned remote index {location}: {location}{SIGNATURE_SUFFIX} was not found.\n  Sign the index with 'rv-repo sign' and trust the key with 'rivet config set trusted_key <hex>'.\n  Pass --insecure to override (not recommended)."
         ),
         None => Ok(()),
     }

@@ -1,4 +1,6 @@
 /target
+/dist/*
+!/dist/README.md
 *.key
 *.pdb
 *.tmp

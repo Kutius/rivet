@@ -17,7 +17,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
-      - run: cargo build --locked --release --bin rv --bin rv-repo
+      - run: cargo build --locked --release --bins
 
       - name: Install and smoke test every package
         shell: pwsh

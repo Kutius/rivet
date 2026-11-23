@@ -98,6 +98,20 @@ pub struct InstalledShim {
     pub sidecar: Option<PathBuf>,
 }
 
+/// Ensure `rv-shim.exe` is available when any binary in `bins` requires a
+/// launcher shim instead of a direct symlink. Calling this before removing old
+/// shims avoids leaving a package without commands if `rv-shim.exe` is missing.
+pub fn preflight_shims(paths: &Paths, package: &str, bins: &[BinSpec]) -> Result<()> {
+    let needs_launcher = bins.iter().any(|bin| {
+        let target = current_link(paths, package).join(bin.path());
+        !symlinks_enabled() || !can_symlink(bin, &target)
+    });
+    if needs_launcher {
+        ensure_base_shim(paths)?;
+    }
+    Ok(())
+}
+
 pub fn install_shims(paths: &Paths, package: &str, bins: &[BinSpec]) -> Result<Vec<InstalledShim>> {
     let mut created = Vec::new();
     let mut base: Option<PathBuf> = None;
