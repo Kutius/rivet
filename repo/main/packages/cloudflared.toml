@@ -1,12 +1,12 @@
 name = "cloudflared"
-version = "2026.11.1"
+version = "2026.11.2"
 description = "Cloudflare Tunnel client"
 homepage = "https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/"
 license = "Apache-2.0"
 tags = []
 arch = "x64"
-url = "https://github.com/cloudflare/cloudflared/releases/download/2026.11.1/cloudflared-windows-amd64.exe"
-sha256 = "341deda3db5ec498a0482254d6c38c0b7cf01a30c37bb5dd95d2216d08955e35"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.11.2/cloudflared-windows-amd64.exe"
+sha256 = "555b46c85582461d189cac30d14ad05480d612613801be9f110b8ce08c5b2113"
 extract = "none"
 fonts = []
 depends = []

@@ -1,12 +1,12 @@
 name = "pnpm"
-version = "12.21.0"
+version = "12.23.0"
 description = "Fast, disk space efficient package manager"
 homepage = "https://pnpm.io"
 license = "MIT"
 tags = []
 arch = "x64"
-url = "https://github.com/pnpm/pnpm/releases/download/v12.21.0/pnpm-win32-x64.zip"
-sha256 = "4fb64bb37e46c788309e0fd4ea93beb512546fdc7348121194fb704fbb72c09c"
+url = "https://github.com/pnpm/pnpm/releases/download/v12.23.0/pnpm-win32-x64.zip"
+sha256 = "1a954bdc1b15ff036294279391d01a09407b7d46ff972a59d81f23becce96c1c"
 extract = "zip"
 fonts = []
 depends = []

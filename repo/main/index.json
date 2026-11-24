@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-23T12:53:31.422256800+00:00",
+  "generated_at": "2026-11-24T13:24:58.984624700+00:00",
   "packages": [
     {
       "name": "actionlint",
@@ -294,14 +294,14 @@
     },
     {
       "name": "cloudflared",
-      "version": "2026.11.1",
+      "version": "2026.11.2",
       "description": "Cloudflare Tunnel client",
       "homepage": "https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/",
       "license": "Apache-2.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/cloudflare/cloudflared/releases/download/2026.11.1/cloudflared-windows-amd64.exe",
-      "sha256": "341deda3db5ec498a0482254d6c38c0b7cf01a30c37bb5dd95d2216d08955e35",
+      "url": "https://github.com/cloudflare/cloudflared/releases/download/2026.11.2/cloudflared-windows-amd64.exe",
+      "sha256": "555b46c85582461d189cac30d14ad05480d612613801be9f110b8ce08c5b2113",
       "extract": "none",
       "strip_components": null,
       "bin": [
@@ -1314,14 +1314,14 @@
     },
     {
       "name": "mise",
-      "version": "2026.11.12",
+      "version": "2026.11.14",
       "description": "dev tools, env vars, task runner",
       "homepage": "https://mise.jdx.dev",
       "license": "MIT",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/jdx/mise/releases/download/v2026.11.12/mise-v2026.11.12-windows-x64.zip",
-      "sha256": "706fecc47fba7e4da63f59dccd3262502c59e4699035548f1113df95fcfca96e",
+      "url": "https://github.com/jdx/mise/releases/download/v2026.11.14/mise-v2026.11.14-windows-x64.zip",
+      "sha256": "f1a197ba2d5e4b0ccac323038efd55b007846c6d38828baf529439387b61eb5a",
       "extract": "zip",
       "strip_components": 1,
       "bin": [
@@ -1383,14 +1383,14 @@
     },
     {
       "name": "pnpm",
-      "version": "12.21.0",
+      "version": "12.23.0",
       "description": "Fast, disk space efficient package manager",
       "homepage": "https://pnpm.io",
       "license": "MIT",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/pnpm/pnpm/releases/download/v12.21.0/pnpm-win32-x64.zip",
-      "sha256": "4fb64bb37e46c788309e0fd4ea93beb512546fdc7348121194fb704fbb72c09c",
+      "url": "https://github.com/pnpm/pnpm/releases/download/v12.23.0/pnpm-win32-x64.zip",
+      "sha256": "1a954bdc1b15ff036294279391d01a09407b7d46ff972a59d81f23becce96c1c",
       "extract": "zip",
       "strip_components": null,
       "bin": [
@@ -1926,14 +1926,14 @@
     },
     {
       "name": "yt-dlp",
-      "version": "2026.10.26",
+      "version": "2026.11.23",
       "description": "A feature-rich command-line audio/video downloader",
       "homepage": "https://discord.gg/H5MNcFW63r",
       "license": "Unlicense",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp.exe",
-      "sha256": "f5389d3698ecde4ef06f4e6b1ce0294fe9ac1396228c8990b8d3416d6d177a7d",
+      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.11.23/yt-dlp.exe",
+      "sha256": "622ed48023cac1daa52a3bf3a6ac38f03514de214b5f0fa069389fd0f6d17e5c",
       "extract": "none",
       "strip_components": null,
       "bin": [
