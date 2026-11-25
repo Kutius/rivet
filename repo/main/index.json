@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-24T13:24:58.984624700+00:00",
+  "generated_at": "2026-11-25T12:17:13.095972800+00:00",
   "packages": [
     {
       "name": "actionlint",
@@ -126,14 +126,14 @@
     },
     {
       "name": "biome",
-      "version": "2.6.8",
+      "version": "2.6.9",
       "description": "A toolchain for web projects, aimed to provide functionalities to maintain them. Biome offers formatter and linter, usable via CLI and LSP.",
       "homepage": "https://biomejs.dev",
       "license": "Apache-2.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.6.8/biome-win32-x64.exe",
-      "sha256": "4328e7468693a259474b8d6810899fafa4af3ef7ceec446d1b98553c8f7b3ace",
+      "url": "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.6.9/biome-win32-x64.exe",
+      "sha256": "12ecf4622bd324046a4e2f0f469fb7c79254d77280277082a187183fa591b48a",
       "extract": "none",
       "strip_components": null,
       "bin": [
@@ -271,14 +271,14 @@
     },
     {
       "name": "cargo-deny",
-      "version": "0.22.0",
+      "version": "0.22.1",
       "description": "❌ Cargo plugin for linting your dependencies 🦀",
       "homepage": "http://embark.rs",
       "license": "Apache-2.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.0/cargo-deny-0.22.0-x86_64-pc-windows-msvc.tar.gz",
-      "sha256": "a85b270b4aa28633d2cb2be97fccd4518ccb783014914e99463e75468cb3183c",
+      "url": "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.1/cargo-deny-0.22.1-x86_64-pc-windows-msvc.tar.gz",
+      "sha256": "b8d7e473f54c328cc528ef8aea221c40b5ccac3d63844aa056f86ed0886800a2",
       "extract": "tar.gz",
       "strip_components": 1,
       "bin": [
@@ -552,7 +552,7 @@
     },
     {
       "name": "dust",
-      "version": "1.2.7",
+      "version": "1.2.8",
       "description": "A more intuitive version of du in rust",
       "homepage": "https://github.com/bootandy/dust",
       "license": "Apache-2.0",
@@ -562,8 +562,8 @@
         "cli"
       ],
       "arch": "x64",
-      "url": "https://github.com/bootandy/dust/releases/download/v1.2.7/dust-v1.2.7-x86_64-pc-windows-msvc.zip",
-      "sha256": "d07a41521958895e701ad55f342302b7362799d6a328c843e8e2208ba0564c30",
+      "url": "https://github.com/bootandy/dust/releases/download/v1.2.8/dust-v1.2.8-x86_64-pc-windows-msvc.zip",
+      "sha256": "adfbdab0765c72e5e3a8c43ae9e92f4076cdb30c6364b68817301fb85fe44ecd",
       "extract": "zip",
       "strip_components": 1,
       "bin": [
@@ -1797,14 +1797,14 @@
     },
     {
       "name": "uv",
-      "version": "0.13.9",
+      "version": "0.13.10",
       "description": "An extremely fast Python package and project manager, written in Rust.",
       "homepage": "https://docs.astral.sh/uv",
       "license": "Apache-2.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-pc-windows-msvc.zip",
-      "sha256": "edd61f7f5728a56cc62455386661860bdfc7bab65872f39b0c25bdcc1d8e1beb",
+      "url": "https://github.com/astral-sh/uv/releases/download/0.13.10/uv-x86_64-pc-windows-msvc.zip",
+      "sha256": "297b3881fe1adfb922becc2c1613202abb41dc83ea5ff43d472aa087ca1f8683",
       "extract": "zip",
       "strip_components": null,
       "bin": [

@@ -1,12 +1,12 @@
 name = "cargo-deny"
-version = "0.22.0"
+version = "0.22.1"
 description = "❌ Cargo plugin for linting your dependencies 🦀"
 homepage = "http://embark.rs"
 license = "Apache-2.0"
 tags = []
 arch = "x64"
-url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.0/cargo-deny-0.22.0-x86_64-pc-windows-msvc.tar.gz"
-sha256 = "a85b270b4aa28633d2cb2be97fccd4518ccb783014914e99463e75468cb3183c"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.1/cargo-deny-0.22.1-x86_64-pc-windows-msvc.tar.gz"
+sha256 = "b8d7e473f54c328cc528ef8aea221c40b5ccac3d63844aa056f86ed0886800a2"
 extract = "tar.gz"
 strip_components = 1
 fonts = []
