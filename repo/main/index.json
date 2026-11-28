@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-25T12:17:13.095972800+00:00",
+  "generated_at": "2026-11-28T11:29:39.780287600+00:00",
   "packages": [
     {
       "name": "actionlint",
@@ -99,7 +99,7 @@
     },
     {
       "name": "bat",
-      "version": "0.26.1",
+      "version": "0.27.0",
       "description": "Cat clone with syntax highlighting and Git integration",
       "homepage": "https://github.com/sharkdp/bat",
       "license": "MIT OR Apache-2.0",
@@ -109,8 +109,8 @@
         "cli"
       ],
       "arch": "x64",
-      "url": "https://github.com/sharkdp/bat/releases/download/v0.26.1/bat-v0.26.1-x86_64-pc-windows-msvc.zip",
-      "sha256": "0f729b4b6f5f28d395c641eacc2e9ff68d0096b85aa0eec344aa62425144b69b",
+      "url": "https://github.com/sharkdp/bat/releases/download/v0.27.0/bat-v0.27.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "3c0b0a9765bd4679de82a1f2772c522025eea5a1de5f7b97c6fa119c25721b1b",
       "extract": "zip",
       "strip_components": 1,
       "bin": [
@@ -248,14 +248,14 @@
     },
     {
       "name": "cargo-binstall",
-      "version": "1.28.0",
+      "version": "1.29.0",
       "description": "Binary installation for rust projects",
       "homepage": "https://github.com/cargo-bins/cargo-binstall",
       "license": "GPL-3.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/cargo-bins/cargo-binstall/releases/download/v1.28.0/cargo-binstall-x86_64-pc-windows-msvc.zip",
-      "sha256": "72b0b451ea85173c6b7d484913051dd53bfa2155f065fce8ee4494ff54d95aa4",
+      "url": "https://github.com/cargo-bins/cargo-binstall/releases/download/v1.29.0/cargo-binstall-x86_64-pc-windows-msvc.zip",
+      "sha256": "31ac80fa69a258bf7b763693af63273f2b5beb8b836427649f75b5d4a6b30a95",
       "extract": "zip",
       "strip_components": null,
       "bin": [
@@ -271,14 +271,14 @@
     },
     {
       "name": "cargo-deny",
-      "version": "0.22.1",
+      "version": "0.22.2",
       "description": "❌ Cargo plugin for linting your dependencies 🦀",
       "homepage": "http://embark.rs",
       "license": "Apache-2.0",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.1/cargo-deny-0.22.1-x86_64-pc-windows-msvc.tar.gz",
-      "sha256": "b8d7e473f54c328cc528ef8aea221c40b5ccac3d63844aa056f86ed0886800a2",
+      "url": "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.2/cargo-deny-0.22.2-x86_64-pc-windows-msvc.tar.gz",
+      "sha256": "da696b3647f5a661d599807cadb13ed120e56fb421ee3ef113082c274194572c",
       "extract": "tar.gz",
       "strip_components": 1,
       "bin": [
@@ -707,14 +707,14 @@
     },
     {
       "name": "gh",
-      "version": "2.105.0",
+      "version": "2.106.0",
       "description": "GitHub’s official command line tool",
       "homepage": "https://cli.github.com",
       "license": "MIT",
       "tags": [],
       "arch": "x64",
-      "url": "https://github.com/cli/cli/releases/download/v2.105.0/gh_2.105.0_windows_amd64.zip",
-      "sha256": "8813a72c899900afaa10e3fec8fbc64b908c89dbfe837e95ed2fa500fc140627",
+      "url": "https://github.com/cli/cli/releases/download/v2.106.0/gh_2.106.0_windows_amd64.zip",
+      "sha256": "d406f442ca0baa3d3e9c695e9cded1aa48e67dad3294b8947e5ab84f980b4844",
       "extract": "zip",
       "strip_components": null,
       "bin": [
